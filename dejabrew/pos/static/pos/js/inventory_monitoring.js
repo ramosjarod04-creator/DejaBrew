@@ -29,11 +29,12 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
-// Initialize date filters to last 30 days
+// Initialize date filters to show all data (1 year back)
 function initializeDateFilters() {
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
+    // Go back 1 year to catch all historical data
+    startDate.setFullYear(startDate.getFullYear() - 1);
 
     document.getElementById('end-date').valueAsDate = endDate;
     document.getElementById('start-date').valueAsDate = startDate;
