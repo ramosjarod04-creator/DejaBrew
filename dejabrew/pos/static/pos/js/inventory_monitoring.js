@@ -132,6 +132,19 @@ function updateUI() {
     updateTransactionsTable();
     updateIngredientsTable();
     updateIngredientDropdown();
+    checkForNoData();
+}
+
+// Check if there's no data and show setup notice
+function checkForNoData() {
+    const { transactions } = monitoringData;
+    const setupNotice = document.getElementById('setup-notice');
+
+    if (transactions.length === 0) {
+        setupNotice.style.display = 'block';
+    } else {
+        setupNotice.style.display = 'none';
+    }
 }
 
 // Update summary statistics
