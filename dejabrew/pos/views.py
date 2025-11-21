@@ -265,7 +265,7 @@ def create_inventory_transaction(ingredient, transaction_type, quantity, user, n
         # Get fresh stock levels
         ingredient.refresh_from_db()
 
-        InventoryTransaction.objects.create(
+        transaction = InventoryTransaction.objects.create(
             ingredient=ingredient,
             ingredient_name=ingredient.name,
             transaction_type=transaction_type,
@@ -279,8 +279,13 @@ def create_inventory_transaction(ingredient, transaction_type, quantity, user, n
             reference=reference,
             user=user
         )
+        print(f"✓ Created {transaction_type} transaction for {ingredient.name}: {quantity}{ingredient.unit}")
+        return transaction
     except Exception as e:
-        print(f"⚠️ Failed to create inventory transaction: {e}")
+        print(f"⚠️ Failed to create inventory transaction for {ingredient.name}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise  # Re-raise the exception so we can see it
 
 
 def save_receipt_to_file(order, order_items_list, subtotal, discount, discount_amount, total, payment_method, 
