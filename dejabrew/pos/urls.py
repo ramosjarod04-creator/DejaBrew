@@ -49,5 +49,10 @@ urlpatterns = [
 
     path('api/order/<int:order_id>/', views.order_details_api, name='order_details_api'),
 
+    # Inventory Monitoring
+    path('inventory-monitoring/', views.inventory_monitoring_view, name='inventory_monitoring'),
+    path('api/inventory-monitoring/', views.inventory_monitoring_api, name='api_inventory_monitoring'),
+    path('api/inventory-monitoring/export/', views.export_inventory_monitoring, name='export_inventory_monitoring'),
+
     path('forecasting/api/predict/', forecast_views.predict_api, name='forecast_predict_api')
 ]

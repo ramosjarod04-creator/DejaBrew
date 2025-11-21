@@ -158,3 +158,48 @@ class WastedLog(models.Model):
     def __str__(self):
         return f"{self.quantity}{self.unit} of {self.ingredient_name} wasted"
 # --- END NEW ---
+
+
+class InventoryTransaction(models.Model):
+    """
+    Comprehensive tracking of all inventory movements for monitoring and reporting
+    """
+    TRANSACTION_TYPE_CHOICES = [
+        ('STOCK_IN', 'Stock In'),           # Adding inventory
+        ('STOCK_OUT', 'Stock Out'),         # Usage from sales
+        ('TRANSFER_TO_MAIN', 'Transfer to Main Stock'),
+        ('TRANSFER_TO_ROOM', 'Transfer to Stock Room'),
+        ('WASTE', 'Waste'),                 # Wasted inventory
+        ('ADJUSTMENT', 'Manual Adjustment'), # Manual corrections
+    ]
+
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.SET_NULL, null=True, blank=True)
+    ingredient_name = models.CharField(max_length=100)  # Preserved name if ingredient deleted
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
+    quantity = models.FloatField()  # Positive for IN, negative for OUT
+    unit = models.CharField(max_length=20)
+    cost_per_unit = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    # Stock levels after transaction
+    main_stock_after = models.FloatField(default=0)
+    stock_room_after = models.FloatField(default=0)
+
+    # Additional details
+    notes = models.TextField(blank=True)
+    reference = models.CharField(max_length=100, blank=True)  # Order ID, waste log ID, etc.
+
+    # Tracking
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['ingredient', '-created_at']),
+            models.Index(fields=['transaction_type', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.transaction_type}: {self.quantity}{self.unit} of {self.ingredient_name}"

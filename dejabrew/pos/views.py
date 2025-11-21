@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import Item, Order, OrderItem, AuditTrail, UserProfile, Ingredient, WastedLog
+from .models import Item, Order, OrderItem, AuditTrail, UserProfile, Ingredient, WastedLog, InventoryTransaction
 from .serializers import ItemSerializer, OrderSerializer, IngredientSerializer
 from django.http import JsonResponse, QueryDict
 from django.core.serializers import serialize
@@ -1148,8 +1148,271 @@ def order_details_api(request, order_id):
                 for item in order.items.all()
             ]
         }
-        
+
         return JsonResponse(order_data)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ==================== INVENTORY MONITORING ENDPOINTS ====================
+
+@login_required
+def inventory_monitoring_view(request):
+    """
+    Render the inventory monitoring page
+    """
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    user_role = 'unknown'
+    if request.user.is_superuser:
+        user_role = 'admin'
+    elif hasattr(request.user, 'profile'):
+        try:
+            user_role = request.user.profile.role
+        except UserProfile.DoesNotExist:
+            if request.user.is_staff:
+                user_role = 'staff'
+    elif request.user.is_staff:
+        user_role = 'staff'
+
+    context = {
+        'username': request.user.username,
+        'user_role': user_role
+    }
+    return render(request, 'inventory_monitoring.html', context)
+
+
+@login_required
+def inventory_monitoring_api(request):
+    """
+    API endpoint for inventory monitoring with date filtering
+    Returns comprehensive inventory transaction data
+    """
+    try:
+        # Get date range from query params
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        ingredient_id = request.GET.get('ingredient_id')
+        transaction_type = request.GET.get('transaction_type')
+
+        # Default to last 30 days if no dates provided
+        if not end_date_str:
+            end_date = timezone.now()
+        else:
+            end_date = timezone.datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+
+        if not start_date_str:
+            start_date = end_date - timedelta(days=30)
+        else:
+            start_date = timezone.datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+
+        # Build query
+        transactions = InventoryTransaction.objects.filter(
+            created_at__gte=start_date,
+            created_at__lte=end_date
+        ).select_related('ingredient', 'user')
+
+        # Apply filters
+        if ingredient_id:
+            transactions = transactions.filter(ingredient_id=ingredient_id)
+
+        if transaction_type:
+            transactions = transactions.filter(transaction_type=transaction_type)
+
+        # Get all ingredients for dropdown
+        ingredients = Ingredient.objects.all().order_by('name').values('id', 'name', 'unit', 'category')
+
+        # Prepare transaction data
+        transactions_data = []
+        for txn in transactions:
+            transactions_data.append({
+                'id': txn.id,
+                'ingredient_name': txn.ingredient_name,
+                'ingredient_id': txn.ingredient.id if txn.ingredient else None,
+                'transaction_type': txn.transaction_type,
+                'transaction_type_display': txn.get_transaction_type_display(),
+                'quantity': float(txn.quantity),
+                'unit': txn.unit,
+                'cost_per_unit': float(txn.cost_per_unit),
+                'total_cost': float(txn.total_cost),
+                'main_stock_after': float(txn.main_stock_after),
+                'stock_room_after': float(txn.stock_room_after),
+                'notes': txn.notes,
+                'reference': txn.reference,
+                'created_at': txn.created_at.isoformat(),
+                'user': txn.user.username if txn.user else 'System',
+            })
+
+        # Calculate summary statistics
+        stock_in = transactions.filter(transaction_type='STOCK_IN').aggregate(
+            total=Sum('quantity'),
+            cost=Sum('total_cost')
+        )
+        stock_out = transactions.filter(transaction_type='STOCK_OUT').aggregate(
+            total=Sum('quantity'),
+            cost=Sum('total_cost')
+        )
+        waste = transactions.filter(transaction_type='WASTE').aggregate(
+            total=Sum('quantity'),
+            cost=Sum('total_cost')
+        )
+        transfers = transactions.filter(
+            transaction_type__in=['TRANSFER_TO_MAIN', 'TRANSFER_TO_ROOM']
+        ).aggregate(total=Count('id'))
+
+        summary = {
+            'stock_in': {
+                'count': transactions.filter(transaction_type='STOCK_IN').count(),
+                'total_quantity': float(stock_in['total'] or 0),
+                'total_cost': float(stock_in['cost'] or 0),
+            },
+            'stock_out': {
+                'count': transactions.filter(transaction_type='STOCK_OUT').count(),
+                'total_quantity': abs(float(stock_out['total'] or 0)),
+                'total_cost': float(stock_out['cost'] or 0),
+            },
+            'waste': {
+                'count': transactions.filter(transaction_type='WASTE').count(),
+                'total_quantity': float(waste['total'] or 0),
+                'total_cost': float(waste['cost'] or 0),
+            },
+            'transfers': {
+                'count': transfers['total'] or 0,
+            },
+            'date_range': {
+                'start': start_date.isoformat(),
+                'end': end_date.isoformat(),
+            }
+        }
+
+        # Get ingredient-wise breakdown
+        ingredient_summary = []
+        ingredient_transactions = transactions.values('ingredient_id', 'ingredient_name').annotate(
+            stock_in_qty=Sum('quantity', filter=Q(transaction_type='STOCK_IN')),
+            stock_out_qty=Sum('quantity', filter=Q(transaction_type='STOCK_OUT')),
+            waste_qty=Sum('quantity', filter=Q(transaction_type='WASTE')),
+            total_cost=Sum('total_cost')
+        ).order_by('-total_cost')
+
+        for item in ingredient_transactions:
+            if item['ingredient_id']:
+                try:
+                    ingredient = Ingredient.objects.get(id=item['ingredient_id'])
+                    ingredient_summary.append({
+                        'id': item['ingredient_id'],
+                        'name': item['ingredient_name'],
+                        'category': ingredient.category,
+                        'unit': ingredient.unit,
+                        'stock_in': float(item['stock_in_qty'] or 0),
+                        'stock_out': abs(float(item['stock_out_qty'] or 0)),
+                        'waste': float(item['waste_qty'] or 0),
+                        'total_cost': float(item['total_cost'] or 0),
+                        'current_main_stock': float(ingredient.mainStock),
+                        'current_stock_room': float(ingredient.stockRoom),
+                    })
+                except Ingredient.DoesNotExist:
+                    continue
+
+        return JsonResponse({
+            'success': True,
+            'transactions': transactions_data,
+            'summary': summary,
+            'ingredient_summary': ingredient_summary,
+            'ingredients': list(ingredients),
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def export_inventory_monitoring(request):
+    """
+    Export inventory monitoring data to CSV/Excel format
+    """
+    try:
+        import csv
+        from django.http import HttpResponse
+
+        # Get same filters as monitoring API
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        ingredient_id = request.GET.get('ingredient_id')
+        transaction_type = request.GET.get('transaction_type')
+        export_format = request.GET.get('format', 'csv')  # csv or excel
+
+        # Default to last 30 days
+        if not end_date_str:
+            end_date = timezone.now()
+        else:
+            end_date = timezone.datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+
+        if not start_date_str:
+            start_date = end_date - timedelta(days=30)
+        else:
+            start_date = timezone.datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+
+        # Build query
+        transactions = InventoryTransaction.objects.filter(
+            created_at__gte=start_date,
+            created_at__lte=end_date
+        ).select_related('ingredient', 'user').order_by('-created_at')
+
+        if ingredient_id:
+            transactions = transactions.filter(ingredient_id=ingredient_id)
+
+        if transaction_type:
+            transactions = transactions.filter(transaction_type=transaction_type)
+
+        if export_format == 'excel':
+            # For Excel export, we'll use CSV with .xlsx extension hint
+            # In production, you might want to use openpyxl or xlsxwriter
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="inventory_monitoring_{start_date.strftime("%Y%m%d")}_{end_date.strftime("%Y%m%d")}.csv"'
+        else:
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="inventory_monitoring_{start_date.strftime("%Y%m%d")}_{end_date.strftime("%Y%m%d")}.csv"'
+
+        writer = csv.writer(response)
+
+        # Write header
+        writer.writerow([
+            'Date/Time',
+            'Ingredient',
+            'Category',
+            'Transaction Type',
+            'Quantity',
+            'Unit',
+            'Cost per Unit',
+            'Total Cost',
+            'Main Stock After',
+            'Stock Room After',
+            'User',
+            'Reference',
+            'Notes'
+        ])
+
+        # Write data
+        for txn in transactions:
+            writer.writerow([
+                txn.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                txn.ingredient_name,
+                txn.ingredient.category if txn.ingredient else '',
+                txn.get_transaction_type_display(),
+                txn.quantity,
+                txn.unit,
+                txn.cost_per_unit,
+                txn.total_cost,
+                txn.main_stock_after,
+                txn.stock_room_after,
+                txn.user.username if txn.user else 'System',
+                txn.reference,
+                txn.notes
+            ])
+
+        return response
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)

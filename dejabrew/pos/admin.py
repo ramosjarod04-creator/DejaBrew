@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item, Order, OrderItem, UserProfile, AuditTrail
+from .models import Item, Order, OrderItem, UserProfile, AuditTrail, Ingredient, WastedLog, InventoryTransaction
 
 
 # =======================
@@ -90,3 +90,69 @@ class AuditTrailAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+# =======================
+#  INGREDIENT ADMIN
+# =======================
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'category', 'mainStock', 'stockRoom', 'unit', 'cost', 'status', 'ingredient_type')
+    search_fields = ('name', 'category')
+    list_filter = ('status', 'category', 'ingredient_type')
+    ordering = ('name',)
+
+
+# =======================
+#  WASTED LOG ADMIN
+# =======================
+@admin.register(WastedLog)
+class WastedLogAdmin(admin.ModelAdmin):
+    list_display = ('ingredient_name', 'quantity', 'unit', 'cost_at_waste', 'wasted_at', 'reason', 'user')
+    search_fields = ('ingredient_name', 'reason', 'user__username')
+    list_filter = ('reason', 'wasted_at')
+    ordering = ('-wasted_at',)
+    readonly_fields = ('wasted_at',)
+    date_hierarchy = 'wasted_at'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('ingredient', 'user')
+
+
+# =======================
+#  INVENTORY TRANSACTION ADMIN
+# =======================
+@admin.register(InventoryTransaction)
+class InventoryTransactionAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'ingredient_name', 'transaction_type', 'quantity', 'unit', 'total_cost', 'user')
+    search_fields = ('ingredient_name', 'transaction_type', 'user__username', 'notes', 'reference')
+    list_filter = ('transaction_type', 'created_at')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at', 'main_stock_after', 'stock_room_after')
+    date_hierarchy = 'created_at'
+
+    fieldsets = (
+        ('Transaction Info', {
+            'fields': ('ingredient', 'ingredient_name', 'transaction_type', 'created_at')
+        }),
+        ('Quantity & Cost', {
+            'fields': ('quantity', 'unit', 'cost_per_unit', 'total_cost')
+        }),
+        ('Stock Levels After Transaction', {
+            'fields': ('main_stock_after', 'stock_room_after')
+        }),
+        ('Additional Details', {
+            'fields': ('notes', 'reference', 'user')
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('ingredient', 'user')
+
+    # Make transactions read-only after creation to maintain audit trail integrity
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Only superusers can delete transactions
+        return request.user.is_superuser
