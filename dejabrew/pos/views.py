@@ -185,6 +185,40 @@ def get_client_ip(request):
     return x_forwarded_for.split(',')[0].strip() if x_forwarded_for else request.META.get('REMOTE_ADDR', 'Unknown')
 
 
+def create_inventory_transaction(ingredient, transaction_type, quantity, user, notes="", reference=""):
+    """
+    Helper function to create an InventoryTransaction record
+
+    Args:
+        ingredient: Ingredient instance
+        transaction_type: One of the TRANSACTION_TYPE_CHOICES
+        quantity: Float (positive for IN, negative for OUT)
+        user: User instance
+        notes: Optional notes
+        reference: Optional reference (Order ID, Waste Log ID, etc.)
+    """
+    try:
+        # Get fresh stock levels
+        ingredient.refresh_from_db()
+
+        InventoryTransaction.objects.create(
+            ingredient=ingredient,
+            ingredient_name=ingredient.name,
+            transaction_type=transaction_type,
+            quantity=quantity,
+            unit=ingredient.unit,
+            cost_per_unit=ingredient.cost,
+            total_cost=Decimal(str(abs(quantity))) * ingredient.cost,
+            main_stock_after=ingredient.mainStock,
+            stock_room_after=ingredient.stockRoom,
+            notes=notes,
+            reference=reference,
+            user=user
+        )
+    except Exception as e:
+        print(f"⚠️ Failed to create inventory transaction: {e}")
+
+
 def save_receipt_to_file(order, order_items_list, subtotal, discount, discount_amount, total, payment_method, 
                          vatable_amount=None, vat_amount=None, discount_type='regular', discount_id=''):
     try:
