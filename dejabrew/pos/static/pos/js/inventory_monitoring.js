@@ -376,6 +376,67 @@ function setupTabs() {
     });
 }
 
+// Populate historical data via API
+async function populateHistoricalData() {
+    const button = document.getElementById('populate-btn');
+    const resultDiv = document.getElementById('populate-result');
+
+    try {
+        // Disable button and show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Populating...';
+        resultDiv.style.display = 'none';
+
+        const response = await fetch('/api/inventory-monitoring/populate/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#d4edda';
+            resultDiv.style.color = '#155724';
+            resultDiv.style.border = '1px solid #c3e6cb';
+            resultDiv.innerHTML = `
+                <strong>✓ Success!</strong> Historical data populated successfully.<br>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Stock Out Transactions: ${data.stats.stock_out}</li>
+                    <li>Waste Transactions: ${data.stats.waste}</li>
+                    <li>Total: ${data.stats.total}</li>
+                </ul>
+            `;
+
+            // Reload data after 2 seconds
+            setTimeout(() => {
+                fetchMonitoringData();
+            }, 2000);
+
+        } else {
+            throw new Error(data.error || 'Failed to populate data');
+        }
+
+    } catch (error) {
+        console.error('Error populating historical data:', error);
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#f8d7da';
+        resultDiv.style.color = '#721c24';
+        resultDiv.style.border = '1px solid #f5c6cb';
+        resultDiv.innerHTML = `
+            <strong>✗ Error:</strong> ${error.message}<br>
+            <small>Please try running the command manually or check the console for details.</small>
+        `;
+    } finally {
+        // Re-enable button
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-database"></i> Populate Historical Data';
+    }
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
     initializeDateFilters();
@@ -388,6 +449,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('apply-filter').addEventListener('click', fetchMonitoringData);
     document.getElementById('reset-filter').addEventListener('click', resetFilters);
     document.getElementById('export-csv').addEventListener('click', exportData);
+
+    // Populate button (if it exists)
+    const populateBtn = document.getElementById('populate-btn');
+    if (populateBtn) {
+        populateBtn.addEventListener('click', populateHistoricalData);
+    }
 
     // Allow enter key to apply filter
     document.querySelectorAll('.filter-group input, .filter-group select').forEach(element => {

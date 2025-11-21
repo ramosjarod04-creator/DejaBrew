@@ -1536,3 +1536,113 @@ def export_inventory_monitoring(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+@transaction.atomic
+def populate_historical_transactions(request):
+    """
+    API endpoint to populate historical inventory transactions
+    Can be called from the UI
+    """
+    # Check admin access
+    admin_check = require_admin_access(request, 'dashboard')
+    if admin_check is not True:
+        return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
+    try:
+        # Counter for statistics
+        stock_out_count = 0
+        waste_count = 0
+        errors = []
+
+        # Check if already populated
+        existing_count = InventoryTransaction.objects.count()
+        if existing_count > 0:
+            return JsonResponse({
+                'success': False,
+                'error': f'Transactions already exist ({existing_count} records). Clear them first if you want to repopulate.'
+            })
+
+        # Process historical orders for STOCK_OUT transactions
+        orders = Order.objects.filter(status='paid').prefetch_related('items__item').order_by('created_at')
+
+        for order in orders:
+            for order_item in order.items.all():
+                item = order_item.item
+
+                # Check if item has a recipe
+                if isinstance(item.recipe, list) and len(item.recipe) > 0:
+                    for recipe_ingredient in item.recipe:
+                        ingredient_name = recipe_ingredient.get('ingredient')
+                        quantity_per_item = recipe_ingredient.get('quantity', 0)
+
+                        if ingredient_name and quantity_per_item > 0:
+                            try:
+                                ingredient = Ingredient.objects.get(name=ingredient_name)
+                                total_quantity = float(quantity_per_item) * order_item.qty
+
+                                # Create STOCK_OUT transaction
+                                InventoryTransaction.objects.create(
+                                    ingredient=ingredient,
+                                    ingredient_name=ingredient.name,
+                                    transaction_type='STOCK_OUT',
+                                    quantity=-total_quantity,
+                                    unit=ingredient.unit,
+                                    cost_per_unit=ingredient.cost,
+                                    total_cost=Decimal(str(total_quantity)) * ingredient.cost,
+                                    main_stock_after=ingredient.mainStock,
+                                    stock_room_after=ingredient.stockRoom,
+                                    notes=f"Used in order (recipe for {item.name})",
+                                    reference=f"Order-{order.id}",
+                                    user=order.cashier,
+                                    created_at=order.created_at
+                                )
+                                stock_out_count += 1
+
+                            except Ingredient.DoesNotExist:
+                                errors.append(f'Ingredient "{ingredient_name}" not found for order {order.id}')
+                                continue
+
+        # Process waste logs for WASTE transactions
+        waste_logs = WastedLog.objects.all().order_by('wasted_at')
+
+        for waste_log in waste_logs:
+            ingredient = waste_log.ingredient
+
+            if ingredient:
+                # Create WASTE transaction
+                InventoryTransaction.objects.create(
+                    ingredient=ingredient,
+                    ingredient_name=waste_log.ingredient_name,
+                    transaction_type='WASTE',
+                    quantity=-waste_log.quantity,
+                    unit=waste_log.unit,
+                    cost_per_unit=waste_log.cost_at_waste / Decimal(str(waste_log.quantity)) if waste_log.quantity > 0 else Decimal('0'),
+                    total_cost=waste_log.cost_at_waste,
+                    main_stock_after=ingredient.mainStock,
+                    stock_room_after=ingredient.stockRoom,
+                    notes=f"Waste recorded: {waste_log.reason}",
+                    reference=f"WasteLog-{waste_log.id}",
+                    user=waste_log.user,
+                    created_at=waste_log.wasted_at
+                )
+                waste_count += 1
+            else:
+                errors.append(f'Ingredient for waste log {waste_log.id} no longer exists')
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Historical data populated successfully',
+            'stats': {
+                'stock_out': stock_out_count,
+                'waste': waste_count,
+                'total': stock_out_count + waste_count,
+                'errors': len(errors)
+            },
+            'errors': errors[:10]  # Return first 10 errors
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
