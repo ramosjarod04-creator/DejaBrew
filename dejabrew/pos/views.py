@@ -74,24 +74,88 @@ class IngredientViewSet(viewsets.ModelViewSet):
                  raise PermissionDenied("Staff members can only update the ingredient status.")
 
         serializer.save()
-        
-        instance.refresh_from_db() 
+
+        instance.refresh_from_db()
 
         changes = []
         action = "Update Ingredient"
         severity = "medium"
 
+        # Track inventory transactions for stock changes
         if old_mainStock != instance.mainStock and old_stockRoom != instance.stockRoom:
+            # This is a transfer between locations
             action = "Stock Transfer"
             severity = "low"
             changes.append(f"mainStock: {old_mainStock} -> {instance.mainStock}")
             changes.append(f"stockRoom: {old_stockRoom} -> {instance.stockRoom}")
-        
-        else: 
+
+            # Determine transfer direction
+            main_diff = instance.mainStock - old_mainStock
+            if main_diff > 0:
+                # Transfer from stock room to main
+                create_inventory_transaction(
+                    ingredient=instance,
+                    transaction_type='TRANSFER_TO_MAIN',
+                    quantity=main_diff,
+                    user=self.request.user,
+                    notes=f"Transferred {main_diff}{instance.unit} from stock room to main stock"
+                )
+            else:
+                # Transfer from main to stock room
+                create_inventory_transaction(
+                    ingredient=instance,
+                    transaction_type='TRANSFER_TO_ROOM',
+                    quantity=abs(main_diff),
+                    user=self.request.user,
+                    notes=f"Transferred {abs(main_diff)}{instance.unit} from main stock to stock room"
+                )
+
+        else:
             if old_mainStock != instance.mainStock:
                 changes.append(f"mainStock: {old_mainStock} -> {instance.mainStock}")
+                stock_diff = instance.mainStock - old_mainStock
+
+                if stock_diff > 0:
+                    # Stock added to main
+                    create_inventory_transaction(
+                        ingredient=instance,
+                        transaction_type='STOCK_IN',
+                        quantity=stock_diff,
+                        user=self.request.user,
+                        notes=f"Added {stock_diff}{instance.unit} to main stock"
+                    )
+                else:
+                    # Stock removed from main (manual adjustment)
+                    create_inventory_transaction(
+                        ingredient=instance,
+                        transaction_type='ADJUSTMENT',
+                        quantity=stock_diff,
+                        user=self.request.user,
+                        notes=f"Manual adjustment: removed {abs(stock_diff)}{instance.unit} from main stock"
+                    )
+
             if old_stockRoom != instance.stockRoom:
                 changes.append(f"stockRoom: {old_stockRoom} -> {instance.stockRoom}")
+                stock_diff = instance.stockRoom - old_stockRoom
+
+                if stock_diff > 0:
+                    # Stock added to room
+                    create_inventory_transaction(
+                        ingredient=instance,
+                        transaction_type='STOCK_IN',
+                        quantity=stock_diff,
+                        user=self.request.user,
+                        notes=f"Added {stock_diff}{instance.unit} to stock room"
+                    )
+                else:
+                    # Stock removed from room (manual adjustment)
+                    create_inventory_transaction(
+                        ingredient=instance,
+                        transaction_type='ADJUSTMENT',
+                        quantity=stock_diff,
+                        user=self.request.user,
+                        notes=f"Manual adjustment: removed {abs(stock_diff)}{instance.unit} from stock room"
+                    )
 
         if old_status != instance.status:
             changes.append(f"status: '{old_status}' -> '{instance.status}'")
@@ -640,12 +704,24 @@ def process_order(request):
 
         for ing_data in ingredients_to_update:
             ingredient = ing_data['ingredient']
-            ingredient.mainStock -= ing_data['deduct_qty']
+            deduct_qty = ing_data['deduct_qty']
+
+            ingredient.mainStock -= deduct_qty
             if ingredient.mainStock <= 0 and ingredient.stockRoom <= 0 and ingredient.status != 'Out of Stock':
                 ingredient.status = 'Out of Stock'
             elif ingredient.mainStock < ingredient.reorder and ingredient.status == 'In Stock':
                 ingredient.status = 'Low Stock'
             ingredient.save(update_fields=['mainStock', 'status'])
+
+            # Create inventory transaction for stock out (usage in recipe)
+            create_inventory_transaction(
+                ingredient=ingredient,
+                transaction_type='STOCK_OUT',
+                quantity=-deduct_qty,  # Negative because it's removing from stock
+                user=request.user,
+                notes=f"Used in order (recipe)",
+                reference=f"Order-{order.id}"
+            )
         
         audit_description = f"Order #{order.id} processed. Total: ₱{total}."
         if discount_type in ['senior', 'pwd']:
@@ -1095,7 +1171,7 @@ def record_waste(request):
             return JsonResponse({'success': False, 'error': f'Cannot waste {quantity}{ingredient.unit}. Only {ingredient.mainStock}{ingredient.unit} is in main stock.'}, status=400)
 
         total_cost = (ingredient.cost or Decimal('0.0')) * Decimal(quantity)
-        WastedLog.objects.create(
+        waste_log = WastedLog.objects.create(
             ingredient=ingredient,
             ingredient_name=ingredient.name,
             quantity=quantity,
@@ -1109,12 +1185,22 @@ def record_waste(request):
         ingredient.save()
         ingredient.refresh_from_db()
 
+        # Create inventory transaction for waste
+        create_inventory_transaction(
+            ingredient=ingredient,
+            transaction_type='WASTE',
+            quantity=-quantity,  # Negative because it's removing from stock
+            user=request.user,
+            notes=f"Waste recorded: {reason}",
+            reference=f"WasteLog-{waste_log.id}"
+        )
+
         log_audit(
             request, request.user, "Record Waste",
             f"User '{request.user.username}' manually recorded {quantity}{ingredient.unit} of '{ingredient.name}' as waste. Reason: {reason}. New Main Stock: {ingredient.mainStock}",
             category="inventory", severity="medium"
         )
-        
+
         if ingredient.mainStock <= 0 and ingredient.stockRoom <= 0:
             ingredient.status = 'Out of Stock'
         elif ingredient.mainStock < ingredient.reorder:
