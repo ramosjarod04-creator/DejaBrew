@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Product Management - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/products.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* Makes the table background match the page */
+    .table-section table {
+        border-collapse: separate;
+        border-spacing: 0 1rem; /* This creates the space between rows */
+        background: transparent;
+    }
+
+    /* Styles each row as a card */
+    #productTable tbody tr {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Remove the default table lines */
+    #productTable th,
+    #productTable td {
+        border: none;
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+    }
+    
+    #productTable th {
+        color: #555;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Add back the rounded corners on the first and last cells */
+    #productTable td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+    #productTable td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: right; }
+
+    /* Product image and name styling */
+    .product-info { display: flex; align-items: center; gap: 15px; }
+    .product-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+    .product-thumb-placeholder {
+        width: 60px; height: 60px; border-radius: 6px;
+        background: #f0f0f0; color: #aaa;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 600;
+    }
+
+    /* Action button styling */
+    .action-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-icon {
+        background: #f4f4f4; border: 1px solid #ddd; color: #555;
+        width: 36px; height: 36px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-icon:hover { background: #eee; }
+    .btn-icon.btn-danger { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+    .btn-icon.btn-danger:hover { background: #f1c1c6; }
+
+    /* --- THIS IS THE FIX: ADDED STATUS BADGE STYLING --- */
+    .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+    .badge-in-stock { background-color: #d4edda; color: #155724; }
+    .badge-low-stock { background-color: #fff3cd; color: #856404; }
+    .badge-out-of-stock { background-color: #f8d7da; color: #721c24; }
+    .badge-inactive { background-color: #e2e3e5; color: #5a6268; }
+    /* --- END OF FIX --- */
+
+    /* Recipe section in modal */
+    #recipeSection label { font-weight: 600; margin-bottom: 5px; display: block; }
+    #recipeSection p { font-size: 12px; color: #666; margin-top: -5px; margin-bottom: 15px; }
+    .ingredient-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .ingredient-row select, .ingredient-row input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; width: 100%; }
+    .ingredient-row select { flex: 3; }
+    .ingredient-row input { flex: 1; }
+    .remove-ingredient { background: none; border: none; color: #dc3545; cursor: pointer; font-size: 16px; padding: 5px; line-height: 1; }
+
+    /* Image preview styling */
+    .image-preview-container {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    .image-preview-container img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .image-preview-container .file-input-wrapper {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div>
+        <h1>Product Management</h1>
+        <p>Manage your café's product catalog and inventory</p>
+    </div>
+    <button class="btn btn-primary" id="addProductBtn"><i class="fa fa-plus"></i> Add Product</button>
+</header>
+
+<section class="stats">
+    <div class="stat-card">
+        <h2 id="totalProducts">0</h2>
+        <p>Total Products</p>
+    </div>
+    <div class="stat-card">
+        <h2 id="inStockCount">0</h2>
+        <p>In Stock</p>
+    </div>
+    <div class="stat-card">
+        <h2 id="lowStockCount">0</h2>
+        <p>Low Stock</p>
+    </div>
+    <div class="stat-card">
+        <h2 id="totalValue">₱0.00</h2>
+        <p>Total Value of In Stock Product</p>
+    </div>
+</section>
+
+<section class="filters">
+    <input type="text" id="searchInput" placeholder="Search by product name..." />
+    <select id="categoryFilter">
+        <option value="all">All Categories</option>
+        </select>
+    <select id="statusFilter">
+        <option value="all">All Status</option>
+        <option value="in stock">In Stock</option>
+        <option value="low stock">Low Stock</option>
+        <option value="out of stock">Out of Stock</option>
+    </select>
+    <button class="btn" id="clearFilters">Clear Filters</button>
+</section>
+
+<section class="table-section">
+    <h2>Products</h2>
+    <p class="subtitle">Complete list of products available in your café</p>
+
+    <div class="table-container">
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">Loading products...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal" id="productModal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-btn" id="closeModal">&times;</span>
+        <h2 id="modalTitle">Add New Product</h2>
+        
+        <!-- Scrollable form container -->
+        <div class="modal-form-container">
+            <form id="productForm" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="image-preview-container">
+                    <img id="imagePreview" src="{% static 'pos/img/placeholder.jpg' %}" alt="Image Preview">
+                    <div class="file-input-wrapper">
+                        <label for="productImageFile">Upload Image</label>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px; margin-bottom: 10px;">Upload a new image from your computer to replace the current one.</p>
+                        <input type="file" id="productImageFile" accept="image/png, image/jpeg, image/webp">
+                        <input type="hidden" id="productImageUrl" />
+                    </div>
+                </div>
+
+                <label for="productName">Product Name</label>
+                <input type="text" id="productName" placeholder="e.g., Iced Caramel Macchiato" required />
+
+                <label for="productCategory">Category</label>
+                <input type="text" id="productCategory" placeholder="e.g., Drinks, Snacks, Add Ons" required />
+
+                <label for="productPrice">Price (₱)</label>
+                <input type="number" id="productPrice" placeholder="e.g., 150.00" step="0.01" min="0" required />
+
+                <label for="productStock">Stock Quantity</label>
+                <input type="number" id="productStock" placeholder="e.g., 50" min="0" required />
+
+                <div id="recipeSectionPlaceholder">
+                    <!-- Recipe section will be injected here by products.js -->
+                </div>
+            </form>
+        </div>
+        
+        <!-- Action buttons stay at the bottom -->
+        <div class="modal-actions">
+            <button type="submit" form="productForm" class="btn btn-primary">Save Product</button>
+            <button type="button" class="btn btn-ghost" id="cancelModalBtn">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'pos/js/products.js' %}"></script>
+{% endblock %}
+

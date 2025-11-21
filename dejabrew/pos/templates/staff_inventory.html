@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventory Management - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/inventory.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* Chart & Status Button Styles */
+chart-container {
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.chart-container h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.chart-container .muted {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.chart-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.chart-filters button {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.chart-filters button:hover {
+    background: #e0e0e0;
+}
+
+.chart-filters button.active {
+    background: #8B4513;
+    color: white;
+    border-color: #8B4513;
+}
+.font-bold { font-weight: 600; }
+.text-center { text-align: center; }
+.forecast-warn { color: #ff9800; }
+.forecast-critical { color: #dc3545; }
+.status-actions button { padding: 4px 8px; margin: 0 2px; font-size: 12px; border-radius: 4px; cursor: pointer; }
+.status-actions .btn-instock { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.status-actions .btn-lowstock { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+.status-actions .btn-outofstock { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.status-actions button.active { font-weight: bold; box-shadow: 0 0 0 2px rgba(0,0,0,0.2); }
+.admin-actions i { margin: 0 5px; cursor: pointer; color: #6c757d; font-size: 16px; }
+.admin-actions i:hover { color: #343a40; }
+.admin-actions .fa-trash:hover { color: #dc3545; }
+.admin-only, .staff-only { display: none; }
+.admin-only.visible { display: block; }
+button.admin-only.visible { display: inline-block; vertical-align: middle; }
+div.admin-only.visible { display: block; }
+div.modal.admin-only.visible { display: flex !important; }
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-card {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal.visible .modal-card {
+    transform: scale(1);
+}
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #888;
+    cursor: pointer;
+    line-height: 1;
+}
+.modal-close:hover {
+    color: #333;
+}
+.modal-card h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #333;
+    font-size: 1.5rem;
+    text-align: center;
+}
+#ingredientForm label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+}
+#ingredientForm input,
+#ingredientForm select {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 18px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+#ingredientForm input:focus,
+#ingredientForm select:focus {
+    border-color: #8B4513;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.2);
+}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+.modal-actions .btn {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{{ user_role|json_script:"user-role-data" }}
+
+<header class="main-header">
+    <div class="header-left">
+        <h1>Inventory Management</h1>
+        <p class="subtitle">
+            {% if user_role == 'admin' %}Manage main floor inventory{% else %}View stock and update status{% endif %}
+        </p>
+    </div>
+    <div class="header-right">
+        <button id="exportBtn" class="btn ghost admin-only"><i class="fa-regular fa-file-export"></i> Export</button>
+        <div class="tag main-tag">Main Floor Inventory</div>
+    </div>
+</header>
+
+<section class="stats">
+    <div class="stat-card">
+        <div class="label">Total Ingredients</div>
+        <div class="value" id="statIngredients">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Low Stock Alerts</div>
+        <div class="value" id="statLow">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Inventory Value</div>
+        <div class="value" id="statValue">₱0.00</div>
+    </div>
+</section>
+
+<div class="chart-container">
+    <h2>Inventory Usage Forecast</h2>
+    <p class="muted">Current usage trends vs. predicted usage for all ingredients based on sales history and ML forecasting.</p>
+    <div class="chart-filters" id="inventoryFilter">
+        <button class="active" data-period="daily">Daily (7 days)</button>
+        <button data-period="weekly">Weekly (14 days)</button>
+        <button data-period="monthly">Monthly (30 days)</button>
+    </div>
+    <div style="position: relative; height: 500px;">
+        <canvas id="inventoryForecastChart"></canvas>
+    </div>
+</div>
+
+<section class="filters-row">
+    <div class="left">
+        <input id="searchInput" type="search" placeholder="Search ingredients...">
+    </div>
+    <div class="right">
+        <select id="categoryFilter">
+            <option value="all">All Categories</option>
+            </select>
+        <button id="refreshBtn" class="btn">Refresh</button>
+        <button id="addIngredientBtn" class="btn primary admin-only"><i class="fa fa-plus"></i> Add Ingredient</button>
+    </div>
+</section>
+
+<section class="tab-content">
+    <div class="card table-card">
+        <div class="card-header">
+            <div>
+                <h2>Ingredients – Main Floor</h2>
+                <p class="muted">
+                    {% if user_role == 'admin' %}Full inventory control.{% else %}Click status buttons to notify admin.{% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Ingredient Name</th>
+                        <th>Category</th>
+                        <th>Main Stock</th>
+                        <th>Stock Room</th>
+                        <th>Unit</th>
+                        <th class="cost-column">Cost per Unit</th>
+                        <th>Current Status</th>
+                        <th>Avg. Daily Use</th>
+                        <th>Days Until Empty</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="10" style="text-align: center; padding: 20px; color: #999;">Loading inventory...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<div id="ingredientModal" class="modal admin-only" style="display: none;">
+    <div class="modal-card">
+        <button class="modal-close" id="closeIngredientModal">&times;</button>
+        <h3 id="ingredientModalTitle">Add Ingredient</h3>
+        <form id="ingredientForm">
+            {% csrf_token %}
+            <input type="hidden" id="ingId" name="ingredient_id">
+            <label>Ingredient Name</label>
+            <input id="ingName" name="name" required>
+            <label>Category</label>
+            <select id="ingCategory" name="category"></select>
+            <label>Main Stock</label>
+            <input type="number" step="any" id="ingMainStock" name="mainStock" min="0" required>
+            <label>Stock Room</label>
+            <input type="number" step="any" id="ingStockRoom" name="stockRoom" min="0">
+            <label>Unit</label>
+            <input id="ingUnit" name="unit" placeholder="e.g., ml, g" required>
+            <label>Cost per Unit (₱)</label>
+            <input type="number" step="0.01" id="ingCost" name="cost" min="0" required>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn primary">Save</button>
+                <button type="button" class="btn ghost" id="cancelIngredient">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let USER_ROLE = 'unknown';
+    try {
+        // This assumes your view context for staff_inventory.html
+        // is now passing `user_role` just like `inventory_view` does.
+        // If not, you may need to hardcode 'staff' or update the view.
+        // For now, let's try to read it dynamically.
+        USER_ROLE = JSON.parse(document.getElementById('user-role-data').textContent);
+    } catch(e) {
+        console.warn("Could not find user-role-data, defaulting to 'staff'.");
+        USER_ROLE = 'staff'; // Default to staff if data block is missing
+    }
+</script>
+<script src="{% static 'pos/js/inventory.js' %}"></script>
+{% endblock %}

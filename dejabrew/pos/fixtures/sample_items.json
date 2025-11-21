@@ -1,0 +1,79 @@
+[
+  {
+    "model": "pos.item",
+    "pk": 1,
+    "fields": {
+      "name": "Java Chip Frappe",
+      "description": "A creamy blend of chocolate, coffee, and milk, topped with whipped cream.",
+      "category": "Frappuccino",
+      "price": "120.00",
+      "stock": 20,
+      "image_url": "/static/pos/img/item1.jpg",
+      "recipe": [
+        { "ingredient": "Espresso Shots", "quantity": 50 },
+        { "ingredient": "Fresh Milk", "quantity": 0.1 },
+        { "ingredient": "Chocolate Syrup", "quantity": 0.05 }
+      ]
+    }
+  },
+  {
+    "model": "pos.item",
+    "pk": 2,
+    "fields": {
+      "name": "Cappuccino",
+      "description": "Classic rich espresso with steamed milk foam.",
+      "category": "Hot Coffee",
+      "price": "95.00",
+      "stock": 30,
+      "image_url": "/static/pos/img/item2.jpg",
+      "recipe": [
+        { "ingredient": "Espresso Shots", "quantity": 50 },
+        { "ingredient": "Fresh Milk", "quantity": 0.1 }
+      ]
+    }
+  },
+  {
+    "model": "pos.item",
+    "pk": 3,
+    "fields": {
+      "name": "Espresso",
+      "description": "A strong, concentrated single shot of coffee.",
+      "category": "Hot Coffee",
+      "price": "65.00",
+      "stock": 50,
+      "image_url": "/static/pos/img/item3.jpg",
+      "recipe": [
+        { "ingredient": "Espresso Shots", "quantity": 25 }
+      ]
+    }
+  },
+  {
+    "model": "pos.item",
+    "pk": 4,
+    "fields": {
+      "name": "Iced Latte",
+      "description": "Chilled milk and a shot of rich espresso served over ice.",
+      "category": "Iced Coffee",
+      "price": "110.00",
+      "stock": 25,
+      "image_url": "/static/pos/img/item4.jpg",
+      "recipe": [
+        { "ingredient": "Espresso Shots", "quantity": 50 },
+        { "ingredient": "Fresh Milk", "quantity": 0.15 }
+      ]
+    }
+  },
+  {
+    "model": "pos.item",
+    "pk": 5,
+    "fields": {
+      "name": "Blueberry Muffin",
+      "description": "A soft and moist muffin bursting with blueberries.",
+      "category": "Food",
+      "price": "70.00",
+      "stock": 15,
+      "image_url": "/static/pos/img/item5.jpg",
+      "recipe": []
+    }
+  }
+]

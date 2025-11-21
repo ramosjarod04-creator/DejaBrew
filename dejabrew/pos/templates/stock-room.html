@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Stock Room - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/inventory.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* Modal Styles (Copied from inventory.html) */
+.admin-only { display: none; }
+button.admin-only.visible { display: inline-block; vertical-align: middle; }
+div.modal.admin-only.visible { display: flex !important; }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.modal.visible {
+    display: flex; /* Show when visible class is added */
+    opacity: 1;
+    visibility: visible;
+}
+.modal-card {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal.visible .modal-card {
+    transform: scale(1);
+}
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #888;
+    cursor: pointer;
+    line-height: 1;
+}
+.modal-close:hover {
+    color: #333;
+}
+.modal-card h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #333;
+    font-size: 1.5rem;
+    text-align: center;
+}
+#ingredientForm label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+}
+#ingredientForm input,
+#ingredientForm select {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 18px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+#ingredientForm input:focus,
+#ingredientForm select:focus {
+    border-color: #8B4513;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.2);
+}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+.modal-actions .btn {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Add user_role data for JS -->
+{{ user_role|json_script:"user-role-data" }}
+
+<header class="main-header">
+    <div class="header-left">
+        <h1>Stock Room (Inventory B)</h1>
+        <p class="subtitle">Manage reserve inventory and transfer stock to the main floor</p>
+    </div>
+
+    <div class="header-right">
+        <div class="tag stock-room-tag">Reserve Inventory</div>
+    </div>
+</header>
+
+<section class="stats">
+    <div class="stat-card">
+        <div class="label">Total Ingredients</div>
+        <div class="value" id="statIngredients">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Low Stock Alerts</div>
+        <div class="value" id="statLow">0</div>
+    </div>
+</section>
+
+<section class="card table-card">
+    <div class="card-header">
+        <div>
+            <h2>Stock Room Inventory</h2>
+            <p class="muted">This is your reserve stock. Transfer items to the Main Inventory to make them available for sale.</p>
+        </div>
+        <div class="filters-row">
+            <input id="searchInput" type="search" placeholder="Search ingredients...">
+            <select id="categoryFilter">
+                <option value="all">All Categories</option>
+            </select>
+            <!-- ADDED "Add Ingredient" Button -->
+            <button id="addIngredientBtn" class="btn primary admin-only"><i class="fa fa-plus"></i> Add Ingredient</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th>Ingredient Name</th>
+                    <th>Category</th>
+                    <th>Stock Room Qty</th>
+                    <th>Main Stock Qty</th>
+                    <th>Unit</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+</section>
+
+<div id="transferModal" class="modal">
+    <div class="modal-card">
+        <button class="modal-close" id="closeModal">&times;</button>
+        <h3 id="modalTitle">Transfer Stock</h3>
+        <form id="transferForm">
+            <input type="hidden" id="transferIndex">
+
+            <p>Transferring: <strong id="ingredientName"></strong></p>
+            <div class="stock-info">
+                <span>Stock Room: <b id="currentStockRoom">0</b></span>
+                <span>Main Stock: <b id="currentMainStock">0</b></span>
+            </div>
+
+            <label for="transferQty">Quantity to Transfer to Main Inventory</label>
+            <input type="number" id="transferQty" min="1" required>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn primary">Confirm Transfer</button>
+                <button type="button" class="btn ghost" id="cancelModal">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADDED ingredientModal -->
+<div id="ingredientModal" class="modal admin-only">
+    <div class="modal-card">
+        <button class="modal-close" id="closeIngredientModal">&times;</button>
+        <h3 id="ingredientModalTitle">Add Ingredient</h3>
+        <form id="ingredientForm">
+            {% csrf_token %}
+            <input type="hidden" id="ingId" name="ingredient_id">
+            <label>Ingredient Name</label>
+            <input id="ingName" name="name" required>
+            <label>Category</label>
+            <select id="ingCategory" name="category"></select>
+            <label>Main Stock</label>
+            <input type="number" step="any" id="ingMainStock" name="mainStock" min="0" required>
+            <label>Stock Room</label>
+            <input type="number" step="any" id="ingStockRoom" name="stockRoom" min="0">
+            <label>Unit</label>
+            <input id="ingUnit" name="unit" placeholder="e.g., ml, g" required>
+            <label>Cost per Unit (₱)</label>
+            <input type="number" step="0.01" id="ingCost" name="cost" min="0" required>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn primary">Save</button>
+                <button type="button" class="btn ghost" id="cancelIngredient">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- ADDED user_role script -->
+<script>
+    let USER_ROLE = 'unknown';
+    try {
+        USER_ROLE = JSON.parse(document.getElementById('user-role-data').textContent);
+    } catch(e) {
+        console.error("Error parsing user role from template");
+    }
+</script>
+<script src="{% static 'pos/js/stock-room.js' %}"></script>
+{% endblock %}

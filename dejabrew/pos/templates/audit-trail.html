@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Audit Trail - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/users.css' %}">
+<style>
+/* Receipt Modal Styles */
+.receipt-modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.receipt-modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+.receipt-modal-card {
+    background-color: #fff;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.receipt-modal.visible .receipt-modal-card {
+    transform: scale(1);
+}
+.receipt-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 20px;
+    color: #333;
+    cursor: pointer;
+    line-height: 1;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.receipt-modal-close:hover {
+    background: #f0f0f0;
+    color: #000;
+}
+
+/* Receipt Container Styles */
+.receipt-container {
+    width: 100%;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #000;
+    padding: 20px;
+}
+.receipt-header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+.receipt-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+.receipt-header p {
+    margin: 2px 0;
+    font-size: 12px;
+}
+.receipt-divider {
+    border-top: 1px dashed #000;
+    margin: 10px 0;
+}
+.receipt-info {
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+.receipt-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+.receipt-item .item-name {
+    width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.receipt-item .item-qty {
+    width: 40px;
+    text-align: right;
+    padding-right: 5px;
+}
+.receipt-item .item-price {
+    width: 70px;
+    text-align: right;
+}
+.receipt-totals {
+    margin-top: 10px;
+}
+.receipt-totals .totals-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+.receipt-totals .totals-row.total {
+    font-weight: bold;
+    font-size: 16px;
+    border-top: 1px dashed #000;
+    padding-top: 5px;
+    margin-top: 5px;
+}
+.receipt-footer {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 12px;
+}
+
+/* View Order Button Style */
+.view-order-btn {
+    background: #8B4513;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+.view-order-btn:hover {
+    background: #6d3410;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="header">
+    <h1>Audit Trail</h1>
+    <p>Track all system changes and user actions</p>
+</div>
+
+<!-- Filters -->
+<section class="filters">
+    <div class="filters-left">
+        <button class="filter-btn"><i class="fa-solid fa-filter"></i> Filters</button>
+        <input id="searchInput" type="search" placeholder="Search actions..." />
+    </div>
+
+    <div class="filters-right">
+        <select id="categoryFilter"><option value="all">All Categories</option></select>
+        <select id="severityFilter"><option value="all">All Severities</option></select>
+        <select id="userFilter"><option value="all">All Users</option></select>
+
+        <div class="date-filter">
+            <input id="startDate" type="date" />
+            <span class="dash">—</span>
+            <input id="endDate" type="date" />
+        </div>
+
+        <button id="applyBtn" class="btn small">Filter</button>
+        <button id="clearBtn" class="btn small outline">Clear</button>
+    </div>
+</section>
+
+<!-- Severity summary badges -->
+<section class="severity-summary" aria-hidden="false">
+    <div class="badge high"><span id="countHigh">0</span> High</div>
+    <div class="badge medium"><span id="countMedium">0</span> Medium</div>
+    <div class="badge low"><span id="countLow">0</span> Low</div>
+</section>
+
+<!-- Table -->
+<section class="table-wrap card">
+    <div class="table-info">Showing <span id="shownCount">0</span> of <span id="totalCount">0</span> audit logs</div>
+
+    <table id="auditTable" class="audit-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Category</th>
+                <th>Action</th>
+                <th>Description</th>
+                <th>Severity</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- JS inserts rows here -->
+        </tbody>
+    </table>
+</section>
+
+<!-- Modal for details -->
+<div id="detailModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+        <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
+        <div id="modalContent" class="modal-content">
+            <!-- Filled dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" class="receipt-modal">
+    <div class="receipt-modal-card">
+        <button class="receipt-modal-close" id="receiptModalClose">&times;</button>
+        
+        <div class="receipt-container" id="receiptContent">
+            <div class="receipt-header">
+                <h3>Deja Brew Café</h3>
+                <p>95 National Road Cut-cot, Pulilan, Bulacan</p>
+                <p>VAT REG TIN: 000-000-000-000</p>
+                <p style="font-weight: bold; margin-top: 5px;">OFFICIAL RECEIPT</p>
+            </div>
+
+            <div class="receipt-divider"></div>
+
+            <p class="receipt-info" id="receiptOrderNum">Order #: Loading...</p>
+            <p class="receipt-info" id="receiptDate">Date: Loading...</p>
+            <p class="receipt-info" id="receiptCashier">Cashier: Loading...</p>
+            <p class="receipt-info" id="receiptCustomer" style="display: none;">Customer: </p>
+
+            <div class="receipt-divider"></div>
+
+            <!-- Header for items -->
+            <div class="receipt-item" style="font-weight: bold;">
+                <span class="item-name">Item</span>
+                <span class="item-qty">Qty</span>
+                <span class="item-price">Price</span>
+            </div>
+
+            <!-- Items will be inserted here -->
+            <div id="receiptItems"></div>
+
+            <div class="receipt-divider"></div>
+
+            <!-- Totals Section -->
+            <div class="receipt-totals">
+                <div class="totals-row">
+                    <span>Subtotal:</span>
+                    <span id="receiptSubtotal">₱0.00</span>
+                </div>
+                <div class="totals-row" id="receiptDiscountRow" style="display: none;">
+                    <span id="receiptDiscountLabel">Discount (0%):</span>
+                    <span id="receiptDiscount">-₱0.00</span>
+                </div>
+                <div class="totals-row total">
+                    <span>TOTAL:</span>
+                    <span id="receiptTotal">₱0.00</span>
+                </div>
+                <div class="totals-row" style="margin-top: 10px;">
+                    <span>Payment Method:</span>
+                    <span id="receiptPayment">Cash</span>
+                </div>
+            </div>
+
+            <div class="receipt-divider"></div>
+
+            <div class="receipt-footer">
+                <p style="font-weight: bold;">Thank you for your purchase!</p>
+                <p>Please come again.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'pos/js/audit-trail.js' %}"></script>
+{% endblock %}

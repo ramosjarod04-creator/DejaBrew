@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventory Management - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/inventory.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* Chart & Status Button Styles */
+.chart-container { padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; }
+.chart-filters { display: flex; gap: 10px; margin-bottom: 20px; }
+.chart-filters button { background: #f0f0f0; border: 1px solid #ddd; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+.chart-filters button.active { background: #8B4513; color: white; border-color: #8B4513; }
+.font-bold { font-weight: 600; }
+.text-center { text-align: center; }
+.forecast-warn { color: #ff9800; }
+.forecast-critical { color: #dc3545; }
+.status-actions button { padding: 4px 8px; margin: 0 2px; font-size: 12px; border-radius: 4px; cursor: pointer; }
+.status-actions .btn-instock { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.status-actions .btn-lowstock { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+.status-actions .btn-outofstock { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.status-actions button.active { font-weight: bold; box-shadow: 0 0 0 2px rgba(0,0,0,0.2); }
+.admin-actions i { margin: 0 5px; cursor: pointer; color: #6c757d; font-size: 16px; }
+.admin-actions i:hover { color: #343a40; }
+.admin-actions .fa-trash:hover { color: #dc3545; }
+.admin-only, .staff-only { display: none; }
+.admin-only.visible { display: block; }
+button.admin-only.visible { display: inline-block; vertical-align: middle; }
+div.admin-only.visible { display: block; }
+div.modal.admin-only.visible { display: flex !important; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 15px; }
+.form-grid .full-width { grid-column: 1 / -1; }
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-card {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal.visible .modal-card {
+    transform: scale(1);
+}
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #888;
+    cursor: pointer;
+    line-height: 1;
+}
+.modal-close:hover {
+    color: #333;
+}
+.modal-card h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #333;
+    font-size: 1.5rem;
+    text-align: center;
+}
+.modal-card label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+}
+.modal-card input,
+.modal-card select {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 18px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+.modal-card input:focus,
+.modal-card select:focus {
+    border-color: #8B4513;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.2);
+}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+.modal-actions .btn {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 6px;
+}
+
+/* Header Styles */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+.header-left h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #1e293b;
+}
+.header-left .subtitle {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 14px;
+}
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.btn-outline {
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    text-decoration: none; 
+    display: inline-flex; 
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px; 
+}
+.btn-outline:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #94a3b8;
+}
+.btn-danger-outline {
+    background: #fff;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    display: inline-flex; 
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+}
+.btn-danger-outline:hover {
+    background: #fef2f2;
+    border-color: #f87171;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{{ user_role|json_script:"user-role-data" }}
+
+<header class="main-header">
+    <div class="header-left">
+        <h1>Inventory Management</h1>
+        <p class="subtitle">
+            {% if user_role == 'admin' %}Manage main floor inventory{% else %}View stock and update status{% endif %}
+        </p>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'waste_inventory' %}" class="btn btn-outline admin-only visible">
+            <i class="fa-solid fa-clipboard-list"></i> Waste Log
+        </a>
+        <button id="recordWasteBtn" class="btn btn-danger-outline admin-only visible">
+            <i class="fa-solid fa-trash-can"></i> Record Waste
+        </button>
+    </div>
+</header>
+
+<section class="stats">
+    <div class="stat-card">
+        <div class="label">Total Ingredients</div>
+        <div class="value" id="statIngredients">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Low Stock Alerts</div>
+        <div class="value" id="statLow">0</div>
+    </div>
+</section>
+
+<div class="chart-container">
+    <h2>Inventory Forecast</h2>
+    <p class="muted">Projected stock levels for top-used ingredients based on sales history.</p>
+    <div class="chart-filters" id="inventoryFilter">
+        <button class="active" data-period="daily">Daily</button>
+        <button data-period="weekly">Weekly</button>
+        <button data-period="monthly">Monthly</button>
+    </div>
+    <canvas id="inventoryForecastChart" style="height: 300px;"></canvas>
+</div>
+
+<section class="filters-row">
+    <div class="left">
+        <input id="searchInput" type="search" placeholder="Search ingredients...">
+    </div>
+    <div class="right">
+        <select id="categoryFilter">
+            <option value="all">All Categories</option>
+            </select>
+        <button id="refreshBtn" class="btn">Refresh</button>
+        <button id="addIngredientBtn" class="btn primary admin-only"><i class="fa fa-plus"></i> Add Ingredient</button>
+    </div>
+</section>
+
+<section class="tab-content">
+    <div class="card table-card">
+        <div class="card-header">
+            <div>
+                <h2>Ingredients List</h2>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Ingredient Name</th>
+                        <th>Category</th>
+                        <th>Main Stock</th>
+                        <th>Stock Room</th>
+                        <th>Unit</th>
+                        <th class="cost-column">Cost per Unit</th>
+                        <th>Current Status</th>
+                        <th>Avg. Daily Use</th>
+                        <th>Days Until Empty</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="10" style="text-align: center; padding: 20px; color: #999;">Loading inventory...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<div id="ingredientModal" class="modal admin-only" style="display: none;">
+    <div class="modal-card">
+        <button class="modal-close" id="closeIngredientModal">&times;</button>
+        <h3 id="ingredientModalTitle">Add Ingredient</h3>
+        <form id="ingredientForm">
+            {% csrf_token %}
+            <input type="hidden" id="ingId" name="ingredient_id">
+            
+            <div class="form-grid full-width">
+                <label>Ingredient Name</label>
+                <input id="ingName" name="name" required>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label>Category</label>
+                    <select id="ingCategory" name="category" style="margin-bottom: 8px;"></select>
+                    <input id="ingNewCategory" placeholder="type new category here..." style="margin-bottom: 18px; background-color: #f9fafb;">
+                </div>
+                <div>
+                    <label>Perishable Type</label>
+                    <select id="ingIngredientType" name="ingredient_type">
+                        <option value="non-perishable">Non-Perishable</option>
+                        <option value="perishable">Perishable</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Main Stock</label>
+                    <input type="number" step="any" id="ingMainStock" name="mainStock" min="0" required>
+                </div>
+                <div>
+                    <label>Stock Room</label>
+                    <input type="number" step="any" id="ingStockRoom" name="stockRoom" min="0">
+                </div>
+                <div>
+                    <label>Unit</label>
+                    <input id="ingUnit" name="unit" placeholder="e.g., ml, g" required>
+                </div>
+                <div>
+                    <label>Cost per Unit (₱)</label>
+                    <input type="number" step="0.01" id="ingCost" name="cost" min="0" required>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn primary">Save</button>
+                <button type="button" class="btn ghost" id="cancelIngredient">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="wasteModal" class="modal admin-only" style="display: none;">
+    <div class="modal-card">
+        <button class="modal-close" id="closeWasteModal">&times;</button>
+        <h3>Record Waste</h3>
+        <form id="wasteForm">
+            <label>Ingredient</label>
+            <select id="wasteIngredientSelect" required>
+                <option value="">Select an ingredient...</option>
+            </select>
+            
+            <label>Quantity Wasted</label>
+            <input type="number" step="any" id="wasteQuantity" min="0.01" required>
+            
+            <label>Reason</label>
+            <select id="wasteReason" required>
+                <option value="Manual Entry - Spoilage">Spoilage</option>
+                <option value="Manual Entry - Error">Error / Dropped</option>
+                <option value="Manual Entry - Other">Other</option>
+            </select>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn primary">Record Waste</button>
+                <button type="button" class="btn ghost" id="cancelWaste">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let USER_ROLE = 'unknown';
+    try {
+        USER_ROLE = JSON.parse(document.getElementById('user-role-data').textContent);
+    } catch(e) {
+        console.error("Error parsing user role from template");
+    }
+</script>
+<script src="{% static 'pos/js/inventory.js' %}"></script>
+{% endblock %}

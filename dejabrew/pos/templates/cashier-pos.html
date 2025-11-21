@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cashier POS - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/admin-pos.css' %}?v=2">
+{% comment %} This is the new file you need for printing {% endcomment %}
+<link rel="stylesheet" href="{% static 'pos/css/print-receipt.css' %}">
+<style>
+    /* --- RESPONSIVE POS ADJUSTMENTS --- */
+    @media (max-width: 1024px) {
+        /* Stack layout on smaller screens (tablets vertical) */
+        .content {
+            flex-direction: column;
+            height: calc(100vh - 140px); /* Adjust height */
+        }
+        
+        .products-col {
+            width: 100%;
+            padding-right: 0;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        /* Hide Cart Column by default on mobile */
+        .cart-col {
+            position: fixed;
+            right: -100%; /* Hidden off-screen */
+            top: 0;
+            height: 100vh;
+            width: 85%;
+            max-width: 400px;
+            background: white;
+            z-index: 2000;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+            transition: right 0.3s ease-in-out;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Class to show cart */
+        .cart-col.is-mobile-open {
+            right: 0;
+        }
+        
+        /* Add a close button for mobile cart */
+        .mobile-cart-close {
+            display: block !important; /* Force show */
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #333;
+        }
+        
+        /* Adjust Products Grid */
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+        
+        /* Mobile Cart Toggle Button (Bottom Right) */
+        .mobile-cart-toggle {
+            display: flex !important; /* Show button */
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1500;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        
+        .mobile-cart-count {
+            background: #ff4d4d;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+            font-size: 12px;
+        }
+    }
+    
+    @media (max-width: 600px) {
+        .header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .search-wrap {
+            width: 100%;
+        }
+        .search-wrap input {
+            width: 100%;
+        }
+        .filters-row {
+            flex-wrap: wrap;
+        }
+        .filters-row select {
+            width: 100%;
+        }
+    }
+    
+    /* Overlay for mobile cart */
+    .cart-overlay-open {
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div>
+        <h1>Cashier POS</h1>
+        <p class="subtitle">Process customer orders</p>
+    </div>
+    <div class="search-wrap">
+        <input id="searchInput" type="search" placeholder="Search products..." />
+    </div>
+</header>
+
+<section class="content">
+    <div class="products-col">
+        <div class="filters-row">
+            <select id="categorySelect">
+                <option value="all">All Products</option>
+                <option value="drinks">Drinks</option>
+                <option value="special">Special</option>
+            </select>
+        </div>
+
+        <div id="productsGrid" class="products-grid">
+            </div>
+    </div>
+
+    <aside class="cart-col">
+        <div class="cart-card" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="cart-header" style="position: relative;">
+                <h3>Order Cart (<span id="cartCount">0</span>)</h3>
+                <!-- Mobile Close Button -->
+                <button class="mobile-cart-close" id="mobileCartClose" style="display: none;">&times;</button>
+                
+                <div class="cart-empty-msg" id="cartEmptyMsg">Cart is empty</div>
+            </div>
+
+            <div id="cartItems" class="cart-items" style="flex: 1; overflow-y: auto;">
+            </div>
+
+            <div class="cart-controls">
+                <!-- Discount Button (ADDED) -->
+                <button id="applyDiscountBtn" class="btn secondary" style="margin-bottom: 10px; width: 100%;">
+                    <i class="fa-solid fa-percent"></i> Apply Discount
+                </button>
+                
+                <label>Discount (%)</label>
+                <input id="discountInput" type="number" value="0" min="0" max="100" />
+
+                <label>Payment Method</label>
+                <select id="paymentMethod">
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="Gcash">Gcash</option>
+                </select>
+
+                <div class="totals-row">
+                    <div>Subtotal:</div>
+                    <div id="subtotalDisplay">₱0.00</div>
+                </div>
+                <div class="totals-row total">
+                    <div>Total:</div>
+                    <div id="totalDisplay">₱0.00</div>
+                </div>
+
+                <button id="processOrderBtn" class="btn primary"><i class="fa-solid fa-check"></i> Process Order</button>
+                <button id="clearCartBtn" class="btn secondary"><i class="fa-solid fa-trash"></i> Clear Cart</button>
+            </div>
+        </div>
+    </aside>
+</section>
+
+<!-- Mobile Cart Toggle Button (Hidden on Desktop via CSS) -->
+<button class="mobile-cart-toggle" id="mobileCartToggle" style="display: none;">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span>Cart</span>
+    <span class="mobile-cart-count" id="mobileCartCount">0</span>
+</button>
+
+<div id="printable-receipt" style="display: none;"></div>
+
+<div id="paymentModal" class="payment-modal">
+    <div class="payment-modal-card">
+        <h3 id="paymentModalTitle">Payment Details</h3>
+        
+        <div class="form-group">
+            <label for="paymentCustomerName">Customer Name (Optional)</label>
+            <input type="text" id="paymentCustomerName" placeholder="e.g., Juan Dela Cruz">
+        </div>
+        
+        <div class="form-group">
+            <label for="paymentRefNum">Reference Number</label>
+            <input type="text" id="paymentRefNum" placeholder="Enter transaction ID or Ref #">
+        </div>
+
+        <div class="payment-modal-actions">
+            <button id="paymentModalCancel" class="btn secondary">Cancel</button>
+            <button id="paymentModalConfirm" class="btn primary">Confirm Payment</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'pos/js/cashier-pos.js' %}"></script>
+<script>
+    // --- SIMPLE MOBILE CART TOGGLE LOGIC ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('mobileCartToggle');
+        const closeBtn = document.getElementById('mobileCartClose');
+        const cartCol = document.querySelector('.cart-col');
+        const body = document.body;
+
+        if (toggleBtn && cartCol) {
+            toggleBtn.addEventListener('click', function() {
+                cartCol.classList.add('is-mobile-open');
+                body.classList.add('cart-overlay-open');
+            });
+        }
+
+        if (closeBtn && cartCol) {
+            closeBtn.addEventListener('click', function() {
+                cartCol.classList.remove('is-mobile-open');
+                body.classList.remove('cart-overlay-open');
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin POS - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/admin-pos.css' %}?v=2">
+{% comment %} This is the new file you need for printing {% endcomment %}
+<link rel="stylesheet" href="{% static 'pos/css/print-receipt.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div>
+        <h1>Admin POS</h1>
+        <p class="subtitle">Process customer orders and manage transactions</p>
+    </div>
+    <div class="search-wrap">
+        <input id="searchInput" type="search" placeholder="Search products..." />
+    </div>
+</header>
+
+<section class="content">
+    <div class="products-col">
+        <div class="filters-row">
+            <select id="categorySelect">
+                <option value="all">All Products</option>
+                <option value="drinks">Drinks</option>
+                <option value="special">Special</option>
+            </select>
+        </div>
+
+        <div id="productsGrid" class="products-grid">
+            </div>
+    </div>
+
+    <aside class="cart-col">
+        <div class="cart-card">
+            <div class="cart-header">
+                <h3>Order Cart (<span id="cartCount">0</span>)</h3>
+                
+                <button class="mobile-cart-close" id="mobileCartClose">&times;</button>
+                
+                <div class="cart-empty-msg" id="cartEmptyMsg">Cart is empty</div>
+            </div>
+
+            <div id="cartItems" class="cart-items">
+                </div>
+
+            <div class="cart-controls">
+                <!-- Discount Button (NEW) -->
+                <button id="applyDiscountBtn" class="btn secondary" style="margin-bottom: 10px; width: 100%;">
+                    <i class="fa-solid fa-percent"></i> Apply Discount
+                </button>
+                
+                <label>Discount (%)</label>
+                <input id="discountInput" type="number" value="0" min="0" max="100" />
+
+                <label>Payment Method</label>
+                <select id="paymentMethod">
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="Gcash">Gcash</option>
+                </select>
+
+                <div class="totals-row">
+                    <div>Subtotal:</div>
+                    <div id="subtotalDisplay">₱0.00</div>
+                </div>
+                <div class="totals-row total">
+                    <div>Total:</div>
+                    <div id="totalDisplay">₱0.00</div>
+                </div>
+
+                <button id="processOrderBtn" class="btn primary"><i class="fa-solid fa-check"></i> Process Order</button>
+                <button id="clearCartBtn" class="btn secondary"><i class="fa-solid fa-trash"></i> Clear Cart</button>
+            </div>
+        </div>
+
+        <div class="recent-card">
+            <h4>Recent Orders</h4>
+            <div id="recentOrders" class="recent-orders">
+                </div>
+        </div>
+    </aside>
+</section>
+
+<button class="mobile-cart-toggle" id="mobileCartToggle">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span>View Cart</span>
+    <span class="mobile-cart-count" id="mobileCartCount">0</span>
+</button>
+
+<div id="printable-receipt" style="display: none;"></div>
+
+
+<div id="paymentModal" class="payment-modal">
+    <div class="payment-modal-card">
+        <h3 id="paymentModalTitle">Payment Details</h3>
+        
+        <div class="form-group">
+            <label for="paymentCustomerName">Customer Name (Optional)</label>
+            <input type="text" id="paymentCustomerName" placeholder="e.g., Juan Dela Cruz">
+        </div>
+        
+        <div class="form-group">
+            <label for="paymentRefNum">Reference Number</label>
+            <input type="text" id="paymentRefNum" placeholder="Enter transaction ID or Ref #">
+        </div>
+
+        <div class="payment-modal-actions">
+            <button id="paymentModalCancel" class="btn secondary">Cancel</button>
+            <button id="paymentModalConfirm" class="btn primary">Confirm Payment</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'pos/js/admin-pos.js' %}"></script>
+{% endblock %}

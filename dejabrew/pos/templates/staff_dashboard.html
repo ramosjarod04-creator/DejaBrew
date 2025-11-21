@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Staff Dashboard - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Styles copied from admin dashboard for visual consistency */
+.alert {
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+.stats-grid {
+    display: grid;
+    /* Adjust grid columns as needed for staff dashboard (e.g., fewer stats) */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.stat-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.stat-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: #555;
+}
+.stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+}
+.stat-change {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.chart-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.chart-container h2 { margin-top: 0; }
+.chart-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.chart-filters button {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.chart-filters button.active {
+    background: #8B4513;
+    color: white;
+    border-color: #8B4513;
+}
+
+.tables-section {
+    display: grid;
+    /* Only one table for staff */
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+.table-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+.table-container h2 { margin-top: 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+th { background-color: #f8f9fa; font-weight: 600; }
+tbody tr:last-child td { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Staff Dashboard</h1>
+    <p>Welcome, {{ username }}! Here's your activity today.</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Your Sales Today</h3>
+        <p class="stat-value">{{ my_sales_count }}</p>
+        <span class="stat-change">₱{{ my_revenue_today|floatformat:2 }} revenue</span>
+    </div>
+    </div>
+
+<div class="charts-section">
+    <div class="chart-container">
+        <h2>Sales Trend</h2>
+        <p>Overall historical sales data</p>
+        <canvas id="salesChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h2>Sales Forecast</h2>
+        <p>Predicted overall sales based on historical trends</p>
+        <div class="chart-filters" id="salesForecastFilter">
+            <button class="active" data-period="daily">Daily</button>
+            <button data-period="weekly">Weekly</button>
+            <button data-period="monthly">Monthly</button>
+        </div>
+        <canvas id="forecastChart"></canvas>
+    </div>
+</div>
+
+<div class="tables-section">
+    <div class="table-container">
+        <h2>Your Recent Transactions</h2>
+        <p>Latest sales you processed</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Time</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if my_recent_transactions %}
+                    {% for order in my_recent_transactions %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.created_at|date:"h:i A" }}</td>
+                        <td>{{ order.customer_name|default:"Walk-in" }}</td>
+                        <td>₱{{ order.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center;">No transactions yet today</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- CHART INSTANCES ---
+    let salesTrendChart;
+    let salesForecastChart;
+
+    // --- RENDER SALES TREND CHART ---
+    function renderSalesTrendChart(salesData) {
+        const labels = salesData.map(d => d.label);
+        const values = salesData.map(d => d.sales);
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        if (salesTrendChart) salesTrendChart.destroy();
+        
+        salesTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Daily Sales (₱)',
+                    data: values,
+                    borderColor: '#8B4513',
+                    backgroundColor: 'rgba(139, 69, 19, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: chartOptions('₱')
+        });
+    }
+
+    // --- RENDER SALES FORECAST CHART ---
+    function renderSalesForecastChart(historicalSales, realForecast, period) {
+        const labels = historicalSales.map(d => d.label);
+        const values = historicalSales.map(d => d.sales);
+        const ctx = document.getElementById('forecastChart').getContext('2d');
+
+        let forecastLabels;
+        let forecastDataSeries;
+
+        if (realForecast && realForecast.length > 0) {
+            console.log("Using real forecast data:", realForecast);
+            
+            const forecastValueSeries = realForecast.map(p => p.predicted_revenue);
+            
+            const forecastLabelSeries = realForecast.map(p => {
+                const dt = new Date(p.date + 'T00:00:00'); 
+                return (dt.getMonth() + 1) + '/' + dt.getDate();
+            });
+            forecastLabels = [...labels, ...forecastLabelSeries];
+            
+            forecastDataSeries = [
+                ...Array(values.length - 1).fill(null),
+                values[values.length - 1], 
+                ...forecastValueSeries
+            ];
+        } else {
+            console.warn("Using placeholder forecast logic.");
+            forecastLabels = [...labels, '...'];
+            forecastDataSeries = [
+                ...Array(values.length - 1).fill(null),
+                values[values.length - 1],
+                null
+            ];
+        }
+
+        if (salesForecastChart) salesForecastChart.destroy();
+
+        salesForecastChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: forecastLabels,
+                datasets: [{
+                    label: 'Historical Sales',
+                    data: values.concat(Array(forecastDataSeries.length - values.length).fill(null)),
+                    borderColor: '#8B4B13',
+                    tension: 0.4
+                }, {
+                    label: 'Predicted Sales',
+                    data: forecastDataSeries,
+                    borderColor: '#28a745',
+                    borderDash: [5, 5],
+                    tension: 0.4
+                }]
+            },
+            options: chartOptions('₱')
+        });
+    }
+
+    // --- DATA FETCHING ---
+    async function updateCharts(period = 'daily') {
+        // --- MODIFIED: Get today's date ---
+        // This helper function gets the local date, not UTC
+        const endDate = (function(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        })(new Date());
+        
+        const forecastSteps = { daily: 7, weekly: 14, monthly: 30 };
+        const daysToForecast = forecastSteps[period] || 7;
+        const origin = window.location.origin;
+
+        const salesTrendApiUrl = `${origin}/api/dashboard-sales/?period=${period}&end_date=${endDate}`;
+        const forecastApiUrl = `${origin}/forecasting/api/predict/?days=${daysToForecast}&period=${period}&end_date=${endDate}`;
+
+        try {
+            const [salesTrendResponse, forecastResponse] = await Promise.all([
+                fetch(salesTrendApiUrl),
+                fetch(forecastApiUrl)
+            ]);
+            
+            if (salesTrendResponse.ok) {
+                const salesTrendData = await salesTrendResponse.json();
+                renderSalesTrendChart(salesTrendData.sales_data);
+            } else {
+                console.warn('Failed to load Sales Trend data.');
+            }
+
+            if (forecastResponse.ok) {
+                const forecastData = await forecastResponse.json();
+                renderSalesForecastChart(
+                    forecastData.combined_historical, 
+                    forecastData.aggregated_forecast, 
+                    period
+                );
+            } else {
+                console.warn('Failed to load REAL forecast data.');
+            }
+
+        } catch (err) {
+            console.error(`Error loading chart data:`, err);
+        }
+    }
+
+    // --- Event Listeners (Chart) ---
+    const filterButtons = document.querySelectorAll('#salesForecastFilter button');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const period = button.dataset.period;
+            updateCharts(period); // Re-fetch data
+        });
+    });
+
+    // --- Shared Chart Options ---
+    function chartOptions(prefix = '') {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const decimals = prefix === '₱' ? 2 : 0;
+                            return (context.dataset.label || '') + `: ${prefix}` + (context.parsed.y || 0).toFixed(decimals);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            if (prefix === '₱') {
+                                return prefix + value.toFixed(2);
+                            }
+                            if (value % 1 !== 0) {
+                                return null;
+                            }
+                            return prefix + value;
+                        }
+                    }
+                }
+            }
+        };
+    }
+    updateCharts('daily');
+});
+</script>
+{% endblock %}

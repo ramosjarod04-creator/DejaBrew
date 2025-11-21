@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Waste Inventory - Deja Brew{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pos/css/inventory.css' %}">
+<style>
+    /* Specific styles for waste log page */
+    .waste-header {
+        margin-bottom: 30px;
+    }
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-box {
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    .stat-box .label { font-size: 14px; color: #666; margin-bottom: 5px; }
+    .stat-box .value { font-size: 24px; font-weight: bold; color: #333; }
+    
+    .waste-table-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .table-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f8f9fa; font-weight: 600; color: #555; }
+    .reason-tag {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .reason-spoilage { background: #ffebee; color: #c62828; } /* Red */
+    .reason-error { background: #fff3e0; color: #ef6c00; } /* Orange */
+    .reason-other { background: #e3f2fd; color: #1565c0; } /* Blue */
+    
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #666;
+        text-decoration: none;
+        margin-bottom: 15px;
+        font-weight: 500;
+    }
+    .btn-back:hover { color: #333; }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'inventory' %}" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Back to Inventory</a>
+
+<div class="waste-header">
+    <h1>Waste Log</h1>
+    <p class="muted">Track spoiled, dropped, or wasted inventory items.</p>
+</div>
+
+<div class="stats-row">
+    <div class="stat-box">
+        <div class="label">Total Waste Value</div>
+        <div class="value" id="totalWasteValue">₱0.00</div>
+    </div>
+    <div class="stat-box">
+        <div class="label">Total Incidents</div>
+        <div class="value" id="totalIncidents">0</div>
+    </div>
+    <div class="stat-box">
+        <div class="label">Most Common Reason</div>
+        <div class="value" id="topReason">-</div>
+    </div>
+</div>
+
+<div class="waste-table-card">
+    <div class="table-header">
+        <h2>Recent Waste Records</h2>
+        </div>
+    <div class="table-wrapper">
+        <table id="wasteTable">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Ingredient</th>
+                    <th>Quantity</th>
+                    <th>Cost</th>
+                    <th>Reason</th>
+                    <th>Recorded By</th>
+                </tr>
+            </thead>
+            <tbody id="wasteTableBody">
+                <tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">Loading waste records...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', loadWasteLogs);
+
+async function loadWasteLogs() {
+    try {
+        const response = await fetch('/api/waste-log/');
+        if (!response.ok) throw new Error('Failed to fetch logs');
+        
+        const data = await response.json();
+        renderTable(data.logs);
+        updateStats(data.stats);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('wasteTableBody').innerHTML = 
+            `<tr><td colspan="6" style="text-align: center; color: red;">Error loading records.</td></tr>`;
+    }
+}
+
+function renderTable(logs) {
+    const tbody = document.getElementById('wasteTableBody');
+    if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">No waste records found.</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = logs.map(log => {
+        // Format Date
+        const date = new Date(log.wasted_at).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit', hour12: true
+        });
+        
+        // Determine badge style
+        let reasonClass = 'reason-other';
+        if (log.reason.toLowerCase().includes('spoilage')) reasonClass = 'reason-spoilage';
+        else if (log.reason.toLowerCase().includes('error')) reasonClass = 'reason-error';
+        
+        return `
+            <tr>
+                <td>${date}</td>
+                <td><strong>${log.ingredient_name}</strong></td>
+                <td>${log.quantity} ${log.unit}</td>
+                <td>₱${log.cost_at_waste.toFixed(2)}</td>
+                <td><span class="reason-tag ${reasonClass}">${log.reason}</span></td>
+                <td>${log.user}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateStats(stats) {
+    document.getElementById('totalWasteValue').textContent = '₱' + stats.total_value.toLocaleString('en-PH', {minimumFractionDigits: 2});
+    document.getElementById('totalIncidents').textContent = stats.total_logs;
+    
+    if (stats.by_reason && stats.by_reason.length > 0) {
+        // Simplify the reason string (remove "Manual Entry - ")
+        let top = stats.by_reason[0].reason.replace('Manual Entry - ', '');
+        document.getElementById('topReason').textContent = top;
+    } else {
+        document.getElementById('topReason').textContent = 'None';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Deja Brew{% endblock %}</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/9a4a7f4d6f.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="{% static 'pos/css/base.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo-section">
+            Deja Brew
+        </div>
+
+        <div class="user-info">
+            <div></div>
+            <div>
+                <strong>{{ request.user.username|default:username }}</strong>
+                <p>
+                    {% if user_role == 'admin' %}
+                        Admin
+                    {% elif user_role == 'staff' %}
+                        Staff
+                    {% else %}
+                        User
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <ul class="nav-menu">
+            {% if user.is_authenticated %}
+                {% if user_role == 'admin' %}
+                    <!-- Admin Links -->
+                    <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}"> Dashboard</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'admin-pos' %}active{% endif %}">
+                        <a href="{% url 'admin-pos' %}"> Admin POS</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'inventory' %}active{% endif %}">
+                        <a href="{% url 'inventory' %}"> Inventory</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'stock-room' %}active{% endif %}">
+                        <a href="{% url 'stock-room' %}"> Stock Room</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'products' %}active{% endif %}">
+                        <a href="{% url 'products' %}"> Products</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'user_management' %}active{% endif %}">
+                        <a href="{% url 'user_management' %}"> User Management</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'audit_trail' %}active{% endif %}">
+                        <a href="{% url 'audit_trail' %}"> Audit Trail</a>
+                    </li>
+                {% elif user_role == 'staff' %}
+                    <!-- Staff Links - Limited Navigation -->
+                    <li class="{% if request.resolver_match.url_name == 'staff_dashboard' %}active{% endif %}">
+                         <a href="{% url 'staff_dashboard' %}"> Dashboard</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'cashier_pos' %}active{% endif %}">
+                        <a href="{% url 'cashier_pos' %}"> POS</a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'inventory' %}active{% endif %}"> {# Changed URL name #}
+                        <a href="{% url 'inventory' %}"> Inventory</a> {# Changed URL name #}
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+
+
+        {% if user.is_authenticated %}
+        <div class="logout-section">
+            <a href="{% url 'logout' %}" class="logout-btn"> Logout</a>
+        </div>
+        {% endif %}
+    </nav>
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

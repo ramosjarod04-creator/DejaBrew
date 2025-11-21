@@ -1,0 +1,318 @@
+date,article,quantity
+2025-09-01,Cappuccino,19
+2025-09-01,Latte,15
+2025-09-01,Espresso,12
+2025-09-02,Cappuccino,12
+2025-09-02,Latte,9
+2025-09-02,Espresso,7
+2025-09-02,Americano with Milk,5
+2025-09-03,Cappuccino,14
+2025-09-03,Latte,11
+2025-09-03,Espresso,9
+2025-09-03,Strawberry Milk,5
+2025-09-04,Cappuccino,16
+2025-09-04,Latte,13
+2025-09-04,Espresso,10
+2025-09-04,Americano with Milk,7
+2025-09-04,Hot Chocolate,6
+2025-09-05,Cappuccino,23
+2025-09-05,Latte,19
+2025-09-05,Espresso,16
+2025-09-05,Americano with Milk,11
+2025-09-05,Cocoa,5
+2025-09-06,Cappuccino,26
+2025-09-06,Latte,21
+2025-09-06,Espresso,19
+2025-09-06,Americano with Milk,13
+2025-09-06,Hot Chocolate,11
+2025-09-06,Strawberry Milk,12
+2025-09-07,Cappuccino,20
+2025-09-07,Latte,16
+2025-09-07,Espresso,13
+2025-09-07,Americano with Milk,10
+2025-09-08,Cappuccino,11
+2025-09-08,Latte,8
+2025-09-08,Espresso,6
+2025-09-08,Americano with Milk,4
+2025-09-09,Cappuccino,10
+2025-09-09,Latte,7
+2025-09-09,Espresso,5
+2025-09-09,Cocoa,3
+2025-09-10,Cappuccino,13
+2025-09-10,Latte,10
+2025-09-10,Espresso,8
+2025-09-10,Strawberry Milk,4
+2025-09-11,Cappuccino,15
+2025-09-11,Latte,12
+2025-09-11,Espresso,9
+2025-09-11,Americano with Milk,6
+2025-09-11,Hot Chocolate,5
+2025-09-12,Cappuccino,22
+2025-09-12,Latte,18
+2025-09-12,Espresso,15
+2025-09-12,Americano with Milk,10
+2025-09-12,Strawberry Milk,9
+2025-09-13,Cappuccino,25
+2025-09-13,Latte,20
+2025-09-13,Espresso,18
+2025-09-13,Americano with Milk,12
+2025-09-13,Hot Chocolate,10
+2025-09-13,Cocoa,7
+2025-09-14,Cappuccino,19
+2025-09-14,Latte,15
+2025-09-14,Espresso,12
+2025-09-14,Americano with Milk,9
+2025-09-14,Strawberry Milk,8
+2025-09-15,Cappuccino,12
+2025-09-15,Latte,9
+2025-09-15,Espresso,7
+2025-09-15,Americano with Milk,5
+2025-09-16,Cappuccino,10
+2025-09-16,Latte,8
+2025-09-16,Espresso,6
+2025-09-16,Hot Chocolate,3
+2025-09-17,Cappuccino,14
+2025-09-17,Latte,11
+2025-09-17,Espresso,9
+2025-09-17,Americano with Milk,6
+2025-09-17,Cocoa,4
+2025-09-18,Cappuccino,16
+2025-09-18,Latte,13
+2025-09-18,Espresso,10
+2025-09-18,Americano with Milk,7
+2025-09-18,Strawberry Milk,5
+2025-09-19,Cappuccino,23
+2025-09-19,Latte,19
+2025-09-19,Espresso,16
+2025-09-19,Americano with Milk,11
+2025-09-19,Hot Chocolate,9
+2025-09-20,Cappuccino,26
+2025-09-20,Latte,21
+2025-09-20,Espresso,19
+2025-09-20,Americano with Milk,13
+2025-09-20,Strawberry Milk,12
+2025-09-21,Cappuccino,20
+2025-09-21,Latte,16
+2025-09-21,Espresso,13
+2025-09-21,Americano with Milk,10
+2025-09-21,Cocoa,8
+2025-09-22,Cappuccino,11
+2025-09-22,Latte,8
+2025-09-22,Espresso,6
+2025-09-22,Americano with Milk,4
+2025-09-23,Cappuccino,10
+2025-09-23,Latte,7
+2025-09-23,Espresso,5
+2025-09-23,Hot Chocolate,3
+2025-09-24,Cappuccino,13
+2025-09-24,Latte,10
+2025-09-24,Espresso,8
+2025-09-24,Americano with Milk,5
+2025-09-24,Strawberry Milk,4
+2025-09-25,Cappuccino,15
+2025-09-25,Latte,12
+2025-09-25,Espresso,9
+2025-09-25,Americano with Milk,6
+2025-09-25,Cocoa,4
+2025-09-26,Cappuccino,21
+2025-09-26,Latte,17
+2025-09-26,Espresso,14
+2025-09-26,Americano with Milk,10
+2025-09-26,Hot Chocolate,8
+2025-09-27,Cappuccino,24
+2025-09-27,Latte,20
+2025-09-27,Espresso,17
+2025-09-27,Americano with Milk,12
+2025-09-27,Strawberry Milk,11
+2025-09-28,Cappuccino,18
+2025-09-28,Latte,14
+2025-09-28,Espresso,11
+2025-09-28,Americano with Milk,8
+2025-09-29,Cappuccino,12
+2025-09-29,Latte,9
+2025-09-29,Espresso,7
+2025-09-29,Americano with Milk,5
+2025-09-30,Cappuccino,10
+2025-09-30,Latte,8
+2025-09-30,Espresso,6
+2025-09-30,Hot Chocolate,3
+2025-10-01,Cappuccino,15
+2025-10-01,Latte,12
+2025-10-01,Espresso,10
+2025-10-01,Americano with Milk,7
+2025-10-01,Cocoa,4
+2025-10-01,Strawberry Milk,6
+2025-10-02,Cappuccino,17
+2025-10-02,Latte,14
+2025-10-02,Espresso,11
+2025-10-02,Americano with Milk,8
+2025-10-02,Hot Chocolate,6
+2025-10-03,Cappuccino,24
+2025-10-03,Latte,20
+2025-10-03,Espresso,17
+2025-10-03,Americano with Milk,12
+2025-10-03,Strawberry Milk,11
+2025-10-04,Cappuccino,27
+2025-10-04,Latte,22
+2025-10-04,Espresso,20
+2025-10-04,Americano with Milk,14
+2025-10-04,Hot Chocolate,12
+2025-10-04,Cocoa,9
+2025-10-05,Cappuccino,21
+2025-10-05,Latte,17
+2025-10-05,Espresso,14
+2025-10-05,Americano with Milk,11
+2025-10-05,Strawberry Milk,10
+2025-10-06,Cappuccino,13
+2025-10-06,Latte,10
+2025-10-06,Espresso,8
+2025-10-06,Americano with Milk,5
+2025-10-07,Cappuccino,11
+2025-10-07,Latte,9
+2025-10-07,Espresso,7
+2025-10-07,Hot Chocolate,4
+2025-10-08,Cappuccino,15
+2025-10-08,Latte,12
+2025-10-08,Espresso,10
+2025-10-08,Americano with Milk,7
+2025-10-08,Cocoa,4
+2025-10-09,Cappuccino,17
+2025-10-09,Latte,14
+2025-10-09,Espresso,11
+2025-10-09,Americano with Milk,8
+2025-10-09,Strawberry Milk,7
+2025-10-10,Cappuccino,24
+2025-10-10,Latte,20
+2025-10-10,Espresso,17
+2025-10-10,Americano with Milk,12
+2025-10-10,Hot Chocolate,10
+2025-10-11,Cappuccino,27
+2025-10-11,Latte,22
+2025-10-11,Espresso,20
+2025-10-11,Americano with Milk,14
+2025-10-11,Cocoa,9
+2025-10-11,Strawberry Milk,13
+2025-10-12,Cappuccino,21
+2025-10-12,Latte,17
+2025-10-12,Espresso,14
+2025-10-12,Americano with Milk,11
+2025-10-13,Cappuccino,13
+2025-10-13,Latte,10
+2025-10-13,Espresso,8
+2025-10-13,Americano with Milk,5
+2025-10-13,Hot Chocolate,5
+2025-10-14,Cappuccino,11
+2025-10-14,Latte,9
+2025-10-14,Espresso,7
+2025-10-14,Americano with Milk,4
+2025-10-15,Cappuccino,15
+2025-10-15,Latte,12
+2025-10-15,Espresso,10
+2025-10-15,Strawberry Milk,6
+2025-10-16,Cappuccino,17
+2025-10-16,Latte,14
+2025-10-16,Espresso,11
+2025-10-16,Americano with Milk,8
+2025-10-16,Cocoa,5
+2025-10-17,Cappuccino,24
+2025-10-17,Latte,20
+2025-10-17,Espresso,17
+2025-10-17,Americano with Milk,12
+2025-10-17,Hot Chocolate,10
+2025-10-18,Cappuccino,27
+2025-10-18,Latte,22
+2025-10-18,Espresso,20
+2025-10-18,Americano with Milk,14
+2025-10-18,Strawberry Milk,13
+2025-10-19,Cappuccino,21
+2025-10-19,Latte,17
+2025-10-19,Espresso,14
+2025-10-19,Americano with Milk,11
+2025-10-20,Cappuccino,13
+2025-10-20,Latte,10
+2025-10-20,Espresso,8
+2025-10-20,Americano with Milk,5
+2025-10-20,Cocoa,4
+2025-10-21,Cappuccino,11
+2025-10-21,Latte,9
+2025-10-21,Espresso,7
+2025-10-21,Americano with Milk,4
+2025-10-22,Cappuccino,15
+2025-10-22,Latte,12
+2025-10-22,Espresso,10
+2025-10-22,Hot Chocolate,5
+2025-10-22,Strawberry Milk,6
+2025-10-23,Cappuccino,17
+2025-10-23,Latte,14
+2025-10-23,Espresso,11
+2025-10-23,Americano with Milk,8
+2025-10-24,Cappuccino,24
+2025-10-24,Latte,20
+2025-10-24,Espresso,17
+2025-10-24,Americano with Milk,12
+2025-10-24,Cocoa,6
+2025-10-25,Cappuccino,27
+2025-10-25,Latte,22
+2025-10-25,Espresso,20
+2025-10-25,Americano with Milk,14
+2025-10-25,Hot Chocolate,12
+2025-10-26,Cappuccino,21
+2025-10-26,Latte,17
+2025-10-26,Espresso,14
+2025-10-26,Americano with Milk,11
+2025-10-26,Strawberry Milk,10
+2025-10-27,Cappuccino,13
+2025-10-27,Latte,10
+2025-10-27,Espresso,8
+2025-10-27,Americano with Milk,5
+2025-10-28,Cappuccino,11
+2025-10-28,Latte,9
+2025-10-28,Espresso,7
+2025-10-28,Hot Chocolate,4
+2025-10-29,Cappuccino,15
+2025-10-29,Latte,12
+2025-10-29,Espresso,10
+2025-10-29,Americano with Milk,7
+2025-10-29,Cocoa,4
+2025-10-30,Cappuccino,17
+2025-10-30,Latte,14
+2025-10-30,Espresso,11
+2025-10-30,Americano with Milk,8
+2025-10-30,Strawberry Milk,7
+2025-10-31,Cappuccino,24
+2025-10-31,Latte,20
+2025-10-31,Espresso,17
+2025-10-31,Americano with Milk,12
+2025-10-31,Hot Chocolate,10
+2025-11-01,Cappuccino,28
+2025-11-01,Latte,23
+2025-11-01,Espresso,21
+2025-11-01,Americano with Milk,15
+2025-11-01,Hot Chocolate,13
+2025-11-01,Cocoa,10
+2025-11-01,Strawberry Milk,14
+2025-11-02,Cappuccino,22
+2025-11-02,Latte,18
+2025-11-02,Espresso,15
+2025-11-02,Americano with Milk,12
+2025-11-02,Strawberry Milk,11
+2025-11-03,Cappuccino,14
+2025-11-03,Latte,11
+2025-11-03,Espresso,9
+2025-11-03,Americano with Milk,6
+2025-11-04,Cappuccino,12
+2025-11-04,Latte,10
+2025-11-04,Espresso,8
+2025-11-04,Americano with Milk,5
+2025-11-04,Hot Chocolate,5
+2025-11-05,Cappuccino,16
+2025-11-05,Latte,13
+2025-11-05,Espresso,11
+2025-11-05,Americano with Milk,8
+2025-11-05,Cocoa,5
+2025-11-05,Strawberry Milk,7
+2025-11-06,Cappuccino,18
+2025-11-06,Latte,15
+2025-11-06,Espresso,12
+2025-11-06,Americano with Milk,9
+2025-11-06,Hot Chocolate,7
