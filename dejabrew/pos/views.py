@@ -1546,6 +1546,50 @@ def export_inventory_monitoring(request):
 
 
 @login_required
+def debug_transactions(request):
+    """
+    Debug endpoint to check recent transactions
+    """
+    try:
+        # Get last 20 transactions
+        recent = InventoryTransaction.objects.all().order_by('-created_at')[:20]
+
+        transactions_list = []
+        for txn in recent:
+            transactions_list.append({
+                'id': txn.id,
+                'created_at': txn.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'ingredient': txn.ingredient_name,
+                'type': txn.transaction_type,
+                'type_display': txn.get_transaction_type_display(),
+                'quantity': float(txn.quantity),
+                'unit': txn.unit,
+            })
+
+        total_count = InventoryTransaction.objects.count()
+
+        # Count by type
+        type_counts = {}
+        for choice in InventoryTransaction._meta.get_field('transaction_type').choices:
+            count = InventoryTransaction.objects.filter(transaction_type=choice[0]).count()
+            type_counts[choice[1]] = count
+
+        return JsonResponse({
+            'success': True,
+            'total_transactions': total_count,
+            'by_type': type_counts,
+            'recent_20': transactions_list
+        })
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        })
+
+
+@login_required
 @require_http_methods(["POST"])
 @transaction.atomic
 def populate_historical_transactions(request):

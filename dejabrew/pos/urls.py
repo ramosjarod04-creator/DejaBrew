@@ -54,6 +54,7 @@ urlpatterns = [
     path('api/inventory-monitoring/', views.inventory_monitoring_api, name='api_inventory_monitoring'),
     path('api/inventory-monitoring/export/', views.export_inventory_monitoring, name='export_inventory_monitoring'),
     path('api/inventory-monitoring/populate/', views.populate_historical_transactions, name='populate_historical_transactions'),
+    path('api/inventory-monitoring/debug/', views.debug_transactions, name='debug_transactions'),
 
     path('forecasting/api/predict/', forecast_views.predict_api, name='forecast_predict_api')
 ]
