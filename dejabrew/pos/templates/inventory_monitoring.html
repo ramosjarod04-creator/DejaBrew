@@ -359,6 +359,27 @@
         </div>
     </div>
 
+    <!-- First Time Setup Notice -->
+    <div id="setup-notice" style="display: none; background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h3 style="margin-top: 0; color: #856404;">
+            <i class="fas fa-info-circle"></i> First Time Setup Required
+        </h3>
+        <p style="margin-bottom: 15px; color: #856404;">
+            No transaction data found. Click the button below to populate historical data from existing orders and waste logs:
+        </p>
+        <button id="populate-btn" class="btn btn-primary" style="margin-bottom: 15px;">
+            <i class="fas fa-database"></i> Populate Historical Data
+        </button>
+        <div id="populate-result" style="display: none; margin-top: 10px; padding: 10px; border-radius: 4px;"></div>
+        <p style="margin-bottom: 15px; margin-top: 15px; color: #856404; font-size: 0.9em;">
+            <strong>Alternative:</strong> You can also run this command in your terminal:<br>
+            <code style="background: #fff; padding: 5px; display: inline-block; margin-top: 5px;">python manage.py populate_inventory_transactions</code>
+        </p>
+        <p style="margin-bottom: 0; color: #856404;">
+            <strong>Note:</strong> After populating, all new inventory changes will be automatically tracked.
+        </p>
+    </div>
+
     <!-- Summary Stats -->
     <div class="stats-grid" id="summary-stats">
         <div class="stat-card stock-in">
