@@ -190,7 +190,7 @@ class InventoryTransaction(models.Model):
     reference = models.CharField(max_length=100, blank=True)  # Order ID, waste log ID, etc.
 
     # Tracking
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     class Meta:
