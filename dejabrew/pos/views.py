@@ -1499,7 +1499,8 @@ def export_inventory_monitoring(request):
 
         # Write header
         writer.writerow([
-            'Date/Time',
+            'Date',
+            'Time',
             'Ingredient',
             'Category',
             'Transaction Type',
@@ -1517,7 +1518,8 @@ def export_inventory_monitoring(request):
         # Write data
         for txn in transactions:
             writer.writerow([
-                txn.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                txn.created_at.strftime('%Y-%m-%d'),  # Date only
+                txn.created_at.strftime('%H:%M'),     # Time only
                 txn.ingredient_name,
                 txn.ingredient.category if txn.ingredient else '',
                 txn.get_transaction_type_display(),

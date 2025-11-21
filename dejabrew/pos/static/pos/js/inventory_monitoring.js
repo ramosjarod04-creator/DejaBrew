@@ -349,9 +349,22 @@ async function exportData() {
     }
 }
 
-// Reset filters
+// Reset filters to default (1 year back)
 function resetFilters() {
     initializeDateFilters();
+    document.getElementById('ingredient-filter').value = '';
+    document.getElementById('transaction-type-filter').value = '';
+    fetchMonitoringData();
+}
+
+// Reset to show ALL data (no date restriction)
+function resetToAllData() {
+    // Set very old start date and today as end date
+    const endDate = new Date();
+    const startDate = new Date('2020-01-01'); // Go back to 2020 to catch everything
+
+    document.getElementById('end-date').valueAsDate = endDate;
+    document.getElementById('start-date').valueAsDate = startDate;
     document.getElementById('ingredient-filter').value = '';
     document.getElementById('transaction-type-filter').value = '';
     fetchMonitoringData();
@@ -447,7 +460,13 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchMonitoringData();
 
     // Event listeners
-    document.getElementById('apply-filter').addEventListener('click', fetchMonitoringData);
+    document.getElementById('apply-filter').addEventListener('click', () => {
+        console.log('Apply Filter clicked');
+        console.log('Start Date:', document.getElementById('start-date').value);
+        console.log('End Date:', document.getElementById('end-date').value);
+        fetchMonitoringData();
+    });
+
     document.getElementById('reset-filter').addEventListener('click', resetFilters);
     document.getElementById('export-csv').addEventListener('click', exportData);
 
@@ -463,6 +482,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') {
                 fetchMonitoringData();
             }
+        });
+    });
+
+    // Show hint when dates change
+    const dateInputs = [document.getElementById('start-date'), document.getElementById('end-date')];
+    dateInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            console.log('Date changed to:', input.value);
+            // You can add a visual hint here if needed
         });
     });
 });
