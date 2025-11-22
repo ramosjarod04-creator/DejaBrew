@@ -1,10 +1,10 @@
 # forecasting/train_models.py
 """
-Train per-product models from multiple Kaggle CSVs.
-- Reads: forecasting/forecasting_data/bakery_sales.csv
-- Reads: forecasting/forecasting_data/Coffe_sales.csv
-Combines them and trains models for the top 10 bakery + top 20 coffee products.
-*** NEW: Now includes a cleanup step to remove old/unused models. ***
+Train per-product models using Coffee Shop Sales dataset (Ahmed Abas).
+- Reads: forecasting/forecasting_data/coffee_shop_sales.csv
+- Trains models for top-selling products
+- Evaluates with MAE, RMSE, R², and Accuracy metrics
+- Includes cleanup step to remove old/unused models
 """
 import os
 import pandas as pd
@@ -18,70 +18,115 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, 'forecasting_data')
 os.makedirs(DATA_DIR, exist_ok=True)
 
-BAKERY_CSV = os.path.join(DATA_DIR, 'bakery_sales.csv')
-COFFEE_CSV = os.path.join(DATA_DIR, 'Coffe_sales.csv') # Exact name from user
+# Ahmed Abas Coffee Shop Sales dataset
+COFFEE_SHOP_SALES_CSV = os.path.join(DATA_DIR, 'coffee_shop_sales.csv')
+# Fallback legacy data
+GENERATED_CSV = os.path.join(DATA_DIR, 'generated_sales.csv')
 
 MODEL_PREFIX = 'model_'
 MODEL_DIR = DATA_DIR
 
 def load_data():
     """
-    --- UPDATED ---
-    Loads and combines data from both CSVs.
+    Loads Coffee Shop Sales dataset (Ahmed Abas).
+
+    Expected CSV columns:
+    - transaction_date: Date of sale
+    - product_detail: Product name
+    - transaction_qty: Quantity sold
+
     Returns:
-    1. A combined DataFrame for training.
-    2. A list of unique articles from the bakery CSV.
-    3. A list of unique articles from the coffee CSV.
+    1. A DataFrame with columns: date, article, quantity
+    2. A list of unique product names
     """
     all_dfs = []
-    bakery_articles = []
-    coffee_articles = []
+    all_articles = []
 
-    # 1. Load Bakery Data
-    if os.path.exists(BAKERY_CSV):
+    # 1. Load Coffee Shop Sales (Ahmed Abas dataset)
+    if os.path.exists(COFFEE_SHOP_SALES_CSV):
         try:
-            df_bakery = pd.read_csv(BAKERY_CSV)
-            if 'date' not in df_bakery.columns or 'article' not in df_bakery.columns or 'quantity' not in df_bakery.columns:
-                print(f"Bakery CSV missing required columns. Found: {df_bakery.columns.tolist()}")
+            print(f"Loading Coffee Shop Sales from: {COFFEE_SHOP_SALES_CSV}")
+            df_coffee_shop = pd.read_csv(COFFEE_SHOP_SALES_CSV)
+
+            # Check for required columns
+            required_cols = ['transaction_date', 'product_detail', 'transaction_qty']
+            missing_cols = [col for col in required_cols if col not in df_coffee_shop.columns]
+
+            if missing_cols:
+                print(f"❌ Error: Missing required columns: {missing_cols}")
+                print(f"   Found columns: {df_coffee_shop.columns.tolist()}")
+                print(f"\n   Expected Ahmed Abas Coffee Shop Sales format:")
+                print(f"   - transaction_date, product_detail, transaction_qty")
             else:
-                df_bakery['date'] = pd.to_datetime(df_bakery['date'])
-                df_bakery['article'] = df_bakery['article'].str.strip()
-                bakery_articles = df_bakery['article'].unique().tolist() # Get bakery names
-                all_dfs.append(df_bakery[['date', 'article', 'quantity']])
-                print(f"Successfully loaded {BAKERY_CSV}")
+                # Rename to standard format
+                df_coffee_shop = df_coffee_shop.rename(columns={
+                    'transaction_date': 'date',
+                    'product_detail': 'article',
+                    'transaction_qty': 'quantity'
+                })
+
+                # Convert date and clean article names
+                df_coffee_shop['date'] = pd.to_datetime(df_coffee_shop['date'])
+                df_coffee_shop['article'] = df_coffee_shop['article'].str.strip()
+
+                # Remove invalid quantities
+                df_coffee_shop = df_coffee_shop[df_coffee_shop['quantity'] > 0]
+
+                # Get unique articles
+                all_articles = df_coffee_shop['article'].unique().tolist()
+
+                # Keep only needed columns
+                all_dfs.append(df_coffee_shop[['date', 'article', 'quantity']])
+
+                print(f"✓ Successfully loaded Coffee Shop Sales!")
+                print(f"  Total transactions: {len(df_coffee_shop):,}")
+                print(f"  Date range: {df_coffee_shop['date'].min().date()} to {df_coffee_shop['date'].max().date()}")
+                print(f"  Unique products: {len(all_articles)}")
+
         except Exception as e:
-            print(f"Error loading {BAKERY_CSV}: {e}")
-    
-    # 2. Load Coffee Data
-    if os.path.exists(COFFEE_CSV):
+            print(f"❌ Error loading {COFFEE_SHOP_SALES_CSV}: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print(f"⚠ Coffee Shop Sales CSV not found at:")
+        print(f"  {COFFEE_SHOP_SALES_CSV}")
+        print(f"\n📥 Download instructions:")
+        print(f"  1. Visit: https://www.kaggle.com/datasets/ahmedabbas757/coffee-sales")
+        print(f"  2. Download the dataset")
+        print(f"  3. Save as: coffee_shop_sales.csv")
+        print(f"  4. Place in: {DATA_DIR}/")
+        print(f"\n  See CSV_DOWNLOAD_GUIDE.md for detailed instructions")
+
+    # 2. Fallback: Load Generated Data if Coffee Shop Sales not available
+    if not all_dfs and os.path.exists(GENERATED_CSV):
         try:
-            df_coffee = pd.read_csv(COFFEE_CSV)
-            if 'Date' in df_coffee.columns and 'coffee_name' in df_coffee.columns:
-                # Get coffee names BEFORE renaming
-                coffee_articles = df_coffee['coffee_name'].str.strip().unique().tolist()
-                
-                # Standardize columns: ('Date' -> 'date', 'coffee_name' -> 'article')
-                df_coffee.rename(columns={'Date': 'date', 'coffee_name': 'article'}, inplace=True)
-                df_coffee['quantity'] = 1 # Assume quantity is 1
-                df_coffee['date'] = pd.to_datetime(df_coffee['date'])
-                df_coffee['article'] = df_coffee['article'].str.strip()
-                all_dfs.append(df_coffee[['date', 'article', 'quantity']])
-                print(f"Successfully loaded {COFFEE_CSV}")
-            else:
-                print(f"Coffee CSV missing required columns ('Date', 'coffee_name'). Found: {df_coffee.columns.tolist()}")
+            print(f"\n⚠ Using fallback data: {GENERATED_CSV}")
+            df_generated = pd.read_csv(GENERATED_CSV)
+            if 'date' in df_generated.columns and 'article' in df_generated.columns:
+                df_generated['date'] = pd.to_datetime(df_generated['date'])
+                df_generated['article'] = df_generated['article'].str.strip()
+                df_generated = df_generated[df_generated['quantity'] > 0]
+                all_articles = df_generated['article'].unique().tolist()
+                all_dfs.append(df_generated[['date', 'article', 'quantity']])
+                print(f"✓ Loaded {len(df_generated)} records from fallback data")
         except Exception as e:
-            print(f"Error loading {COFFEE_CSV}: {e}")
+            print(f"Error loading {GENERATED_CSV}: {e}")
 
     # 3. Combine and Final Processing
     if not all_dfs:
-        raise FileNotFoundError(f"No data files found. Please put your CSVs at {BAKERY_CSV} and/or {COFFEE_CSV}")
+        raise FileNotFoundError(
+            f"\n❌ No data files found!\n"
+            f"   Please add coffee_shop_sales.csv to: {DATA_DIR}/\n"
+            f"   See CSV_DOWNLOAD_GUIDE.md for instructions"
+        )
 
     df = pd.concat(all_dfs, ignore_index=True)
     df = df[df['quantity'] > 0]  # remove negatives/returns
-    
-    print(f"Combined data has {len(df)} total sales records.")
-    # Return all 3 items
-    return df, bakery_articles, coffee_articles
+
+    print(f"\n✓ Final dataset ready: {len(df):,} total sales records")
+
+    # Return dataframe and article list (second param unused, kept for compatibility)
+    return df, all_articles, []
 
 def pivot_daily(df):
     daily = df.pivot_table(index='date', columns='article', values='quantity', aggfunc='sum').fillna(0)
@@ -100,26 +145,28 @@ def create_date_features(df_index):
 
 
 def main():
-    print("Starting model training...")
-    # --- UPDATED: Get article lists from load_data ---
-    df, bakery_articles, coffee_articles = load_data()
+    print("=" * 80)
+    print("  DejaBrew Forecasting Model Training")
+    print("  Using Coffee Shop Sales Dataset (Ahmed Abas)")
+    print("=" * 80 + "\n")
+
+    # Load data
+    df, all_articles, _ = load_data()
     daily = pivot_daily(df)
 
-    # --- UPDATED: Get Top 10 Bakery + Top 20 Coffee ---
-    # Get sales summary for all products
+    # Get top-selling products
+    # Train models for top 30 products (configurable)
+    TOP_N_PRODUCTS = 30
+
     all_sales = daily.sum().sort_values(ascending=False)
-    
-    # Filter sales list for bakery articles, then get top 10
-    top_bakery = all_sales[all_sales.index.isin(bakery_articles)].head(10).index.tolist()
-    print(f"\nFound Top {len(top_bakery)} Bakery Items...")
-    
-    # Filter sales list for coffee articles, then get top 20
-    top_coffee = all_sales[all_sales.index.isin(coffee_articles)].head(20).index.tolist()
-    print(f"Found Top {len(top_coffee)} Coffee Items...")
-    
-    # Combine the lists and remove any duplicates (e.g., if 'COOKIE' was in both)
-    top_articles = list(dict.fromkeys(top_bakery + top_coffee))
-    # --- END UPDATED ---
+    top_articles = all_sales.head(TOP_N_PRODUCTS).index.tolist()
+
+    print(f"\nTraining models for top {len(top_articles)} products by sales volume:")
+    for i, article in enumerate(top_articles[:10], 1):
+        total_qty = int(all_sales[article])
+        print(f"  {i}. {article} ({total_qty:,} units sold)")
+    if len(top_articles) > 10:
+        print(f"  ... and {len(top_articles) - 10} more products")
 
     print(f"\nTraining models for {len(top_articles)} products:")
     print(top_articles)
