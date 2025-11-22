@@ -19,10 +19,10 @@ def get_order_item_model():
 # --- Get paths ---
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, 'forecasting_data')
-BAKERY_CSV = os.path.join(DATA_DIR, 'bakery_sales.csv')
-COFFEE_CSV = os.path.join(DATA_DIR, 'Coffe_sales.csv')
+# Ahmed Abas Coffee Shop Sales dataset
+COFFEE_SHOP_SALES_CSV = os.path.join(DATA_DIR, 'coffee_shop_sales.csv')
+# Legacy CSV files (fallback)
 GENERATED_CSV = os.path.join(DATA_DIR, 'generated_sales.csv')
-GENERATED_CSV_2 = os.path.join(DATA_DIR, 'generated_sales_sep_nov.csv')
 MODEL_PREFIX = 'model_'
 MODEL_CACHE = {}
 
@@ -59,82 +59,93 @@ def load_live_db_data():
 
 def load_kaggle_data():
     """
-    Loads Kaggle CSVs AND generated sales data with caching
+    Loads Coffee Shop Sales CSV (Ahmed Abas dataset) with caching.
+
+    Expected CSV columns:
+    - transaction_date: Date of sale
+    - product_detail: Product name
+    - transaction_qty: Quantity sold
+    - product_category: Product category (optional)
     """
-    cache_key = 'kaggle_data_v1_sep_nov'
+    cache_key = 'coffee_shop_sales_v2'
     cached_data = cache.get(cache_key)
-    
+
     if cached_data:
-        print("Loading Kaggle/Generated CSVs from cache...")
+        print("Loading Coffee Shop Sales from cache...")
         return cached_data
-        
-    print("Loading Kaggle/Generated CSVs from disk...")
+
+    print("Loading Coffee Shop Sales CSV from disk...")
     all_dfs = []
-    bakery_articles = []
-    coffee_articles = []
+    all_articles = []
 
-    # 1. Load Bakery Data
-    if os.path.exists(BAKERY_CSV):
+    # 1. Load Coffee Shop Sales (Ahmed Abas dataset)
+    if os.path.exists(COFFEE_SHOP_SALES_CSV):
         try:
-            df_bakery = pd.read_csv(BAKERY_CSV)
-            if 'date' in df_bakery.columns and 'article' in df_bakery.columns:
-                df_bakery['date'] = pd.to_datetime(df_bakery['date'])
-                df_bakery['article'] = df_bakery['article'].str.strip()
-                bakery_articles = df_bakery['article'].unique().tolist()
-                all_dfs.append(df_bakery[['date', 'article', 'quantity']])
-                print(f"Successfully loaded {BAKERY_CSV}")
-        except Exception as e:
-            print(f"Error loading {BAKERY_CSV}: {e}")
-    
-    # 2. Load Coffee Data
-    if os.path.exists(COFFEE_CSV):
-        try:
-            df_coffee = pd.read_csv(COFFEE_CSV)
-            if 'Date' in df_coffee.columns and 'coffee_name' in df_coffee.columns:
-                coffee_articles = df_coffee['coffee_name'].str.strip().unique().tolist()
-                df_coffee.rename(columns={'Date': 'date', 'coffee_name': 'article'}, inplace=True)
-                df_coffee['quantity'] = 1
-                df_coffee['date'] = pd.to_datetime(df_coffee['date'])
-                df_coffee['article'] = df_coffee['article'].str.strip()
-                all_dfs.append(df_coffee[['date', 'article', 'quantity']])
-                print(f"Successfully loaded {COFFEE_CSV}")
-        except Exception as e:
-            print(f"Error loading {COFFEE_CSV}: {e}")
+            print(f"Reading {COFFEE_SHOP_SALES_CSV}...")
+            df_coffee_shop = pd.read_csv(COFFEE_SHOP_SALES_CSV)
 
-    # 3. Load Generated Data
-    if os.path.exists(GENERATED_CSV):
+            # Check for required columns
+            required_cols = ['transaction_date', 'product_detail', 'transaction_qty']
+            missing_cols = [col for col in required_cols if col not in df_coffee_shop.columns]
+
+            if missing_cols:
+                print(f"Error: Missing required columns: {missing_cols}")
+                print(f"Found columns: {df_coffee_shop.columns.tolist()}")
+            else:
+                # Rename to standard format
+                df_coffee_shop = df_coffee_shop.rename(columns={
+                    'transaction_date': 'date',
+                    'product_detail': 'article',
+                    'transaction_qty': 'quantity'
+                })
+
+                # Convert date and clean article names
+                df_coffee_shop['date'] = pd.to_datetime(df_coffee_shop['date'])
+                df_coffee_shop['article'] = df_coffee_shop['article'].str.strip()
+
+                # Get unique articles
+                all_articles = df_coffee_shop['article'].unique().tolist()
+
+                # Keep only needed columns
+                all_dfs.append(df_coffee_shop[['date', 'article', 'quantity']])
+                print(f"✓ Successfully loaded Coffee Shop Sales: {len(df_coffee_shop)} transactions")
+                print(f"  Date range: {df_coffee_shop['date'].min()} to {df_coffee_shop['date'].max()}")
+                print(f"  Unique products: {len(all_articles)}")
+
+        except Exception as e:
+            print(f"Error loading {COFFEE_SHOP_SALES_CSV}: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print(f"⚠ Coffee Shop Sales CSV not found at: {COFFEE_SHOP_SALES_CSV}")
+        print(f"  Please download from: https://www.kaggle.com/datasets/ahmedabbas757/coffee-sales")
+        print(f"  See CSV_DOWNLOAD_GUIDE.md for instructions")
+
+    # 2. Fallback: Load Generated Data if Coffee Shop Sales not available
+    if not all_dfs and os.path.exists(GENERATED_CSV):
         try:
+            print(f"Loading fallback data: {GENERATED_CSV}")
             df_generated = pd.read_csv(GENERATED_CSV)
             if 'date' in df_generated.columns and 'article' in df_generated.columns:
                 df_generated['date'] = pd.to_datetime(df_generated['date'])
                 df_generated['article'] = df_generated['article'].str.strip()
+                all_articles = df_generated['article'].unique().tolist()
                 all_dfs.append(df_generated[['date', 'article', 'quantity']])
-                print(f"Successfully loaded {GENERATED_CSV}")
+                print(f"✓ Successfully loaded fallback data")
         except Exception as e:
             print(f"Error loading {GENERATED_CSV}: {e}")
 
-    # 4. Load Generated Data (Sep-Nov)
-    if os.path.exists(GENERATED_CSV_2):
-        try:
-            df_generated_2 = pd.read_csv(GENERATED_CSV_2)
-            if 'date' in df_generated_2.columns and 'article' in df_generated_2.columns:
-                df_generated_2['date'] = pd.to_datetime(df_generated_2['date'])
-                df_generated_2['article'] = df_generated_2['article'].str.strip()
-                all_dfs.append(df_generated_2[['date', 'article', 'quantity']])
-                print(f"Successfully loaded {GENERATED_CSV_2}")
-        except Exception as e:
-            print(f"Error loading {GENERATED_CSV_2}: {e}")
-
     if not all_dfs:
-        print("No Kaggle or Generated data files found.")
+        print("❌ No data files found. Please add coffee_shop_sales.csv")
         return pd.DataFrame(), [], []
 
     df = pd.concat(all_dfs, ignore_index=True)
-    
-    cache.set(cache_key, (df, bakery_articles, coffee_articles), 3600)
-    print("Saved CSV data to cache.")
 
-    return df, bakery_articles, coffee_articles
+    # Cache for 1 hour
+    cache.set(cache_key, (df, all_articles, []), 3600)
+    print("✓ Saved CSV data to cache.")
+
+    return df, all_articles, []
 
 
 def load_trained_articles():
