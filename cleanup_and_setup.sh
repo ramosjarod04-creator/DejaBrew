@@ -14,24 +14,52 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 FORECASTING_DIR="/home/user/DejaBrew/dejabrew/forecasting/forecasting_data"
-CSV_FILE="$FORECASTING_DIR/coffee_shop_sales.csv"
+
+# Try multiple filename variations
+CSV_NAMES=(
+    "Coffee Shop Sales.csv"
+    "coffee_shop_sales.csv"
+    "Coffee Shop Sales.xlsx"
+    "coffee_shop_sales.xlsx"
+)
+
+CSV_FILE=""
 
 # Step 1: Check if CSV exists
-echo "Step 1: Checking for coffee_shop_sales.csv..."
-if [ -f "$CSV_FILE" ]; then
-    echo -e "${GREEN}✓ Found: $CSV_FILE${NC}"
-    echo "  Size: $(du -h "$CSV_FILE" | cut -f1)"
-else
-    echo -e "${YELLOW}⚠ CSV file not found at: $CSV_FILE${NC}"
+echo "Step 1: Checking for Coffee Shop Sales CSV..."
+
+for name in "${CSV_NAMES[@]}"; do
+    if [ -f "$FORECASTING_DIR/$name" ]; then
+        CSV_FILE="$FORECASTING_DIR/$name"
+        echo -e "${GREEN}✓ Found: $name${NC}"
+        echo "  Size: $(du -h "$CSV_FILE" | cut -f1)"
+        break
+    fi
+done
+
+if [ -z "$CSV_FILE" ]; then
+    echo -e "${YELLOW}⚠ CSV file not found${NC}"
     echo ""
-    echo "Please move your CSV file:"
-    echo "  mv ~/Downloads/coffee_shop_sales.csv $FORECASTING_DIR/"
+    echo "Searched for:"
+    for name in "${CSV_NAMES[@]}"; do
+        echo "  - $name"
+    done
+    echo ""
+    echo "Please move your CSV file to: $FORECASTING_DIR/"
+    echo "  Example: mv ~/Downloads/'Coffee Shop Sales.csv' $FORECASTING_DIR/"
     echo ""
     read -p "Press Enter after you've moved the file, or Ctrl+C to exit..."
 
-    if [ -f "$CSV_FILE" ]; then
-        echo -e "${GREEN}✓ CSV file found!${NC}"
-    else
+    # Check again
+    for name in "${CSV_NAMES[@]}"; do
+        if [ -f "$FORECASTING_DIR/$name" ]; then
+            CSV_FILE="$FORECASTING_DIR/$name"
+            echo -e "${GREEN}✓ CSV file found: $name${NC}"
+            break
+        fi
+    done
+
+    if [ -z "$CSV_FILE" ]; then
         echo -e "${RED}✗ CSV file still not found. Exiting.${NC}"
         exit 1
     fi

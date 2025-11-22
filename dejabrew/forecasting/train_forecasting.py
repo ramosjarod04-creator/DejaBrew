@@ -27,8 +27,21 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'forecasting_data')
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# File paths
-COFFEE_SHOP_CSV = os.path.join(DATA_DIR, 'coffee_shop_sales.csv')
+# File paths - try multiple common names
+CSV_NAMES = [
+    'Coffee Shop Sales.csv',  # Original Kaggle name
+    'coffee_shop_sales.csv',   # Lowercase with underscores
+    'coffee_shop_sales.xlsx',  # Excel format
+    'Coffee Shop Sales.xlsx'   # Original Excel name
+]
+
+COFFEE_SHOP_CSV = None
+for csv_name in CSV_NAMES:
+    csv_path = os.path.join(DATA_DIR, csv_name)
+    if os.path.exists(csv_path):
+        COFFEE_SHOP_CSV = csv_path
+        break
+
 MODELS_DIR = DATA_DIR
 AGGREGATED_MODEL = os.path.join(MODELS_DIR, 'model_aggregated_sales.joblib')
 PRODUCT_MODEL_PREFIX = 'model_'
@@ -53,18 +66,31 @@ def load_coffee_shop_data():
     """
     print_header("LOADING COFFEE SHOP SALES DATA")
 
-    if not os.path.exists(COFFEE_SHOP_CSV):
-        print(f"❌ ERROR: coffee_shop_sales.csv not found!")
-        print(f"\nExpected location: {COFFEE_SHOP_CSV}")
-        print(f"\nPlease:")
-        print(f"1. Make sure you have coffee_shop_sales.csv file")
-        print(f"2. Move it to: {DATA_DIR}/")
-        print(f"3. Run this script again")
+    if COFFEE_SHOP_CSV is None:
+        print(f"❌ ERROR: Coffee Shop Sales CSV not found!")
+        print(f"\nSearched for these files in {DATA_DIR}:")
+        for name in CSV_NAMES:
+            print(f"  - {name}")
+        print(f"\nYour options:")
+        print(f"1. Move your CSV to: {DATA_DIR}/")
+        print(f"   Accepted names: 'Coffee Shop Sales.csv' or 'coffee_shop_sales.csv'")
+        print(f"2. Or rename it:")
+        print(f"   mv '{DATA_DIR}/Your File.csv' '{DATA_DIR}/Coffee Shop Sales.csv'")
+        print(f"\nThen run this script again")
         sys.exit(1)
 
     try:
-        print(f"Loading: {COFFEE_SHOP_CSV}")
-        df = pd.read_csv(COFFEE_SHOP_CSV)
+        csv_filename = os.path.basename(COFFEE_SHOP_CSV)
+        print(f"Loading: {csv_filename}")
+
+        # Read CSV or Excel
+        if COFFEE_SHOP_CSV.endswith('.csv'):
+            df = pd.read_csv(COFFEE_SHOP_CSV)
+        elif COFFEE_SHOP_CSV.endswith(('.xlsx', '.xls')):
+            print(f"Detected Excel file, converting to CSV format...")
+            df = pd.read_excel(COFFEE_SHOP_CSV)
+        else:
+            raise ValueError(f"Unsupported file format: {COFFEE_SHOP_CSV}")
 
         print(f"✓ CSV loaded: {len(df):,} rows")
         print(f"\nColumns found: {df.columns.tolist()}")
