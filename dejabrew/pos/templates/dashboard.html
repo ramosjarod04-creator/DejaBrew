@@ -921,6 +921,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>Payment Method:</span>
                     <span>${order.payment_method || 'Cash'}</span>
                 </div>
+
+                <div class="totals-row">
+                    <span>Service Type:</span>
+                    <span>${order.dining_option ? order.dining_option.charAt(0).toUpperCase() + order.dining_option.slice(1) : 'Dine-In'}</span>
+                </div>
             </div>
 
             <div class="receipt-footer" style="border-top: 2px solid #000; margin-top: 20px; padding-top: 15px;">

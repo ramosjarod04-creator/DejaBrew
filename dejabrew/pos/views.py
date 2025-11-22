@@ -1245,6 +1245,7 @@ def order_details_api(request, order_id):
         # Fallback safely if fields do not exist
         discount_type = getattr(order, 'discount_type', 'regular')
         discount_id = getattr(order, 'discount_id', '')
+        dining_option = getattr(order, 'dining_option', 'dine-in')
 
         order_data = {
             'id': order.id,
@@ -1257,6 +1258,7 @@ def order_details_api(request, order_id):
             'discount': float(order.discount or 0),
             'discount_type': discount_type,
             'discount_id': discount_id,
+            'dining_option': dining_option,
             'items': [
                 {
                     'id': item.id,
