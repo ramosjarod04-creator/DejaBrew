@@ -49,9 +49,6 @@
                     <li class="{% if request.resolver_match.url_name == 'inventory' %}active{% endif %}">
                         <a href="{% url 'inventory' %}"> Inventory</a>
                     </li>
-                    <li class="{% if request.resolver_match.url_name == 'inventory_monitoring' %}active{% endif %}">
-                        <a href="{% url 'inventory_monitoring' %}"> Inventory Monitoring</a>
-                    </li>
                     <li class="{% if request.resolver_match.url_name == 'stock-room' %}active{% endif %}">
                         <a href="{% url 'stock-room' %}"> Stock Room</a>
                     </li>
@@ -74,9 +71,6 @@
                     </li>
                     <li class="{% if request.resolver_match.url_name == 'inventory' %}active{% endif %}"> {# Changed URL name #}
                         <a href="{% url 'inventory' %}"> Inventory</a> {# Changed URL name #}
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'inventory_monitoring' %}active{% endif %}">
-                        <a href="{% url 'inventory_monitoring' %}"> Inventory Monitoring</a>
                     </li>
                 {% endif %}
             {% endif %}
