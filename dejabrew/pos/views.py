@@ -1808,12 +1808,20 @@ def sales_monitoring_api(request):
         if not end_date_str:
             end_date = timezone.now()
         else:
-            end_date = timezone.make_aware(datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+            end_date_naive = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            if timezone.is_naive(end_date_naive):
+                end_date = timezone.make_aware(end_date_naive)
+            else:
+                end_date = end_date_naive
 
         if not start_date_str:
             start_date = end_date - timedelta(days=30)
         else:
-            start_date = timezone.make_aware(datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0))
+            start_date_naive = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0)
+            if timezone.is_naive(start_date_naive):
+                start_date = timezone.make_aware(start_date_naive)
+            else:
+                start_date = start_date_naive
 
         # Build query
         orders_query = Order.objects.filter(
