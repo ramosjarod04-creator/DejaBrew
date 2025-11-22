@@ -146,6 +146,7 @@ tbody tr:last-child td { border-bottom: none; }
                     <th>Order #</th>
                     <th>Time</th>
                     <th>Customer</th>
+                    <th>Service Type</th>
                     <th>Amount</th>
                 </tr>
             </thead>
@@ -156,12 +157,13 @@ tbody tr:last-child td { border-bottom: none; }
                         <td>#{{ order.id }}</td>
                         <td>{{ order.created_at|date:"h:i A" }}</td>
                         <td>{{ order.customer_name|default:"Walk-in" }}</td>
+                        <td>{{ order.dining_option|default:"Dine-In"|title }}</td>
                         <td>₱{{ order.total|floatformat:2 }}</td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="4" style="text-align: center;">No transactions yet today</td>
+                        <td colspan="5" style="text-align: center;">No transactions yet today</td>
                     </tr>
                 {% endif %}
             </tbody>
