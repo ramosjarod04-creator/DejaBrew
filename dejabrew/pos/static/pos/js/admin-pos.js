@@ -250,7 +250,7 @@ async function loadRecentOrders() {
         if (data.orders && data.orders.length > 0) {
             recentOrdersContainer.innerHTML = data.orders.map(order => `
                 <div class="recent-order-item">
-                    <span>Order #${order.id} (${order.created_at})</span>
+                    <span>Order #${order.id} (${order.created_at}) - <em>${order.dining_option || 'Dine-In'}</em></span>
                     <strong>₱${parseFloat(order.total).toFixed(2)}</strong>
                 </div>
             `).join('');
@@ -1102,6 +1102,7 @@ async function processOrder() {
     });
 
     const discountInfo = window.currentDiscount || { type: 'regular', id: '' };
+    const diningOption = document.getElementById('diningOption').value;
 
     const orderData = {
         items: orderItems,
@@ -1110,8 +1111,9 @@ async function processOrder() {
         discount_type: discountInfo.type,
         discount_id: discountInfo.id,
         payment_method: paymentMethod,
+        dining_option: diningOption,
         customer_name: "Walk-in",
-        payment_details: paymentDetails 
+        payment_details: paymentDetails
     };
     
     const processOrderBtn = document.getElementById('processOrderBtn');

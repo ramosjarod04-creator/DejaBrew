@@ -664,17 +664,20 @@ def process_order(request):
             discount_amount = subtotal * (discount_percent / Decimal('100.0'))
             total = subtotal - discount_amount
         
-        # Attempt to save discount details if model supports it
+        # Attempt to save discount details and dining option if model supports it
+        dining_option = data.get('dining_option', 'dine-in')
+
         order_data = {
             'total': total,
             'customer_name': customer_name,
             'status': 'paid',
             'cashier': request.user,
             'payment_method': payment_method,
-            'discount': discount_percent
+            'discount': discount_percent,
+            'dining_option': dining_option
         }
-        
-        # Try adding discount_type/id if your model has these fields. 
+
+        # Try adding discount_type/id if your model has these fields.
         # If not, this might error, but based on requirements we assume you want to save them.
         try:
             order = Order.objects.create(
@@ -749,7 +752,8 @@ def process_order(request):
             'discount_percent': discount_percent,
             'discount_amount': discount_amount,
             'total': total,
-            'payment_method': payment_method
+            'payment_method': payment_method,
+            'dining_option': dining_option
         }
         
         receipt_html = render_to_string('pos/receipt/_receipt_template.html', receipt_context)
@@ -784,7 +788,7 @@ def process_order(request):
 @login_required
 def recent_orders_api(request):
     orders = Order.objects.filter(status='paid').select_related('cashier').order_by('-created_at')[:5]
-    orders_data = [{'id': o.id, 'total': float(o.total), 'created_at': o.created_at.strftime('%H:%M'), 'cashier': o.cashier.username if o.cashier else 'Unknown', 'customer_name': o.customer_name or 'Walk-in'} for o in orders]
+    orders_data = [{'id': o.id, 'total': float(o.total), 'created_at': o.created_at.strftime('%H:%M'), 'cashier': o.cashier.username if o.cashier else 'Unknown', 'customer_name': o.customer_name or 'Walk-in', 'dining_option': o.dining_option} for o in orders]
     return JsonResponse({'orders': orders_data})
 
 
