@@ -466,6 +466,8 @@ async function loadSalesData() {
         const endDate = document.getElementById('endDate').value;
         const paymentMethod = document.getElementById('paymentMethod').value;
 
+        console.log('Loading sales data with:', { startDate, endDate, paymentMethod });
+
         const params = new URLSearchParams({
             start_date: startDate,
             end_date: endDate,
@@ -473,15 +475,23 @@ async function loadSalesData() {
         });
 
         const response = await fetch(`${API_URL}?${params}`);
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
             throw new Error('Failed to load sales data');
         }
 
         const data = await response.json();
+        console.log('Received data:', data);
+
+        if (data.success === false) {
+            throw new Error(data.error || 'Failed to load sales data');
+        }
 
         updateStats(data);
-        updateTable(data.orders);
+        updateTable(data.orders || []);
 
     } catch (error) {
         console.error('Error loading sales data:', error);
@@ -489,7 +499,8 @@ async function loadSalesData() {
             <tr>
                 <td colspan="8" class="empty-state">
                     <i class="fas fa-exclamation-triangle fa-3x" style="color: #dc3545; margin-bottom: 10px;"></i>
-                    <p>Error loading sales data. Please try again.</p>
+                    <p>Error loading sales data: ${error.message}</p>
+                    <p style="font-size: 0.9em; color: #666;">Check console for details</p>
                 </td>
             </tr>
         `;
