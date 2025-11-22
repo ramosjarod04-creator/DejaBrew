@@ -19,8 +19,16 @@ def get_order_item_model():
 # --- Get paths ---
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, 'forecasting_data')
-# Ahmed Abas Coffee Shop Sales dataset
-COFFEE_SHOP_SALES_CSV = os.path.join(DATA_DIR, 'coffee_shop_sales.csv')
+
+# Ahmed Abas Coffee Shop Sales dataset - try multiple names
+CSV_NAMES = ['Coffee Shop Sales.csv', 'coffee_shop_sales.csv']
+COFFEE_SHOP_SALES_CSV = None
+for csv_name in CSV_NAMES:
+    csv_path = os.path.join(DATA_DIR, csv_name)
+    if os.path.exists(csv_path):
+        COFFEE_SHOP_SALES_CSV = csv_path
+        break
+
 # Legacy CSV files (fallback)
 GENERATED_CSV = os.path.join(DATA_DIR, 'generated_sales.csv')
 MODEL_PREFIX = 'model_'
@@ -79,9 +87,10 @@ def load_kaggle_data():
     all_articles = []
 
     # 1. Load Coffee Shop Sales (Ahmed Abas dataset)
-    if os.path.exists(COFFEE_SHOP_SALES_CSV):
+    if COFFEE_SHOP_SALES_CSV and os.path.exists(COFFEE_SHOP_SALES_CSV):
         try:
-            print(f"Reading {COFFEE_SHOP_SALES_CSV}...")
+            csv_filename = os.path.basename(COFFEE_SHOP_SALES_CSV)
+            print(f"Reading {csv_filename}...")
             df_coffee_shop = pd.read_csv(COFFEE_SHOP_SALES_CSV)
 
             # Check for required columns
