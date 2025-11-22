@@ -221,6 +221,26 @@ html, body {
   background: #eef1f3;
   cursor: pointer;
 }
+.item-controls .qty-input {
+  width: 50px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  -moz-appearance: textfield; /* Firefox */
+}
+.item-controls .qty-input::-webkit-inner-spin-button,
+.item-controls .qty-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.item-controls .qty-input:focus {
+  outline: none;
+  border-color: #8B4513;
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+}
 .item-total {
     font-weight: 700;
     font-size: 14px;

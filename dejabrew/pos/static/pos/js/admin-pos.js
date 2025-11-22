@@ -500,6 +500,46 @@ window.updateQuantity = function(productId, change) {
     updateCartDisplay();
 }
 
+window.setQuantity = function(productId, value) {
+    const item = cart.find(i => i.id === productId);
+    if (!item) return;
+
+    let newQuantity = parseInt(value);
+
+    // Validate input
+    if (isNaN(newQuantity) || newQuantity < 1) {
+        newQuantity = 1;
+    } else if (newQuantity > 999) {
+        newQuantity = 999;
+    }
+
+    const hasStock = (item.stock || 0) > 0;
+    const hasRecipe = item.recipe && item.recipe.length > 0;
+
+    if (hasStock) {
+        if (newQuantity > item.stock) {
+            showNotification(`Only ${item.stock} in stock available`, 'error');
+            newQuantity = item.stock;
+        }
+    } else if (hasRecipe) {
+        const product = allProducts.find(p => p.id === productId);
+        const canMakeResult = checkIfCanMakeProduct(product, newQuantity);
+        if (!canMakeResult.canMake) {
+            showNotification(`Not enough main stock of ${canMakeResult.missingIngredient} for this quantity.`, 'error');
+            // Keep current quantity
+            updateCartDisplay();
+            return;
+        }
+    } else {
+        showNotification('Cannot exceed available stock', 'error');
+        updateCartDisplay();
+        return;
+    }
+
+    item.quantity = newQuantity;
+    updateCartDisplay();
+}
+
 window.removeFromCart = function(productId) {
     const index = cart.findIndex(i => i.id === productId);
     if (index > -1) {
@@ -533,7 +573,9 @@ function updateCartDisplay() {
                 </div>
                 <div class="item-controls">
                     <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
-                    <span class="qty">${item.quantity}</span>
+                    <input type="number" class="qty-input" value="${item.quantity}" min="1" max="999"
+                           onchange="setQuantity(${item.id}, this.value)"
+                           onkeypress="if(event.key==='Enter') this.blur()">
                     <button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
                 </div>
                 <div class="item-total">₱${(item.price * item.quantity).toFixed(2)}</div>
@@ -863,12 +905,19 @@ function confirmPaymentDetails() {
         cust_name: paymentCustomerName.value.trim(),
         ref_num: paymentRefNum.value.trim()
     };
-    
+
     if (!details.ref_num) {
         showNotification('Please enter a reference number.', 'error');
         return;
     }
-    
+
+    // Validate reference number: must be exactly 13 digits
+    const refNumPattern = /^\d{13}$/;
+    if (!refNumPattern.test(details.ref_num)) {
+        showNotification('Reference number must be exactly 13 digits only (no letters or special characters).', 'error');
+        return;
+    }
+
     paymentModal.classList.remove('is-visible');
     if (paymentModalResolve) {
         paymentModalResolve(details);
