@@ -321,7 +321,12 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-        <h3>Total Sales</h3>
+        <h3 style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Total Sales</span>
+            <a href="{% url 'sales_monitoring' %}" style="background: #8B4513; color: white; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; text-decoration: none; font-weight: 500; transition: background 0.3s;" onmouseover="this.style.background='#6d3410'" onmouseout="this.style.background='#8B4513'">
+                <i class="fa fa-chart-line"></i> Monitor Sales
+            </a>
+        </h3>
         <p class="stat-value">{{ total_sales_count }}</p>
         <span class="stat-change">₱{{ total_revenue|floatformat:2 }} revenue</span>
     </div>
