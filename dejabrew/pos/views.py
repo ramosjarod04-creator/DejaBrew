@@ -1742,3 +1742,175 @@ def populate_historical_transactions(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def sales_monitoring_view(request):
+    """
+    Render the sales monitoring page (Admin only)
+    """
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    user_role = 'unknown'
+    if request.user.is_superuser:
+        user_role = 'admin'
+    elif hasattr(request.user, 'profile'):
+        try:
+            user_role = request.user.profile.role
+        except UserProfile.DoesNotExist:
+            if request.user.is_staff:
+                user_role = 'staff'
+    elif request.user.is_staff:
+        user_role = 'staff'
+
+    # Restrict to admin only
+    if user_role != 'admin':
+        return redirect('dashboard')
+
+    context = {
+        'username': request.user.username,
+        'user_role': user_role
+    }
+    return render(request, 'sales_monitoring.html', context)
+
+
+@login_required
+def sales_monitoring_api(request):
+    """
+    API endpoint for sales monitoring with date filtering and payment method filtering (Admin only)
+    Returns comprehensive sales data with breakdown by payment method
+    """
+    # Restrict to admin only
+    user_role = 'unknown'
+    if request.user.is_superuser:
+        user_role = 'admin'
+    elif hasattr(request.user, 'profile'):
+        try:
+            user_role = request.user.profile.role
+        except UserProfile.DoesNotExist:
+            if request.user.is_staff:
+                user_role = 'staff'
+    elif request.user.is_staff:
+        user_role = 'staff'
+
+    if user_role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
+    try:
+        # Get query parameters
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        payment_method = request.GET.get('payment_method', 'all')
+        export_csv = request.GET.get('export') == 'csv'
+
+        # Default to last 30 days if no dates provided
+        if not end_date_str:
+            end_date = timezone.now()
+        else:
+            end_date = timezone.make_aware(datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+
+        if not start_date_str:
+            start_date = end_date - timedelta(days=30)
+        else:
+            start_date = timezone.make_aware(datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0))
+
+        # Build query
+        orders_query = Order.objects.filter(
+            created_at__gte=start_date,
+            created_at__lte=end_date
+        ).select_related('cashier')
+
+        # Filter by payment method if specified
+        if payment_method != 'all':
+            orders_query = orders_query.filter(payment_method__iexact=payment_method)
+
+        orders = orders_query.order_by('-created_at')
+
+        # Calculate summary statistics
+        summary = {
+            'total_sales': 0,
+            'total_orders': 0,
+            'cash_sales': 0,
+            'cash_orders': 0,
+            'gcash_sales': 0,
+            'gcash_orders': 0,
+            'card_sales': 0,
+            'card_orders': 0
+        }
+
+        for order in orders:
+            summary['total_sales'] += float(order.total)
+            summary['total_orders'] += 1
+
+            payment = order.payment_method.lower()
+            if payment == 'cash':
+                summary['cash_sales'] += float(order.total)
+                summary['cash_orders'] += 1
+            elif payment == 'gcash':
+                summary['gcash_sales'] += float(order.total)
+                summary['gcash_orders'] += 1
+            elif payment == 'card':
+                summary['card_sales'] += float(order.total)
+                summary['card_orders'] += 1
+
+        # Export to CSV if requested
+        if export_csv:
+            import csv
+            from django.http import HttpResponse
+
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="sales_report_{start_date.strftime("%Y%m%d")}_{end_date.strftime("%Y%m%d")}.csv"'
+
+            writer = csv.writer(response)
+            writer.writerow(['Order #', 'Date & Time', 'Customer', 'Cashier', 'Payment Method', 'Reference Number', 'Service Type', 'Amount'])
+
+            for order in orders:
+                writer.writerow([
+                    order.id,
+                    order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    order.customer_name or 'Walk-in',
+                    order.cashier.username if order.cashier else 'Unknown',
+                    order.payment_method,
+                    order.reference_number or '-',
+                    order.dining_option or 'dine-in',
+                    f'₱{order.total:.2f}'
+                ])
+
+            # Add summary row
+            writer.writerow([])
+            writer.writerow(['Summary'])
+            writer.writerow(['Total Sales', f'₱{summary["total_sales"]:.2f}'])
+            writer.writerow(['Total Orders', summary['total_orders']])
+            writer.writerow(['Cash Sales', f'₱{summary["cash_sales"]:.2f}', f'{summary["cash_orders"]} orders'])
+            writer.writerow(['GCash Sales', f'₱{summary["gcash_sales"]:.2f}', f'{summary["gcash_orders"]} orders'])
+            writer.writerow(['Card Sales', f'₱{summary["card_sales"]:.2f}', f'{summary["card_orders"]} orders'])
+
+            return response
+
+        # Return JSON response
+        orders_data = []
+        for order in orders:
+            orders_data.append({
+                'id': order.id,
+                'created_at': order.created_at.isoformat(),
+                'customer_name': order.customer_name or 'Walk-in',
+                'cashier_username': order.cashier.username if order.cashier else 'Unknown',
+                'payment_method': order.payment_method,
+                'reference_number': order.reference_number or None,
+                'dining_option': order.dining_option or 'dine-in',
+                'total': float(order.total)
+            })
+
+        return JsonResponse({
+            'success': True,
+            'summary': summary,
+            'orders': orders_data,
+            'date_range': {
+                'start': start_date.isoformat(),
+                'end': end_date.isoformat()
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
