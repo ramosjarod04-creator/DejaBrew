@@ -425,6 +425,7 @@
                         <th>Time</th>
                         <th>Cashier</th>
                         <th>Customer</th>
+                        <th>Service Type</th>
                         <th>Amount</th>
                         <th>Action</th>
                     </tr>
@@ -437,6 +438,7 @@
                             <td>{{ order.created_at|date:"h:i A" }}</td>
                             <td>{{ order.cashier.username|default:"Unknown" }}</td>
                             <td>{{ order.customer_name|default:"Walk-in" }}</td>
+                            <td>{{ order.dining_option|default:"Dine-In"|title }}</td>
                             <td>₱{{ order.total|floatformat:2 }}</td>
                             <td>
                                 <button class="action-btn view-receipt-btn" data-order-id="{{ order.id }}">View</button>
@@ -445,7 +447,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="6" style="text-align: center;">No transactions yet</td>
+                            <td colspan="7" style="text-align: center;">No transactions yet</td>
                         </tr>
                     {% endif %}
                 </tbody>
