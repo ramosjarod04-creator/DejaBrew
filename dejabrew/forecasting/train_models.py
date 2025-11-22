@@ -8,7 +8,9 @@ Combines them and trains models for the top 10 bakery + top 20 coffee products.
 """
 import os
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import joblib
 import json
 
@@ -86,12 +88,16 @@ def pivot_daily(df):
     return daily
 
 def create_date_features(df_index):
+    """
+    Creates basic date features from a datetime index.
+    """
     df = pd.DataFrame(index=df_index)
     df['day_of_week'] = df.index.dayofweek
     df['month'] = df.index.month
     df['day_of_year'] = df.index.dayofyear
     df['year'] = df.index.year
     return df
+
 
 def main():
     print("Starting model training...")
@@ -117,35 +123,67 @@ def main():
 
     print(f"\nTraining models for {len(top_articles)} products:")
     print(top_articles)
-    
+
+    # Create date features for all data
     X = create_date_features(daily.index)
-    
+
     trained_list = [] # Store names of successfully trained models
 
     for article in top_articles:
         if article not in daily.columns:
             print(f"Skipping {article} (not found in data)")
             continue
+
         y = daily[article]
-        
+
+        # Check if we have enough data
+        if len(X) < 30:
+            print(f"Skipping {article} (not enough data: {len(X)} days)")
+            continue
+
         # simple time-series-ish split: last 20% for testing (no shuffle)
-        split = int(len(X) * 0.8) if len(X) >= 5 else int(len(X) * 0.7)
+        split = int(len(X) * 0.8)
         if split < 1 or split >= len(X):
             print(f"Skipping {article} (not enough data to split)")
             continue
-            
+
         X_train, y_train = X.iloc[:split], y.iloc[:split]
-        
+        X_test, y_test = X.iloc[split:], y.iloc[split:]
+
         try:
-            model = GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=42)
+            model = GradientBoostingRegressor(
+                n_estimators=200,
+                learning_rate=0.05,
+                max_depth=5,
+                min_samples_split=10,
+                min_samples_leaf=4,
+                random_state=42
+            )
             model.fit(X_train, y_train)
-            
+
+            # Evaluate model performance
+            y_pred_test = model.predict(X_test)
+            y_pred_train = model.predict(X_train)
+
+            # Calculate metrics
+            test_mae = mean_absolute_error(y_test, y_pred_test)
+            test_rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
+            test_r2 = r2_score(y_test, y_pred_test)
+            test_mape = np.mean(np.abs((y_test - y_pred_test) / (y_test + 1))) * 100
+            test_accuracy = max(0, 100 - test_mape)
+
+            train_mae = mean_absolute_error(y_train, y_pred_train)
+            train_r2 = r2_score(y_train, y_pred_train)
+
             # Clean filename
             safe_name = article.lower().replace(' ', '_').replace('/', '_')
             fname = f"{MODEL_PREFIX}{safe_name}.joblib"
-            
+
             joblib.dump(model, os.path.join(MODEL_DIR, fname))
             print(f"Saved model for {article} -> {fname}")
+            print(f"  Train: MAE={train_mae:.2f}, R²={train_r2:.4f}")
+            print(f"  Test:  MAE={test_mae:.2f}, RMSE={test_rmse:.2f}, R²={test_r2:.4f}, Accuracy={test_accuracy:.2f}%")
+
             trained_list.append(article) # Add to list for json file
             
         except Exception as e:
