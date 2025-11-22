@@ -667,6 +667,11 @@ def process_order(request):
         # Attempt to save discount details and dining option if model supports it
         dining_option = data.get('dining_option', 'dine-in')
 
+        # Extract reference number from payment details (for GCash and Card payments)
+        reference_number = None
+        if payment_details:
+            reference_number = payment_details.get('ref_num', '') or payment_details.get('reference_number', '')
+
         order_data = {
             'total': total,
             'customer_name': customer_name,
@@ -674,7 +679,8 @@ def process_order(request):
             'cashier': request.user,
             'payment_method': payment_method,
             'discount': discount_percent,
-            'dining_option': dining_option
+            'dining_option': dining_option,
+            'reference_number': reference_number or ''
         }
 
         # Try adding discount_type/id if your model has these fields.
@@ -1246,6 +1252,7 @@ def order_details_api(request, order_id):
         discount_type = getattr(order, 'discount_type', 'regular')
         discount_id = getattr(order, 'discount_id', '')
         dining_option = getattr(order, 'dining_option', 'dine-in')
+        reference_number = getattr(order, 'reference_number', None)
 
         order_data = {
             'id': order.id,
@@ -1259,6 +1266,7 @@ def order_details_api(request, order_id):
             'discount_type': discount_type,
             'discount_id': discount_id,
             'dining_option': dining_option,
+            'reference_number': reference_number,
             'items': [
                 {
                     'id': item.id,
