@@ -93,6 +93,7 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=50, default='Cash', blank=True)
     discount = models.DecimalField(max_digits=5, decimal_places=2, default=0, blank=True)
     dining_option = models.CharField(max_length=20, choices=DINING_CHOICES, default='dine-in', blank=True)
+    reference_number = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
         ordering = ['-created_at']
