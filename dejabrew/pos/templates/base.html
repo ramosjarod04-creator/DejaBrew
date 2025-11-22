@@ -61,6 +61,9 @@
                     <li class="{% if request.resolver_match.url_name == 'audit_trail' %}active{% endif %}">
                         <a href="{% url 'audit_trail' %}"> Audit Trail</a>
                     </li>
+                    <li class="{% if request.resolver_match.url_name == 'sales_monitoring' %}active{% endif %}">
+                        <a href="{% url 'sales_monitoring' %}"> Sales Monitoring</a>
+                    </li>
                 {% elif user_role == 'staff' %}
                     <!-- Staff Links - Limited Navigation -->
                     <li class="{% if request.resolver_match.url_name == 'staff_dashboard' %}active{% endif %}">
