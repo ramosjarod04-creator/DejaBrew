@@ -1052,7 +1052,8 @@ async function processOrder() {
     });
 
     const discountInfo = window.currentDiscount || { type: 'regular', id: '' };
-    
+    const diningOption = document.getElementById('diningOption').value;
+
     const orderData = {
         items: orderItems,
         total: parseFloat(document.getElementById('totalDisplay').textContent.replace('₱', '')),
@@ -1060,8 +1061,9 @@ async function processOrder() {
         discount_type: discountInfo.type,
         discount_id: discountInfo.id,
         payment_method: paymentMethod,
+        dining_option: diningOption,
         customer_name: "Walk-in",
-        payment_details: paymentDetails 
+        payment_details: paymentDetails
     };
 
     const processOrderBtn = document.getElementById('processOrderBtn');
