@@ -1285,7 +1285,7 @@ def order_details_api(request, order_id):
 @login_required
 def inventory_monitoring_view(request):
     """
-    Render the inventory monitoring page
+    Render the inventory monitoring page (Admin only)
     """
     if not request.user.is_authenticated:
         return redirect('login')
@@ -1302,6 +1302,10 @@ def inventory_monitoring_view(request):
     elif request.user.is_staff:
         user_role = 'staff'
 
+    # Restrict to admin only
+    if user_role != 'admin':
+        return redirect('dashboard')
+
     context = {
         'username': request.user.username,
         'user_role': user_role
@@ -1312,9 +1316,25 @@ def inventory_monitoring_view(request):
 @login_required
 def inventory_monitoring_api(request):
     """
-    API endpoint for inventory monitoring with date filtering
+    API endpoint for inventory monitoring with date filtering (Admin only)
     Returns comprehensive inventory transaction data
     """
+    # Restrict to admin only
+    user_role = 'unknown'
+    if request.user.is_superuser:
+        user_role = 'admin'
+    elif hasattr(request.user, 'profile'):
+        try:
+            user_role = request.user.profile.role
+        except UserProfile.DoesNotExist:
+            if request.user.is_staff:
+                user_role = 'staff'
+    elif request.user.is_staff:
+        user_role = 'staff'
+
+    if user_role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
     try:
         # Get date range from query params
         start_date_str = request.GET.get('start_date')
@@ -1455,8 +1475,27 @@ def inventory_monitoring_api(request):
 @login_required
 def export_inventory_monitoring(request):
     """
-    Export inventory monitoring data to CSV/Excel format
+    Export inventory monitoring data to CSV/Excel format (Admin only)
     """
+    # Restrict to admin only
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Authentication required'}, status=401)
+
+    user_role = 'unknown'
+    if request.user.is_superuser:
+        user_role = 'admin'
+    elif hasattr(request.user, 'profile'):
+        try:
+            user_role = request.user.profile.role
+        except UserProfile.DoesNotExist:
+            if request.user.is_staff:
+                user_role = 'staff'
+    elif request.user.is_staff:
+        user_role = 'staff'
+
+    if user_role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
     try:
         import csv
         from django.http import HttpResponse
