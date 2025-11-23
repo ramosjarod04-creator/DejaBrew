@@ -321,26 +321,26 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-        <h3 style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Total Sales</span>
-            <a href="{% url 'sales_monitoring' %}" style="background: #28a745; color: white; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; text-decoration: none; font-weight: 500; transition: background 0.3s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
-                Monitor Sales
-            </a>
-        </h3>
-        <p class="stat-value">{{ total_sales_count }}</p>
-        <span class="stat-change">₱{{ total_revenue|floatformat:2 }} revenue</span>
+        <h3>Total Sales</h3>
+        <p class="stat-value">₱{{ total_revenue|floatformat:2 }}</p>
+        <span class="stat-change">{{ total_sales_count }} transactions</span>
     </div>
 
     <div class="stat-card">
-        <h3>Top Product</h3>
-        <p class="stat-value">{{ top_product.item__name|default:"No sales" }}</p>
-        <span class="stat-change">
-            {% if top_product %}
-                {{ top_product.total_qty }} sold - ₱{{ top_product.total_value|floatformat:2 }}
-            {% else %}
-                No sales in this period
-            {% endif %}
-        </span>
+        <h3>Top Products</h3>
+        {% if top_products %}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for product in top_products %}
+                    <div style="padding: 8px; background: #f9f9f9; border-radius: 4px; border-left: 3px solid #8B4513;">
+                        <div style="font-weight: 600; color: #333;">{{ forloop.counter }}. {{ product.item__name }}</div>
+                        <div style="font-size: 0.85rem; color: #666;">₱{{ product.total_value|floatformat:2 }} • {{ product.total_qty }} sold</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="stat-value" style="margin: 0;">No sales</p>
+            <span class="stat-change">No sales in this period</span>
+        {% endif %}
     </div>
 
     <div class="stat-card">
@@ -387,7 +387,11 @@
         <h2>Specific Product Forecast</h2>
         <p>Run a forecast for a single product</p>
         <div class="forecast-controls">
-          <label>Product Name: <input id="product_name_input" type="text" placeholder="e.g., Latte" /></label>
+          <label>Product:
+            <select id="product_dropdown" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer;">
+              <option value="">-- Select a product --</option>
+            </select>
+          </label>
           <label>Days: <input id="days_input" type="number" value="7" min="1" max="90" /></label>
           <button id="runForecastButton">Run Forecast</button>
         </div>
@@ -946,53 +950,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- FORECAST FUNCTIONALITY ---
     const runForecastButton = document.getElementById('runForecastButton');
-    const productNameInput = document.getElementById('product_name_input');
+    const productDropdown = document.getElementById('product_dropdown');
     const daysInput = document.getElementById('days_input');
     const forecastError = document.getElementById('forecastError');
     const specificProductChart = document.getElementById('specificProductChart');
     const specificForecastTable = document.getElementById('specificForecastTable').querySelector('tbody');
     let specificProductChartInstance = null;
 
+    // Load products into dropdown on page load
+    async function loadProductsDropdown() {
+        try {
+            const response = await fetch('/api/products/');
+            const data = await response.json();
+
+            if (data.success && data.products) {
+                const products = data.products.sort((a, b) => a.name.localeCompare(b.name));
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.name;
+                    option.textContent = product.name;
+                    productDropdown.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+        }
+    }
+
     if (runForecastButton) {
+        // Load products when page loads
+        loadProductsDropdown();
+
         runForecastButton.addEventListener('click', async () => {
-            const productName = productNameInput.value.trim();
+            const productName = productDropdown.value.trim();
             const days = parseInt(daysInput.value);
-            
+
             forecastError.textContent = '';
-            
+
             if (!productName) {
-                forecastError.textContent = 'Please enter a product name.';
+                forecastError.textContent = 'Please select a product.';
                 return;
             }
-            
+
             try {
                 const origin = window.location.origin;
                 const response = await fetch(`${origin}/forecasting/api/predict/?product_name=${encodeURIComponent(productName)}&days=${days}`);
-                
+
                 if (!response.ok) {
                     const errorData = await response.json();
                     forecastError.textContent = errorData.error || 'Failed to fetch forecast.';
                     return;
                 }
-                
+
                 const data = await response.json();
                 if (!data.forecast || data.forecast.length === 0) {
                     forecastError.textContent = 'No forecast data returned for this product.';
                     return;
                 }
-                
+
                 specificForecastTable.innerHTML = data.forecast.map(item => `
-                    <tr><td>${item.date}</td><td>${item.predicted_sales.toFixed(0)}</td></tr>
+                    <tr><td>${item.date}</td><td>₱${item.predicted_sales.toFixed(0)}</td></tr>
                 `).join('');
-                
+
                 const labels = data.forecast.map(item => {
                     const dt = new Date(item.date + 'T00:00:00');
                     return (dt.getMonth() + 1) + '/' + dt.getDate();
                 });
                 const values = data.forecast.map(item => item.predicted_sales);
-                
+
                 if (specificProductChartInstance) specificProductChartInstance.destroy();
-                
+
                 const ctx = specificProductChart.getContext('2d');
                 specificProductChartInstance = new Chart(ctx, {
                     type: 'line',
@@ -1001,15 +1028,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         datasets: [{
                             label: `${productName} - Predicted Sales`,
                             data: values,
-                            borderColor: '#28a745',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderColor: '#8B4513',
+                            backgroundColor: 'rgba(139, 69, 19, 0.1)',
                             tension: 0.4,
                             fill: true
                         }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } }
                 });
-                
+
             } catch (error) {
                 console.error('Error fetching forecast:', error);
                 forecastError.textContent = 'An error occurred while fetching the forecast.';

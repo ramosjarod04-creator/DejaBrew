@@ -428,13 +428,15 @@ def dashboard(request):
     total_sales_count = paid_orders.count()
     total_revenue = paid_orders.aggregate(total_sum=Sum('total'))['total_sum'] or 0
     
-    top_product = OrderItem.objects.filter(
-        order__status='paid', 
+    top_products = list(OrderItem.objects.filter(
+        order__status='paid',
         order__created_at__range=[filter_start, filter_end]
     ).values('item__name').annotate(
-        total_qty=Sum('qty'), 
+        total_qty=Sum('qty'),
         total_value=Sum(F('qty') * F('price_at_order'))
-    ).order_by('-total_qty').first()
+    ).order_by('-total_value')[:5])
+
+    top_product = top_products[0] if top_products else None
 
     low_stock_ingredients = Ingredient.objects.filter(
         Q(mainStock__lte=F('reorder'), mainStock__gt=0) | Q(mainStock=0, stockRoom__gt=0)
@@ -476,14 +478,15 @@ def dashboard(request):
 
     recent_transactions = Order.objects.filter(status='paid').select_related('cashier').order_by('-created_at')[:50]
     
-    context = { 
-        'username': request.user.username, 
-        'total_sales_count': total_sales_count, 
-        'total_revenue': total_revenue, 
+    context = {
+        'username': request.user.username,
+        'total_sales_count': total_sales_count,
+        'total_revenue': total_revenue,
         'low_stock_items': low_stock_items_count,
         'top_staff': top_staff,
         'all_staff_sales': all_staff_sales,
-        'top_product': top_product, 
+        'top_product': top_product,
+        'top_products': top_products,
         'recent_transactions': recent_transactions,
         'low_stock_warnings': low_stock_warnings,
         'user_role': 'admin',

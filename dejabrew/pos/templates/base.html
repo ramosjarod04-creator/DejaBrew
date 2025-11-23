@@ -54,6 +54,9 @@
                     <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                         <a href="{% url 'dashboard' %}"> Dashboard</a>
                     </li>
+                    <li class="{% if request.resolver_match.url_name == 'sales_monitoring' %}active{% endif %}">
+                        <a href="{% url 'sales_monitoring' %}"> Monitor Sales</a>
+                    </li>
                     <li class="{% if request.resolver_match.url_name == 'admin-pos' %}active{% endif %}">
                         <a href="{% url 'admin-pos' %}"> Admin POS</a>
                     </li>
