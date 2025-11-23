@@ -4,55 +4,20 @@ services:
     env: python
     region: singapore
     plan: standard
-
-    # Build configuration
-    buildCommand: ./build.sh
-
-    # Environment variables
+    buildCommand: bash -c 'pip install -r requirements.txt && python dejabrew/manage.py collectstatic --noinput --clear && python dejabrew/manage.py migrate --noinput'
+    startCommand: gunicorn dejabrew.dejabrew.wsgi:application --bind 0.0.0.0:$PORT --workers 2
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: dejabrew.settings
-      - key: PYTHON_VERSION
-        value: 3.13
-      - key: PORT
-        value: 8000
-      - key: DEBUG
-        value: false
       - key: ENVIRONMENT
         value: production
-
-      # Database connection
+      - key: DEBUG
+        value: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: dejabrew
-          property: connectionString
-
-      # Django security
-      - key: DJANGO_SECRET_KEY
         sync: false
       - key: ALLOWED_HOSTS
-        value: "dejabrew.onrender.com"
-      - key: CORS_ALLOWED_ORIGINS
-        value: "https://dejabrew.onrender.com"
+        value: "*.onrender.com"
       - key: SESSION_COOKIE_SECURE
         value: true
       - key: CSRF_COOKIE_SECURE
         value: true
-
-    # Health check
-    healthCheckPath: /
-
-    # Disk space
-    disk:
-      name: dejabrew-disk
-      mountPath: /var/data
-      sizeGB: 1
-
-  - type: pserv
-    name: dejabrew-postgres
-    ipAllowList: []
-    plan: standard
-    region: singapore
-    postgresSQLVersion: "18"
-    databaseName: dejabrew
-    preDeployCommand: ""
