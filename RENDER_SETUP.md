@@ -490,4 +490,4 @@ DejaBrew/
 **Last Updated:** 2025-11-23
 **Django Version:** 4.2.8
 **PostgreSQL Version:** 18
-**Python Version:** 3.11+
+**Python Version:** 3.13
