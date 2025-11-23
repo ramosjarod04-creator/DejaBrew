@@ -1346,6 +1346,39 @@ def record_waste(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'}, status=500)
 
+@require_http_methods(["POST"])
+def verify_admin_api(request):
+    """
+    API endpoint to verify admin credentials for POS discount/void actions.
+    """
+    try:
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return JsonResponse({'success': False, 'error': 'Username and password required'}, status=400)
+
+        # Authenticate user
+        from django.contrib.auth import authenticate
+        user = authenticate(username=username, password=password)
+
+        if user is None:
+            return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+        # Check if user is admin
+        is_admin = user.is_superuser or (hasattr(user, 'profile') and user.profile.role == 'admin')
+
+        if not is_admin:
+            return JsonResponse({'success': False, 'error': 'User is not an admin'}, status=403)
+
+        return JsonResponse({'success': True, 'is_admin': True})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 @login_required
 def order_details_api(request, order_id):
     """

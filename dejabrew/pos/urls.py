@@ -37,6 +37,7 @@ urlpatterns = [
     path('audit/api/logs/', views.audit_logs_api, name='audit_logs_api'),
 
     path('api/process-order/', views.process_order, name='process_order'),
+    path('api/verify-admin/', views.verify_admin_api, name='verify_admin_api'),
     path('api/recent-orders/', views.recent_orders_api, name='recent_orders_api'),
     path('api/dashboard-sales/', views.dashboard_sales_data, name='dashboard_sales_data'),
     path('api/products/', views.get_products_api, name='get_products_api'),
