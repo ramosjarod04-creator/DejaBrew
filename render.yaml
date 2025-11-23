@@ -7,7 +7,7 @@ services:
 
     # Build configuration
     buildCommand: ./build.sh
-    startCommand: gunicorn dejabrew.wsgi:application --bind 0.0.0.0:$PORT --workers 2
+    startCommand: gunicorn dejabrew.dejabrew.wsgi:application --bind 0.0.0.0:$PORT --workers 2
 
     # Environment variables
     envVars:
