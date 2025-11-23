@@ -481,6 +481,18 @@ textarea:focus {
 .mb-30 { margin-bottom: 30px; }
 
 /* ============================
+   MOBILE HEADER (hidden on desktop)
+   ============================ */
+
+.mobile-header {
+    display: none;
+}
+
+.sidebar-overlay {
+    display: none;
+}
+
+/* ============================
    RESPONSIVE DESIGN
    ============================ */
 
