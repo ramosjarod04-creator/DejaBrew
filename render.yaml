@@ -14,7 +14,7 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: dejabrew.settings
       - key: PYTHON_VERSION
-        value: 3.11
+        value: 3.13
       - key: PORT
         value: 8000
       - key: DEBUG
