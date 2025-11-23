@@ -1076,6 +1076,65 @@ def create_user(request):
     return redirect('user_management')
 
 @login_required
+@require_http_methods(["POST"])
+def edit_user(request, user_id):
+    admin_check = require_admin_access(request)
+    if admin_check is not True:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+
+    try:
+        user = get_object_or_404(User, id=user_id)
+
+        # Update user fields
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        role = request.POST.get('role', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        # Update user model
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if email:
+            user.email = email
+        if password:
+            user.set_password(password)
+
+        user.save()
+
+        # Update or create user profile
+        if hasattr(user, 'profile'):
+            user.profile.role = role
+            user.profile.save()
+        else:
+            UserProfile.objects.create(user=user, role=role)
+
+        # Log the edit
+        changes = []
+        if first_name or last_name:
+            changes.append(f"name to '{first_name} {last_name}'")
+        if email:
+            changes.append(f"email to '{email}'")
+        if password:
+            changes.append("password")
+        if role:
+            changes.append(f"role to '{role}'")
+
+        change_desc = ", ".join(changes) if changes else "user details"
+        log_audit(
+            request, request.user, "Edit User",
+            f"Admin '{request.user.username}' updated {change_desc} for user '{user.username}'",
+            category="user", severity="medium"
+        )
+
+        return JsonResponse({'success': True, 'message': f"User '{user.username}' updated successfully"})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
 def delete_user(request, user_id):
     admin_check = require_admin_access(request)
     if admin_check is not True:

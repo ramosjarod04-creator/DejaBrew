@@ -67,6 +67,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Full Name</th>
                 <th>Username</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -78,7 +79,18 @@
             {% for user in users %}
             <tr>
                 <td>{{ user.id }}</td>
-                <td><strong>{{ user.username }}</strong></td>
+                <td>
+                    <strong>
+                        {% if user.is_superuser %}
+                            Superuser
+                        {% elif user.first_name or user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </strong>
+                </td>
+                <td>{{ user.username }}</td>
                 <td>{{ user.email|default:"N/A" }}</td>
                 <td>
                     {% if user.is_superuser or user.profile.role == 'admin' %}
@@ -90,10 +102,13 @@
                 <td>{{ user.date_joined|date:"M d, Y" }}</td>
                 <td>
                     {% if user.id != request.user.id %}
-                        <form method="POST" action="{% url 'delete_user' user.id %}" onsubmit="return confirm('Are you sure you want to delete user {{ user.username }}?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-secondary btn-edit-user" data-user-id="{{ user.id }}" data-username="{{ user.username }}" data-email="{{ user.email }}" data-first-name="{{ user.first_name }}" data-last-name="{{ user.last_name }}" data-role="{% if user.profile %}{{ user.profile.role }}{% endif %}">Edit</button>
+                            <form method="POST" action="{% url 'delete_user' user.id %}" onsubmit="return confirm('Are you sure you want to archive user {{ user.username }}?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Archive</button>
+                            </form>
+                        </div>
                     {% else %}
                         <span class="muted-text">Current User</span>
                     {% endif %}
@@ -101,10 +116,127 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" class="text-center">No users found</td>
+                <td colspan="7" class="text-center">No users found</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+        <h2 style="margin-bottom: 20px;">Edit User</h2>
+        <form id="editUserForm" method="POST">
+            {% csrf_token %}
+            <input type="hidden" id="edit_user_id" name="user_id">
+
+            <div class="form-group">
+                <label for="edit_first_name">First Name</label>
+                <input type="text" id="edit_first_name" name="first_name" placeholder="Enter first name">
+            </div>
+
+            <div class="form-group">
+                <label for="edit_last_name">Last Name</label>
+                <input type="text" id="edit_last_name" name="last_name" placeholder="Enter last name">
+            </div>
+
+            <div class="form-group">
+                <label for="edit_email">Email</label>
+                <input type="email" id="edit_email" name="email" placeholder="user@dejabrew.com">
+            </div>
+
+            <div class="form-group">
+                <label for="edit_role">Role</label>
+                <select id="edit_role" name="role" required>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="edit_password">New Password (leave blank to keep current)</label>
+                <input type="password" id="edit_password" name="password" placeholder="Enter new password">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+                <button type="button" class="btn btn-secondary" id="cancelEditBtn" style="flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editUserModal = document.getElementById('editUserModal');
+    const editUserForm = document.getElementById('editUserForm');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const editButtons = document.querySelectorAll('.btn-edit-user');
+
+    // Open edit modal
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            const email = this.dataset.email;
+            const firstName = this.dataset.firstName;
+            const lastName = this.dataset.lastName;
+            const role = this.dataset.role;
+
+            document.getElementById('edit_user_id').value = userId;
+            document.getElementById('edit_first_name').value = firstName || '';
+            document.getElementById('edit_last_name').value = lastName || '';
+            document.getElementById('edit_email').value = email || '';
+            document.getElementById('edit_role').value = role || 'staff';
+            document.getElementById('edit_password').value = '';
+
+            editUserModal.style.display = 'flex';
+        });
+    });
+
+    // Close modal
+    cancelEditBtn.addEventListener('click', function() {
+        editUserModal.style.display = 'none';
+    });
+
+    // Close modal on background click
+    editUserModal.addEventListener('click', function(e) {
+        if (e.target === editUserModal) {
+            editUserModal.style.display = 'none';
+        }
+    });
+
+    // Handle form submission
+    editUserForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(editUserForm);
+        const userId = document.getElementById('edit_user_id').value;
+
+        fetch(`/users/edit/${userId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update user'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the user');
+        });
+    });
+});
+</script>
 {% endblock %}
