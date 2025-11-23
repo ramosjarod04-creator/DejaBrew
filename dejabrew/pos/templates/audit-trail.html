@@ -158,27 +158,27 @@
     <p>Track all system changes and user actions</p>
 </div>
 
-<!-- Filters -->
-<section class="filters">
-    <div class="filters-left">
-        <button class="filter-btn"><i class="fa-solid fa-filter"></i> Filters</button>
-        <input id="searchInput" type="search" placeholder="Search actions..." />
-    </div>
+<!-- Search Bar (Above Filters) -->
+<section style="margin-bottom: 15px;">
+    <input id="searchInput" type="search" placeholder="Search actions, descriptions, or users..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" />
+</section>
 
-    <div class="filters-right">
-        <select id="categoryFilter"><option value="all">All Categories</option></select>
-        <select id="severityFilter"><option value="all">All Severities</option></select>
-        <select id="userFilter"><option value="all">All Users</option></select>
-
-        <div class="date-filter">
-            <input id="startDate" type="date" />
-            <span class="dash">—</span>
-            <input id="endDate" type="date" />
-        </div>
-
-        <button id="applyBtn" class="btn small">Filter</button>
-        <button id="clearBtn" class="btn small outline">Clear</button>
-    </div>
+<!-- Filters (All Aligned Side-by-Side in Single Row) -->
+<section class="filters-row" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+    <select id="categoryFilter" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+        <option value="all">All Categories</option>
+    </select>
+    <select id="severityFilter" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+        <option value="all">All Severities</option>
+    </select>
+    <select id="userFilter" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+        <option value="all">All Users</option>
+    </select>
+    <input id="startDate" type="date" style="flex: 1; min-width: 140px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" />
+    <span style="color: #999;">to</span>
+    <input id="endDate" type="date" style="flex: 1; min-width: 140px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" />
+    <button id="applyBtn" class="btn btn-primary" style="padding: 10px 20px; white-space: nowrap;">Apply Filters</button>
+    <button id="clearBtn" class="btn btn-secondary" style="padding: 10px 20px; white-space: nowrap;">Clear</button>
 </section>
 
 <!-- Severity summary badges -->
@@ -190,7 +190,7 @@
 
 <!-- Table -->
 <section class="table-wrap card">
-    <div class="table-info">Showing <span id="shownCount">0</span> of <span id="totalCount">0</span> audit logs</div>
+    <div class="table-info">Showing <span id="shownCount">0</span> of <span id="totalCount">0</span> audit logs (Page <span id="currentPage">1</span> of <span id="totalPages">1</span>)</div>
 
     <table id="auditTable" class="audit-table">
         <thead>
@@ -208,6 +208,15 @@
             <!-- JS inserts rows here -->
         </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    <div id="paginationControls" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #f0f0f0;">
+        <button id="firstPageBtn" class="btn btn-secondary" style="padding: 8px 12px;">First</button>
+        <button id="prevPageBtn" class="btn btn-secondary" style="padding: 8px 12px;">Previous</button>
+        <span style="padding: 0 15px; color: #666;">Page <span id="currentPageDisplay">1</span> of <span id="totalPagesDisplay">1</span></span>
+        <button id="nextPageBtn" class="btn btn-secondary" style="padding: 8px 12px;">Next</button>
+        <button id="lastPageBtn" class="btn btn-secondary" style="padding: 8px 12px;">Last</button>
+    </div>
 </section>
 
 <!-- Modal for details -->

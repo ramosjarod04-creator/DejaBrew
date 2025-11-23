@@ -26,7 +26,20 @@ const receiptModal = document.getElementById('receiptModal');
 const receiptModalClose = document.getElementById('receiptModalClose');
 const receiptContent = document.getElementById('receiptContent');
 
+// Pagination refs
+const firstPageBtn = document.getElementById('firstPageBtn');
+const prevPageBtn = document.getElementById('prevPageBtn');
+const nextPageBtn = document.getElementById('nextPageBtn');
+const lastPageBtn = document.getElementById('lastPageBtn');
+const currentPageSpan = document.getElementById('currentPage');
+const totalPagesSpan = document.getElementById('totalPages');
+const currentPageDisplay = document.getElementById('currentPageDisplay');
+const totalPagesDisplay = document.getElementById('totalPagesDisplay');
+
 let logsData = [];
+let filteredData = []; // Store filtered results for pagination
+let currentPage = 1;
+const logsPerPage = 20; // Show 20 logs per page
 
 // Utility: Date formatting
 function formatDateTime(ts) {
@@ -91,23 +104,67 @@ function populateFilters(data) {
   );
 }
 
-// Render table
+// Pagination utility functions
+function getTotalPages() {
+  return Math.ceil(filteredData.length / logsPerPage);
+}
+
+function getPaginatedData() {
+  const start = (currentPage - 1) * logsPerPage;
+  const end = start + logsPerPage;
+  return filteredData.slice(start, end);
+}
+
+function updatePaginationControls() {
+  const totalPages = getTotalPages();
+
+  // Update page numbers
+  currentPageSpan.textContent = currentPage;
+  totalPagesSpan.textContent = totalPages;
+  currentPageDisplay.textContent = currentPage;
+  totalPagesDisplay.textContent = totalPages;
+
+  // Enable/disable buttons
+  firstPageBtn.disabled = currentPage === 1;
+  prevPageBtn.disabled = currentPage === 1;
+  nextPageBtn.disabled = currentPage >= totalPages;
+  lastPageBtn.disabled = currentPage >= totalPages;
+
+  // Visual feedback for disabled buttons
+  [firstPageBtn, prevPageBtn, nextPageBtn, lastPageBtn].forEach(btn => {
+    if (btn.disabled) {
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  });
+}
+
+// Render table with pagination
 function renderTable(data) {
+  filteredData = data;
+  currentPage = 1; // Reset to first page when new filter is applied
+
   tableBody.innerHTML = "";
   if (data.length === 0) {
     tableBody.innerHTML = `<tr><td colspan="7">No audit logs found.</td></tr>`;
     shownCount.textContent = 0;
     totalCount.textContent = logsData.length;
+    updatePaginationControls();
     return;
   }
 
-  data.forEach((rowData) => {
+  const paginatedData = getPaginatedData();
+
+  paginatedData.forEach((rowData) => {
     const tr = document.createElement("tr");
-    
+
     // Check if this is a sales-related action
     const isSalesAction = rowData.category === "sales" && rowData.action === "Process Order";
     const orderId = isSalesAction ? extractOrderId(rowData.description) : null;
-    
+
     // Create the details button based on action type
     let detailsButton;
     if (orderId) {
@@ -115,7 +172,7 @@ function renderTable(data) {
     } else {
       detailsButton = `<button class="details-btn" data-id="${rowData.id}" title="View details"><i class="fa-regular fa-eye"></i></button>`;
     }
-    
+
     tr.innerHTML = `
       <td>${formatDateTime(rowData.timestamp)}</td>
       <td>
@@ -142,14 +199,76 @@ function renderTable(data) {
   document.querySelectorAll(".details-btn").forEach((btn) =>
     btn.addEventListener("click", () => openModal(btn.dataset.id))
   );
-  
+
   // Event listeners for view order buttons
   document.querySelectorAll(".view-order-btn").forEach((btn) =>
     btn.addEventListener("click", () => openReceiptModal(btn.dataset.orderId))
   );
 
-  shownCount.textContent = data.length;
-  totalCount.textContent = logsData.length;
+  shownCount.textContent = paginatedData.length;
+  totalCount.textContent = data.length;
+  updatePaginationControls();
+}
+
+// Re-render current page
+function renderCurrentPage() {
+  tableBody.innerHTML = "";
+  const paginatedData = getPaginatedData();
+
+  if (paginatedData.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="7">No audit logs on this page.</td></tr>`;
+    return;
+  }
+
+  paginatedData.forEach((rowData) => {
+    const tr = document.createElement("tr");
+
+    // Check if this is a sales-related action
+    const isSalesAction = rowData.category === "sales" && rowData.action === "Process Order";
+    const orderId = isSalesAction ? extractOrderId(rowData.description) : null;
+
+    // Create the details button based on action type
+    let detailsButton;
+    if (orderId) {
+      detailsButton = `<button class="view-order-btn" data-order-id="${orderId}" title="View order details">View Order</button>`;
+    } else {
+      detailsButton = `<button class="details-btn" data-id="${rowData.id}" title="View details"><i class="fa-regular fa-eye"></i></button>`;
+    }
+
+    tr.innerHTML = `
+      <td>${formatDateTime(rowData.timestamp)}</td>
+      <td>
+        <div class="user-cell">
+          <div class="user-avatar" title="${rowData.user.name}">${rowData.user.initial}</div>
+          <div class="user-meta">
+            <div class="uname">${rowData.user.name}</div>
+            <div class="urole">${rowData.user.role}</div>
+          </div>
+        </div>
+      </td>
+      <td>${rowData.category}</td>
+      <td><span class="action-tag">${rowData.action}</span></td>
+      <td>${rowData.description}</td>
+      <td><span class="sev ${rowData.severity}">${
+      rowData.severity.charAt(0).toUpperCase() + rowData.severity.slice(1)
+    }</span></td>
+      <td>${detailsButton}</td>
+    `;
+    tableBody.appendChild(tr);
+  });
+
+  // Event listeners for regular details buttons
+  document.querySelectorAll(".details-btn").forEach((btn) =>
+    btn.addEventListener("click", () => openModal(btn.dataset.id))
+  );
+
+  // Event listeners for view order buttons
+  document.querySelectorAll(".view-order-btn").forEach((btn) =>
+    btn.addEventListener("click", () => openReceiptModal(btn.dataset.orderId))
+  );
+
+  shownCount.textContent = paginatedData.length;
+  updatePaginationControls();
 }
 
 // Compute severity counts
@@ -445,7 +564,38 @@ function init() {
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeModal();
   });
-  
+
+  // Pagination button event listeners
+  firstPageBtn.addEventListener("click", () => {
+    if (currentPage !== 1) {
+      currentPage = 1;
+      renderCurrentPage();
+    }
+  });
+
+  prevPageBtn.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderCurrentPage();
+    }
+  });
+
+  nextPageBtn.addEventListener("click", () => {
+    const totalPages = getTotalPages();
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderCurrentPage();
+    }
+  });
+
+  lastPageBtn.addEventListener("click", () => {
+    const totalPages = getTotalPages();
+    if (currentPage !== totalPages) {
+      currentPage = totalPages;
+      renderCurrentPage();
+    }
+  });
+
   // Receipt modal close handlers
   if (receiptModalClose) {
     receiptModalClose.addEventListener('click', (e) => {

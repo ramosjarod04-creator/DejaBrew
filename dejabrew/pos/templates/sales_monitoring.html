@@ -279,8 +279,11 @@
         <p>Track all café sales including cash, GCash, and card transactions</p>
     </div>
 
-    <!-- Filters -->
+    <!-- Filters at Top (FOR SUMMARY CARDS ONLY - does not affect table) -->
     <div class="filter-section">
+        <h3 style="margin: 0 0 15px 0; font-size: 1rem; color: #555;">
+            <i class="fas fa-sliders-h"></i> Date Range for Summary Cards
+        </h3>
         <div class="filter-grid">
             <div class="filter-group">
                 <label for="startDate"><i class="fas fa-calendar"></i> Start Date</label>
@@ -290,25 +293,16 @@
                 <label for="endDate"><i class="fas fa-calendar"></i> End Date</label>
                 <input type="date" id="endDate" class="filter-input">
             </div>
-            <div class="filter-group">
-                <label for="paymentMethod"><i class="fas fa-credit-card"></i> Payment Method</label>
-                <select id="paymentMethod" class="filter-input">
-                    <option value="all">All Payment Methods</option>
-                    <option value="cash">Cash</option>
-                    <option value="gcash">GCash</option>
-                    <option value="card">Card</option>
-                </select>
-            </div>
         </div>
         <div class="filter-actions">
             <button id="applyFilters" class="btn btn-primary">
-                <i class="fas fa-filter"></i> Apply Filters
+                <i class="fas fa-sync-alt"></i> Update Summary Cards
             </button>
             <button id="clearFilters" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Clear
+                <i class="fas fa-times"></i> Reset
             </button>
             <button id="exportData" class="btn btn-success export-btn">
-                <i class="fas fa-file-export"></i> Export to CSV
+                <i class="fas fa-file-export"></i> Export All to CSV
             </button>
         </div>
     </div>
@@ -337,11 +331,41 @@
         </div>
     </div>
 
-    <!-- Sales Table -->
+    <!-- Sales Table with Independent Filters -->
     <div class="table-container">
         <div class="table-header">
             <h2>All Transactions</h2>
         </div>
+
+        <!-- Table-Specific Filters -->
+        <div style="padding: 15px; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px;">
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label for="refSearch" style="margin-bottom: 5px;"><i class="fas fa-search"></i> Search Reference Number</label>
+                    <input type="text" id="refSearch" placeholder="Enter reference number..." style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                </div>
+                <div class="filter-group" style="flex: 1; min-width: 150px;">
+                    <label for="tablePaymentFilter" style="margin-bottom: 5px;"><i class="fas fa-credit-card"></i> Payment Method</label>
+                    <select id="tablePaymentFilter" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                        <option value="all">All Methods</option>
+                        <option value="cash">Cash</option>
+                        <option value="gcash">GCash</option>
+                        <option value="card">Card</option>
+                    </select>
+                </div>
+                <button id="applyTableFilters" class="btn btn-primary" style="height: 42px;">
+                    <i class="fas fa-filter"></i> Filter Table
+                </button>
+                <button id="clearTableFilters" class="btn btn-secondary" style="height: 42px;">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
+            </div>
+            <div style="font-size: 0.9rem; color: #666;">
+                <i class="fas fa-info-circle"></i> Showing <span id="tableShownCount">0</span> of <span id="tableTotalCount">0</span> transactions
+                (Page <span id="tableCurrentPage">1</span> of <span id="tableTotalPages">1</span>)
+            </div>
+        </div>
+
         <div class="table-wrapper">
             <table class="data-table">
                 <thead>
@@ -366,6 +390,15 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination Controls -->
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px; border-top: 1px solid #dee2e6; background: #f8f9fa;">
+            <button id="firstTablePage" class="btn btn-secondary" style="padding: 8px 12px;">First</button>
+            <button id="prevTablePage" class="btn btn-secondary" style="padding: 8px 12px;">Previous</button>
+            <span style="padding: 0 15px; color: #666;">Page <span id="tablePageDisplay">1</span> of <span id="tablePagesDisplay">1</span></span>
+            <button id="nextTablePage" class="btn btn-secondary" style="padding: 8px 12px;">Next</button>
+            <button id="lastTablePage" class="btn btn-secondary" style="padding: 8px 12px;">Last</button>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -374,6 +407,12 @@
 <script>
 // API endpoint
 const API_URL = '/api/sales-monitoring/';
+
+// Global state
+let allOrders = []; // All orders from API
+let filteredOrders = []; // Orders after table filtering
+let currentPage = 1;
+const ordersPerPage = 20;
 
 // Initialize date inputs with default values (last 30 days)
 function initializeDates() {
@@ -410,7 +449,7 @@ function getPaymentBadge(method) {
     return `<span class="payment-badge ${methodLower}">${method}</span>`;
 }
 
-// Update stats cards
+// Update stats cards (INDEPENDENT from table filters)
 function updateStats(data) {
     // Total sales
     document.getElementById('totalSales').textContent = formatCurrency(data.summary.total_sales);
@@ -429,11 +468,75 @@ function updateStats(data) {
     document.getElementById('cardOrders').textContent = `${data.summary.card_orders} orders`;
 }
 
-// Update sales table
-function updateTable(orders) {
-    const tbody = document.getElementById('salesTableBody');
+// Pagination helpers
+function getTotalPages() {
+    return Math.ceil(filteredOrders.length / ordersPerPage);
+}
 
-    if (orders.length === 0) {
+function getPaginatedOrders() {
+    const start = (currentPage - 1) * ordersPerPage;
+    const end = start + ordersPerPage;
+    return filteredOrders.slice(start, end);
+}
+
+function updatePaginationControls() {
+    const totalPages = getTotalPages();
+
+    // Update page numbers
+    document.getElementById('tableCurrentPage').textContent = currentPage;
+    document.getElementById('tableTotalPages').textContent = totalPages;
+    document.getElementById('tablePageDisplay').textContent = currentPage;
+    document.getElementById('tablePagesDisplay').textContent = totalPages;
+
+    // Update counts
+    document.getElementById('tableShownCount').textContent = getPaginatedOrders().length;
+    document.getElementById('tableTotalCount').textContent = filteredOrders.length;
+
+    // Enable/disable buttons
+    const firstBtn = document.getElementById('firstTablePage');
+    const prevBtn = document.getElementById('prevTablePage');
+    const nextBtn = document.getElementById('nextTablePage');
+    const lastBtn = document.getElementById('lastTablePage');
+
+    firstBtn.disabled = currentPage === 1;
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage >= totalPages;
+    lastBtn.disabled = currentPage >= totalPages;
+
+    // Visual feedback
+    [firstBtn, prevBtn, nextBtn, lastBtn].forEach(btn => {
+        if (btn.disabled) {
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        } else {
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
+}
+
+// Apply table-specific filters (INDEPENDENT from summary cards)
+function applyTableFilters() {
+    const refSearch = document.getElementById('refSearch').value.trim().toLowerCase();
+    const paymentFilter = document.getElementById('tablePaymentFilter').value;
+
+    filteredOrders = allOrders.filter(order => {
+        const matchesRef = !refSearch || (order.reference_number && order.reference_number.toLowerCase().includes(refSearch));
+        const matchesPayment = paymentFilter === 'all' || order.payment_method.toLowerCase() === paymentFilter.toLowerCase();
+
+        return matchesRef && matchesPayment;
+    });
+
+    currentPage = 1; // Reset to first page
+    renderTable();
+}
+
+// Render table with current page
+function renderTable() {
+    const tbody = document.getElementById('salesTableBody');
+    const paginatedOrders = getPaginatedOrders();
+
+    if (paginatedOrders.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" class="empty-state">
@@ -442,10 +545,11 @@ function updateTable(orders) {
                 </td>
             </tr>
         `;
+        updatePaginationControls();
         return;
     }
 
-    tbody.innerHTML = orders.map(order => `
+    tbody.innerHTML = paginatedOrders.map(order => `
         <tr>
             <td><strong>#${order.id}</strong></td>
             <td>${formatDate(order.created_at)}</td>
@@ -457,53 +561,41 @@ function updateTable(orders) {
             <td><strong>${formatCurrency(order.total)}</strong></td>
         </tr>
     `).join('');
+
+    updatePaginationControls();
 }
 
-// Load sales data
-async function loadSalesData() {
+// Load summary cards data (uses date filters only)
+async function loadSummaryData() {
     try {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
-        const paymentMethod = document.getElementById('paymentMethod').value;
-
-        console.log('Loading sales data with:', { startDate, endDate, paymentMethod });
 
         const params = new URLSearchParams({
             start_date: startDate,
             end_date: endDate,
-            payment_method: paymentMethod
+            payment_method: 'all'
         });
 
         const response = await fetch(`${API_URL}?${params}`);
-        console.log('Response status:', response.status);
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error response:', errorText);
             throw new Error('Failed to load sales data');
         }
 
         const data = await response.json();
-        console.log('Received data:', data);
 
         if (data.success === false) {
             throw new Error(data.error || 'Failed to load sales data');
         }
 
         updateStats(data);
-        updateTable(data.orders || []);
+        allOrders = data.orders || [];
+        filteredOrders = [...allOrders];
+        applyTableFilters(); // Apply any active table filters
 
     } catch (error) {
-        console.error('Error loading sales data:', error);
-        document.getElementById('salesTableBody').innerHTML = `
-            <tr>
-                <td colspan="8" class="empty-state">
-                    <i class="fas fa-exclamation-triangle fa-3x" style="color: #dc3545; margin-bottom: 10px;"></i>
-                    <p>Error loading sales data: ${error.message}</p>
-                    <p style="font-size: 0.9em; color: #666;">Check console for details</p>
-                </td>
-            </tr>
-        `;
+        console.error('Error loading summary data:', error);
     }
 }
 
@@ -511,31 +603,75 @@ async function loadSalesData() {
 function exportToCSV() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-    const paymentMethod = document.getElementById('paymentMethod').value;
 
     const params = new URLSearchParams({
         start_date: startDate,
         end_date: endDate,
-        payment_method: paymentMethod,
+        payment_method: 'all',
         export: 'csv'
     });
 
     window.location.href = `${API_URL}?${params}`;
 }
 
-// Event listeners
-document.getElementById('applyFilters').addEventListener('click', loadSalesData);
+// Event listeners for summary card filters
+document.getElementById('applyFilters').addEventListener('click', loadSummaryData);
 document.getElementById('clearFilters').addEventListener('click', () => {
     initializeDates();
-    document.getElementById('paymentMethod').value = 'all';
-    loadSalesData();
+    loadSummaryData();
 });
 document.getElementById('exportData').addEventListener('click', exportToCSV);
+
+// Event listeners for table filters
+document.getElementById('applyTableFilters').addEventListener('click', applyTableFilters);
+document.getElementById('clearTableFilters').addEventListener('click', () => {
+    document.getElementById('refSearch').value = '';
+    document.getElementById('tablePaymentFilter').value = 'all';
+    applyTableFilters();
+});
+
+// Pagination event listeners
+document.getElementById('firstTablePage').addEventListener('click', () => {
+    if (currentPage !== 1) {
+        currentPage = 1;
+        renderTable();
+    }
+});
+
+document.getElementById('prevTablePage').addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+    }
+});
+
+document.getElementById('nextTablePage').addEventListener('click', () => {
+    const totalPages = getTotalPages();
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderTable();
+    }
+});
+
+document.getElementById('lastTablePage').addEventListener('click', () => {
+    const totalPages = getTotalPages();
+    if (currentPage !== totalPages) {
+        currentPage = totalPages;
+        renderTable();
+    }
+});
+
+// Reference search on Enter key
+document.getElementById('refSearch').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        applyTableFilters();
+    }
+});
 
 // Load data on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeDates();
-    loadSalesData();
+    loadSummaryData();
 });
 </script>
 {% endblock %}

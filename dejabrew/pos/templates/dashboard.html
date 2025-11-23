@@ -327,16 +327,19 @@
     </div>
 
     <div class="stat-card">
-        <h3>Top Products</h3>
+        <h3>Top Products (Lowest to Highest Sales)</h3>
         {% if top_products %}
-            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 8px;">
-                {% for product in top_products %}
-                    <div style="padding: 10px 12px; background: linear-gradient(135deg, #fff9f5 0%, #f9f9f9 100%); border-radius: 6px; border-left: 4px solid #8B4513; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                        <div style="font-weight: 700; color: #333; font-size: 1rem;">{{ forloop.counter }}. {{ product.item__name }}</div>
-                        <div style="font-size: 0.9rem; color: #28a745; font-weight: 600; margin-top: 4px;">₱{{ product.total_value|floatformat:2 }}</div>
-                        <div style="font-size: 0.8rem; color: #999; margin-top: 2px;">{{ product.total_qty }} items sold</div>
-                    </div>
-                {% endfor %}
+            <div style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                    {% for product in top_products %}
+                        <li style="padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem;">
+                            <strong style="color: #333;">{{ forloop.counter }}. {{ product.item__name }}</strong>
+                            <br>
+                            <span style="color: #28a745; font-weight: 600;">₱{{ product.total_value|floatformat:2 }}</span>
+                            <span style="color: #999; font-size: 0.85rem; margin-left: 8px;">({{ product.total_qty }} sold)</span>
+                        </li>
+                    {% endfor %}
+                </ul>
             </div>
         {% else %}
             <p class="stat-value" style="margin: 0;">No sales</p>
@@ -399,14 +402,23 @@
     <div class="chart-container">
         <h2>Specific Product Forecast</h2>
         <p>Run a forecast for a single product</p>
-        <div class="forecast-controls">
-          <label>Product:
-            <select id="product_dropdown" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer;">
-              <option value="">-- Select a product --</option>
-            </select>
-          </label>
-          <label>Days: <input id="days_input" type="number" value="7" min="1" max="90" /></label>
-          <button id="runForecastButton">Run Forecast</button>
+        <div class="forecast-controls" style="flex-direction: column; align-items: stretch;">
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Search & Select Product:</label>
+            <input type="text" id="product_search" placeholder="Type to search products..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px;">
+            <div id="product_dropdown_container" style="position: relative;">
+              <select id="product_dropdown" size="5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer; max-height: 150px; overflow-y: auto;">
+                <option value="" disabled selected>-- Select a product from the list --</option>
+              </select>
+              <div id="load_more_products" style="text-align: center; padding: 8px; background: #f0f0f0; border-top: 1px solid #ddd; cursor: pointer; font-size: 13px; display: none;">
+                Load More Products...
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 15px; align-items: flex-end;">
+            <label style="flex: 1;">Days: <input id="days_input" type="number" value="7" min="1" max="90" style="width: 100%;" /></label>
+            <button id="runForecastButton" style="flex: 1;">Run Forecast</button>
+          </div>
         </div>
         <div id="forecastError"></div>
         <div style="position: relative; max-height: 200px;">
@@ -1018,38 +1030,94 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // --- END NEW RECEIPT JAVASCRIPT ---
 
-    // --- FORECAST FUNCTIONALITY ---
+    // --- FORECAST FUNCTIONALITY WITH SEARCH AND PAGINATION ---
     const runForecastButton = document.getElementById('runForecastButton');
     const productDropdown = document.getElementById('product_dropdown');
+    const productSearchInput = document.getElementById('product_search');
+    const loadMoreButton = document.getElementById('load_more_products');
     const daysInput = document.getElementById('days_input');
     const forecastError = document.getElementById('forecastError');
     const specificProductChart = document.getElementById('specificProductChart');
     const specificForecastTable = document.getElementById('specificForecastTable').querySelector('tbody');
     let specificProductChartInstance = null;
 
-    // Load products into dropdown on page load
-    async function loadProductsDropdown() {
+    // Pagination and search state
+    let allProducts = [];
+    let filteredProducts = [];
+    let currentPage = 0;
+    const pageSize = 5;
+
+    // Load all products from API
+    async function loadAllProducts() {
         try {
             const response = await fetch('/api/products/');
             const data = await response.json();
 
             if (data.success && data.products) {
-                const products = data.products.sort((a, b) => a.name.localeCompare(b.name));
-                products.forEach(product => {
-                    const option = document.createElement('option');
-                    option.value = product.name;
-                    option.textContent = product.name;
-                    productDropdown.appendChild(option);
-                });
+                allProducts = data.products.sort((a, b) => a.name.localeCompare(b.name));
+                filteredProducts = [...allProducts];
+                renderProductDropdown();
             }
         } catch (error) {
             console.error('Error loading products:', error);
         }
     }
 
+    // Render products in dropdown with pagination
+    function renderProductDropdown(append = false) {
+        if (!append) {
+            productDropdown.innerHTML = '<option value="" disabled>-- Select a product from the list --</option>';
+            currentPage = 0;
+        }
+
+        const start = currentPage * pageSize;
+        const end = start + pageSize;
+        const productsToShow = filteredProducts.slice(start, end);
+
+        productsToShow.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.name;
+            option.textContent = product.name;
+            productDropdown.appendChild(option);
+        });
+
+        // Show/hide "Load More" button
+        if (end < filteredProducts.length) {
+            loadMoreButton.style.display = 'block';
+        } else {
+            loadMoreButton.style.display = 'none';
+        }
+
+        currentPage++;
+    }
+
+    // Search functionality
+    if (productSearchInput) {
+        productSearchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+
+            if (searchTerm === '') {
+                filteredProducts = [...allProducts];
+            } else {
+                filteredProducts = allProducts.filter(product =>
+                    product.name.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            renderProductDropdown(false);
+        });
+    }
+
+    // Load more products on button click
+    if (loadMoreButton) {
+        loadMoreButton.addEventListener('click', function() {
+            renderProductDropdown(true);
+        });
+    }
+
     if (runForecastButton) {
         // Load products when page loads
-        loadProductsDropdown();
+        loadAllProducts();
 
         runForecastButton.addEventListener('click', async () => {
             const productName = productDropdown.value.trim();

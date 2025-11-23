@@ -30,6 +30,7 @@ urlpatterns = [
 
     path('users/', views.user_management, name='user_management'),
     path('users/create/', views.create_user, name='create_user'),
+    path('users/edit/<int:user_id>/', views.edit_user, name='edit_user'),
     path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
 
     path('audit-trail/', views.audit_trail, name='audit_trail'),
