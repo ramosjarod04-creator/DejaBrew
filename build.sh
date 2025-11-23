@@ -10,16 +10,13 @@ echo "📦 Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Navigate to Django app directory
-cd /var/task/dejabrew
-
 # Collect static files
 echo "🎨 Collecting static files..."
-python manage.py collectstatic --noinput --clear
+python dejabrew/manage.py collectstatic --noinput --clear
 
 # Run database migrations
 echo "🗄️ Running database migrations..."
-python manage.py migrate --noinput
+python dejabrew/manage.py migrate --noinput
 
 # Create superuser if needed (optional - can be done via Django admin later)
 # python manage.py shell < create_superuser.py
