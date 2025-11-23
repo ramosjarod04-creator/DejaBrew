@@ -438,37 +438,29 @@ def dashboard(request):
 
     top_product = top_products[0] if top_products else None
 
+    # Get low stock ingredients only (sorted from lowest to highest)
     low_stock_ingredients = Ingredient.objects.filter(
         Q(mainStock__lte=F('reorder'), mainStock__gt=0) | Q(mainStock=0, stockRoom__gt=0)
-    ).values_list('name', 'mainStock', 'status')
-    low_stock_products = Item.objects.filter(
-        is_active=True, 
-        stock__lte=10
-    ).values_list('name', 'stock', 'recipe')
-    low_stock_warnings = []
-    for name, stock, status in low_stock_ingredients:
-        low_stock_warnings.append({'name': f"{name} (Ingredient)", 'stock': stock, 'status': status})
-    for name, stock, recipe in low_stock_products:
-        status_str = "Low Stock" if stock > 0 else "Out of Stock"
-        label = "(Recipe Product)" if (recipe and len(recipe) > 0) else "(Product)"
-        low_stock_warnings.append({'name': f"{name} {label}", 'stock': stock, 'status': status_str})
-    low_stock_warnings.sort(key=lambda x: x['stock'])
-    low_stock_items_count = len(low_stock_warnings)
-    
+    ).order_by('mainStock')  # Sort from lowest to highest
+
+    # Convert to list with needed fields
+    low_stock_ingredients_list = [
+        {
+            'name': ing.name,
+            'stock': ing.mainStock,
+            'unit': ing.unit,
+            'status': ing.status
+        }
+        for ing in low_stock_ingredients
+    ]
+
     admin_user_q = Q(cashier__is_superuser=True) | Q(cashier__profile__role='admin')
-    
+
     staff_sales_query = Order.objects.filter(
-        status='paid', 
+        status='paid',
         created_at__range=[filter_start, filter_end]
     ).exclude(admin_user_q)
 
-    top_staff = staff_sales_query.values(
-        'cashier__username'
-    ).annotate(
-        total_sales=Sum('total'),
-        total_orders=Count('id')
-    ).order_by('-total_sales').first()
-    
     all_staff_sales = staff_sales_query.values(
         'cashier__username'
     ).annotate(
@@ -477,18 +469,16 @@ def dashboard(request):
     ).order_by('-total_sales')
 
     recent_transactions = Order.objects.filter(status='paid').select_related('cashier').order_by('-created_at')[:50]
-    
+
     context = {
         'username': request.user.username,
         'total_sales_count': total_sales_count,
         'total_revenue': total_revenue,
-        'low_stock_items': low_stock_items_count,
-        'top_staff': top_staff,
+        'low_stock_ingredients_list': low_stock_ingredients_list,
         'all_staff_sales': all_staff_sales,
         'top_product': top_product,
         'top_products': top_products,
         'recent_transactions': recent_transactions,
-        'low_stock_warnings': low_stock_warnings,
         'user_role': 'admin',
         'start_date_str': start_date_str,
         'end_date_str': end_date_str

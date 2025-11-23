@@ -308,10 +308,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
+<div class="dashboard-header" style="margin-top: 20px;">
     <h1>Dashboard</h1>
     <p>Welcome back, Admin! Here's what's happening at Deja Brew.</p>
-    
+
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">{{ message }}</div>
@@ -321,7 +321,7 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-        <h3>Total Sales</h3>
+        <h3 id="totalSalesLabel">Total Sales</h3>
         <p class="stat-value" style="font-size: 2.5rem; color: #28a745;">₱{{ total_revenue|floatformat:2 }}</p>
         <span class="stat-change" style="font-size: 0.9rem;">{{ total_sales_count }} transactions</span>
     </div>
@@ -329,7 +329,7 @@
     <div class="stat-card">
         <h3>Top Products</h3>
         {% if top_products %}
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 8px;">
                 {% for product in top_products %}
                     <div style="padding: 10px 12px; background: linear-gradient(135deg, #fff9f5 0%, #f9f9f9 100%); border-radius: 6px; border-left: 4px solid #8B4513; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="font-weight: 700; color: #333; font-size: 1rem;">{{ forloop.counter }}. {{ product.item__name }}</div>
@@ -345,21 +345,33 @@
     </div>
 
     <div class="stat-card">
-        <h3>Low Stock Items</h3>
-        <p class="stat-value">{{ low_stock_items }}</p>
-        <span class="stat-change">Items need restocking</span>
-    </div>
-
-    <div class="stat-card">
-        <h3>Top Staff</h3>
-        {% if top_staff %}
-            <p class="stat-value">{{ top_staff.cashier__username }}</p>
-            <span class="stat-change">
-                ₱{{ top_staff.total_sales|floatformat:2 }} from {{ top_staff.total_orders }} orders
-            </span>
+        <h3>Low Stock Ingredients</h3>
+        {% if low_stock_ingredients_list %}
+            <div style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
+                <div style="margin-bottom: 15px;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: #dc2626; margin-bottom: 8px;">⚠️ Lowest Stock:</div>
+                    {% for ing in low_stock_ingredients_list|slice:":3" %}
+                        <div style="padding: 8px 10px; background: #fee2e2; border-radius: 5px; margin-bottom: 6px; border-left: 3px solid #dc2626;">
+                            <div style="font-weight: 600; color: #991b1b; font-size: 0.9rem;">{{ ing.name }}</div>
+                            <div style="font-size: 0.8rem; color: #7f1d1d; margin-top: 2px;">Stock: {{ ing.stock }}{{ ing.unit }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if low_stock_ingredients_list|length > 3 %}
+                    <div style="margin-top: 15px;">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: #059669; margin-bottom: 8px;">✓ Highest Stock (Low Stock Items):</div>
+                        {% for ing in low_stock_ingredients_list|slice:"-3:" reversed %}
+                            <div style="padding: 8px 10px; background: #d1fae5; border-radius: 5px; margin-bottom: 6px; border-left: 3px solid #059669;">
+                                <div style="font-weight: 600; color: #065f46; font-size: 0.9rem;">{{ ing.name }}</div>
+                                <div style="font-size: 0.8rem; color: #064e3b; margin-top: 2px;">Stock: {{ ing.stock }}{{ ing.unit }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
         {% else %}
-            <p class="stat-value">No staff sales</p>
-            <span class="stat-change">No sales recorded from staff</span>
+            <p class="stat-value" style="margin: 0;">0</p>
+            <span class="stat-change">All ingredients stocked</span>
         {% endif %}
     </div>
 </div>
@@ -699,20 +711,76 @@ document.addEventListener('DOMContentLoaded', function() {
         // Week and Month checks omitted for brevity, same logic as original
     }
     updateActiveFilterButton();
+    updateTotalSalesLabel(); // Initialize label on page load
+
+    function updateTotalSalesLabel() {
+        const start_val = startDateInput.value;
+        const end_val = endDateInput.value;
+        const totalSalesLabel = document.getElementById('totalSalesLabel');
+
+        if (!start_val || !end_val || !totalSalesLabel) return;
+
+        const start_date = new Date(start_val);
+        const end_date = new Date(end_val);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Calculate difference in days
+        const diffTime = Math.abs(end_date - start_date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // Check if it's today
+        const today_iso = getISODate(today);
+        if (start_val === today_iso && end_val === today_iso) {
+            totalSalesLabel.textContent = 'Total Sales Today';
+            return;
+        }
+
+        // Check if it's this week (7 days)
+        if (diffDays === 6) {
+            totalSalesLabel.textContent = 'Total Sales This Week';
+            return;
+        }
+
+        // Check if it's this month (28-31 days)
+        if (diffDays >= 28 && diffDays <= 31) {
+            totalSalesLabel.textContent = 'Total Sales This Month';
+            return;
+        }
+
+        // Check if it's this year (365-366 days)
+        if (diffDays >= 365 && diffDays <= 366) {
+            totalSalesLabel.textContent = 'Total Sales This Year';
+            return;
+        }
+
+        // For custom ranges
+        if (diffDays <= 7) {
+            totalSalesLabel.textContent = 'Total Sales (Week Range)';
+        } else if (diffDays <= 31) {
+            totalSalesLabel.textContent = 'Total Sales (Month Range)';
+        } else if (diffDays <= 366) {
+            totalSalesLabel.textContent = 'Total Sales (Year Range)';
+        } else {
+            totalSalesLabel.textContent = 'Total Sales (Custom Range)';
+        }
+    }
 
     document.getElementById('filterToday').addEventListener('click', () => {
         const today_iso = getISODate(new Date());
         startDateInput.value = today_iso;
         endDateInput.value = today_iso;
+        updateTotalSalesLabel();
         dateFilterForm.submit();
     });
     document.getElementById('filterWeek').addEventListener('click', () => {
         const today = new Date();
-        const dayOfWeek = today.getDay(); 
+        const dayOfWeek = today.getDay();
         const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOfWeek);
         const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
         startDateInput.value = getISODate(startOfWeek);
         endDateInput.value = getISODate(endOfWeek);
+        updateTotalSalesLabel();
         dateFilterForm.submit();
     });
     document.getElementById('filterMonth').addEventListener('click', () => {
@@ -723,6 +791,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const endOfMonth = new Date(year, month + 1, 0);
         startDateInput.value = getISODate(startOfMonth);
         endDateInput.value = getISODate(endOfMonth);
+        updateTotalSalesLabel();
         dateFilterForm.submit();
     });
 
