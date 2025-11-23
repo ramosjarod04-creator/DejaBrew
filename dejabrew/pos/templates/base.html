@@ -14,8 +14,19 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- Mobile Header with Hamburger -->
+    <div class="mobile-header">
+        <button class="hamburger-btn" id="hamburgerBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mobile-logo">Deja Brew</div>
+        <div></div> <!-- Empty div for flex spacing -->
+    </div>
 
-    <nav class="sidebar">
+    <!-- Overlay for mobile sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <nav class="sidebar" id="sidebar">
         <div class="logo-section">
             Deja Brew
         </div>
@@ -90,5 +101,37 @@
     </main>
 
     {% block extra_js %}{% endblock %}
+
+    <script>
+        // Mobile hamburger menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (hamburgerBtn && sidebar && overlay) {
+                hamburgerBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('mobile-open');
+                    overlay.classList.toggle('active');
+                });
+
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                });
+
+                // Close sidebar when clicking a link on mobile
+                const navLinks = sidebar.querySelectorAll('.nav-menu a, .logout-btn');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('mobile-open');
+                            overlay.classList.remove('active');
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
