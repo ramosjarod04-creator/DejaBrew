@@ -7,6 +7,7 @@ services:
 
     # Build configuration
     buildCommand: ./build.sh
+    startCommand: gunicorn dejabrew.dejabrew.wsgi:application --bind 0.0.0.0:8000 --workers 2
 
     # Environment variables
     envVars:
@@ -14,8 +15,6 @@ services:
         value: dejabrew.settings
       - key: PYTHON_VERSION
         value: 3.13
-      - key: PORT
-        value: 8000
       - key: DEBUG
         value: false
       - key: ENVIRONMENT
