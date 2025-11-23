@@ -191,7 +191,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 
 class ItemViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Item.objects.filter(is_active=True).order_by('id')
+    queryset = Item.objects.filter(is_active=True, is_archived=False).order_by('id')
     serializer_class = ItemSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [AllowAny]
@@ -911,12 +911,30 @@ def delete_product(request, product_id):
         return admin_check
     try:
         product = get_object_or_404(Item, id=product_id)
-        product_name = product.name
-        product.is_active = False
-        product.stock = 0
-        product.save(update_fields=['is_active', 'stock'])
-        log_audit(request, request.user, "Deactivate Product", f"Admin '{request.user.username}' deactivated product '{product_name}'", category="inventory", severity="medium")
-        return JsonResponse({'success': True, 'message': f'Product "{product_name}" deactivated'})
+
+        # Check if product has existing sales records
+        has_sales = OrderItem.objects.filter(item=product).exists()
+
+        if has_sales:
+            # Soft delete: Archive the product
+            product_name = product.name
+            product.is_archived = True
+            product.archived_at = timezone.now()
+            product.archived_by = request.user
+            product.is_active = False
+            product.save(update_fields=['is_archived', 'archived_at', 'archived_by', 'is_active'])
+            log_audit(request, request.user, "Archive Product", f"Admin '{request.user.username}' archived product '{product_name}' (has existing sales records)", category="inventory", severity="medium")
+            return JsonResponse({'success': True, 'message': f'Product "{product_name}" archived (has sales history)'})
+        else:
+            # No sales records: Soft delete anyway for consistency
+            product_name = product.name
+            product.is_archived = True
+            product.archived_at = timezone.now()
+            product.archived_by = request.user
+            product.is_active = False
+            product.save(update_fields=['is_archived', 'archived_at', 'archived_by', 'is_active'])
+            log_audit(request, request.user, "Archive Product", f"Admin '{request.user.username}' archived product '{product_name}'", category="inventory", severity="medium")
+            return JsonResponse({'success': True, 'message': f'Product "{product_name}" archived'})
     except Item.DoesNotExist: return JsonResponse({'success': False, 'error': 'Product not found'}, status=404)
     except Exception as e: return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
@@ -924,7 +942,7 @@ def delete_product(request, product_id):
 @login_required
 def get_products_api(request):
     try:
-        products = Item.objects.filter(is_active=True).order_by('id')
+        products = Item.objects.filter(is_active=True, is_archived=False).order_by('id')
 
         search = request.GET.get('search', '').strip()
         category_filter = request.GET.get('category', '').strip()
@@ -963,8 +981,8 @@ def get_products_api(request):
                 if stock == 0: product['status'] = "out of stock"
                 elif stock <= 10: product['status'] = "low stock"
                 else: product['status'] = "in stock"
-        
-        active_products = Item.objects.filter(is_active=True)
+
+        active_products = Item.objects.filter(is_active=True, is_archived=False)
         total_value = sum((p.price or 0) * (p.stock or 0) for p in active_products)
         stats = {
             'total_products': active_products.count(), 
@@ -1026,7 +1044,10 @@ def user_management(request):
     admin_check = require_admin_access(request)
     if admin_check is not True:
         return admin_check
-    users = User.objects.all().select_related('profile').order_by('username')
+    # Exclude archived users from the list
+    users = User.objects.filter(is_active=True).exclude(
+        profile__is_archived=True
+    ).select_related('profile').order_by('username')
     context = {'username': request.user.username, 'users': users, 'user_role': 'admin'}
     return render(request, 'user_management.html', context)
 
@@ -1063,10 +1084,53 @@ def delete_user(request, user_id):
     if user.id == request.user.id:
         messages.error(request, 'Cannot delete self!')
         return redirect('user_management')
+
+    # Check if user has existing sales records
+    has_sales = Order.objects.filter(cashier=user).exists()
+
     username = user.username
-    user.delete()
-    log_audit(request, request.user, "Delete User", f"Admin '{request.user.username}' deleted user '{username}'", category="user", severity="high")
-    messages.success(request, f"User '{username}' deleted!")
+
+    if has_sales:
+        # Soft delete: Archive the user profile
+        if hasattr(user, 'profile'):
+            user.profile.is_archived = True
+            user.profile.archived_at = timezone.now()
+            user.profile.archived_by = request.user
+            user.profile.save(update_fields=['is_archived', 'archived_at', 'archived_by'])
+        else:
+            # Create profile if doesn't exist
+            UserProfile.objects.create(
+                user=user,
+                is_archived=True,
+                archived_at=timezone.now(),
+                archived_by=request.user
+            )
+        # Deactivate the user account
+        user.is_active = False
+        user.save(update_fields=['is_active'])
+        log_audit(request, request.user, "Archive User", f"Admin '{request.user.username}' archived user '{username}' (has existing sales records)", category="user", severity="high")
+        messages.success(request, f"User '{username}' archived (has sales history)!")
+    else:
+        # No sales records: Still use soft delete for consistency
+        if hasattr(user, 'profile'):
+            user.profile.is_archived = True
+            user.profile.archived_at = timezone.now()
+            user.profile.archived_by = request.user
+            user.profile.save(update_fields=['is_archived', 'archived_at', 'archived_by'])
+        else:
+            # Create profile if doesn't exist
+            UserProfile.objects.create(
+                user=user,
+                is_archived=True,
+                archived_at=timezone.now(),
+                archived_by=request.user
+            )
+        # Deactivate the user account
+        user.is_active = False
+        user.save(update_fields=['is_active'])
+        log_audit(request, request.user, "Archive User", f"Admin '{request.user.username}' archived user '{username}'", category="user", severity="high")
+        messages.success(request, f"User '{username}' archived!")
+
     return redirect('user_management')
 
 

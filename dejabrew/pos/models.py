@@ -12,6 +12,11 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='staff')
 
+    # Soft Delete Fields
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='archived_profiles')
+
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
@@ -60,6 +65,11 @@ class Item(models.Model):
     image_url = models.CharField(max_length=500, blank=True)
     recipe = models.JSONField(default=list, blank=True, null=True)
     is_active = models.BooleanField(default=True)
+
+    # Soft Delete Fields
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='archived_items')
 
     def get_status(self):
         if not self.is_active:
