@@ -564,7 +564,7 @@ window.updateQuantity = function(productId, change) {
     const newQuantity = item.quantity + change;
 
     if (newQuantity <= 0) {
-        window.removeFromCart(productId);
+        window.voidItem(productId);
         return;
     }
 
@@ -675,7 +675,7 @@ function updateCartDisplay() {
                     <button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
                 </div>
                 <div class="item-total">₱${(item.price * item.quantity).toFixed(2)}</div>
-                <button class="remove-btn" onclick="removeFromCart(${item.id})">&times;</button>
+                <button class="remove-btn" onclick="voidItem(${item.id})" title="Void Item (Requires Admin)">&times;</button>
             </div>
         `;
         }).join('');
@@ -1395,25 +1395,38 @@ function setupAdminPasswordModal() {
         });
     }
 
+    // Handler function for authentication
+    const handleAuthentication = async () => {
+        const password = adminPassword.value.trim();
+
+        if (!password) {
+            showNotification('Please enter admin password', 'error');
+            return;
+        }
+
+        // Verify admin credentials via API (password-only)
+        const isValid = await verifyAdminCredentials(null, password);
+
+        if (isValid) {
+            showNotification('Admin authenticated successfully', 'success');
+            closeAdminPasswordModal();
+            if (adminPasswordResolve) adminPasswordResolve(true);
+        } else {
+            showNotification('Invalid admin password', 'error');
+            adminPassword.value = '';
+            adminPassword.focus();
+        }
+    };
+
     if (adminPasswordConfirm) {
-        adminPasswordConfirm.addEventListener('click', async () => {
-            const password = adminPassword.value.trim();
+        adminPasswordConfirm.addEventListener('click', handleAuthentication);
+    }
 
-            if (!password) {
-                showNotification('Please enter admin password', 'error');
-                return;
-            }
-
-            // Verify admin credentials via API (password-only)
-            const isValid = await verifyAdminCredentials(null, password);
-
-            if (isValid) {
-                showNotification('Admin authenticated successfully', 'success');
-                closeAdminPasswordModal();
-                if (adminPasswordResolve) adminPasswordResolve(true);
-            } else {
-                showNotification('Invalid admin password', 'error');
-                adminPassword.value = '';
+    // Add Enter key support
+    if (adminPassword) {
+        adminPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleAuthentication();
             }
         });
     }
@@ -1485,24 +1498,21 @@ async function requireAdminForDiscount() {
     }
 }
 
-// Update removeFromCart to require admin auth for void action
-const originalRemoveFromCart = window.removeFromCart;
-window.removeFromCart = async function(productId) {
+// Void function with admin authentication
+window.voidItem = async function(productId) {
+    console.log('voidItem called for product:', productId);
+
     const isAuthenticated = await showAdminPasswordModal();
+    console.log('Authentication result:', isAuthenticated);
 
     if (isAuthenticated) {
-        // Call original remove function
-        if (originalRemoveFromCart) {
-            originalRemoveFromCart(productId);
-        } else {
-            // Fallback implementation
-            const index = cart.findIndex(i => i.id === productId);
-            if (index > -1) {
-                const itemName = cart[index].name;
-                cart.splice(index, 1);
-                updateCartDisplay();
-                showNotification(`${itemName} removed from cart`, 'info');
-            }
+        // Remove the item from cart
+        const index = cart.findIndex(i => i.id === productId);
+        if (index > -1) {
+            const itemName = cart[index].name;
+            cart.splice(index, 1);
+            updateCartDisplay();
+            showNotification(`${itemName} voided successfully`, 'success');
         }
     } else {
         showNotification('Admin authentication required to void items', 'error');
