@@ -138,6 +138,7 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', async function() {
     await loadIngredients();
     await loadProducts();
+    await loadAndRenderCategories(); // NEW: Load and render dynamic category buttons
 
     // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
     setupEventListeners();
@@ -255,6 +256,74 @@ async function loadProducts() {
         console.error('Error loading products:', error);
         showNotification('Failed to load products', 'error');
     }
+}
+
+async function loadAndRenderCategories() {
+    try {
+        const response = await fetch('/api/product-categories/');
+        const data = await response.json();
+
+        if (data.success && data.categories) {
+            renderCategoryButtons(data.categories);
+        } else {
+            console.error('Failed to load categories');
+            // Fallback to basic categories
+            renderCategoryButtons(['Food', 'Drinks', 'Frappuccino']);
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to basic categories
+        renderCategoryButtons(['Food', 'Drinks', 'Frappuccino']);
+    }
+}
+
+function renderCategoryButtons(categories) {
+    const container = document.getElementById('categoryButtonsContainer');
+    if (!container) return;
+
+    // Clear existing buttons
+    container.innerHTML = '';
+
+    // Add "All Products" button first
+    const allBtn = createCategoryButton('All Products', 'all', true);
+    container.appendChild(allBtn);
+
+    // Add category buttons from database
+    categories.forEach(category => {
+        const btn = createCategoryButton(category, category.toLowerCase(), false);
+        container.appendChild(btn);
+    });
+
+    // Add "Best Selling" button last with special styling
+    const bestSellingBtn = createCategoryButton('🔥 Best Selling', 'bestselling', false, true);
+    container.appendChild(bestSellingBtn);
+
+    // Re-setup button controls after rendering
+    setupButtonControls();
+}
+
+function createCategoryButton(label, categoryValue, isActive, isBestSelling = false) {
+    const btn = document.createElement('button');
+    btn.className = 'category-btn' + (isActive ? ' active' : '');
+    btn.dataset.category = categoryValue;
+
+    // Base styling
+    btn.style.cssText = `
+        flex: 1;
+        min-width: 120px;
+        padding: 12px;
+        border: 2px solid ${isActive ? '#8B4513' : (isBestSelling ? '#ffc107' : '#ddd')};
+        background: ${isActive ? '#8B4513' : (isBestSelling ? '#ffc107' : 'white')};
+        color: ${isActive ? 'white' : (isBestSelling ? '#333' : '#333')};
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    `;
+
+    btn.textContent = label;
+
+    return btn;
 }
 
 async function loadRecentOrders() {
@@ -425,9 +494,20 @@ function handleSearch() {
 }
 
 window.showProductView = (category) => {
-    const products = productsByCategory[category] || [];
+    // Filter products by category (case-insensitive match)
+    let products;
+
+    if (category === 'all') {
+        products = allProducts;
+    } else {
+        products = allProducts.filter(p =>
+            p.category && p.category.toLowerCase() === category.toLowerCase()
+        );
+    }
+
     renderProducts(products);
-    document.getElementById('productsGrid').dataset.currentCategory = category;
+    const grid = document.getElementById('productsGrid');
+    if(grid) grid.dataset.currentCategory = category;
 };
 
 function showCategoryView() {
@@ -1272,16 +1352,26 @@ function getSelectedPaymentMethod() {
 }
 
 // Show Best Selling Products (sorted by sales count from OrderItems)
-function showBestSellingProducts() {
-    // For now, show all products sorted by name
-    // In a real implementation, you'd fetch from an API with sales data
-    const sortedProducts = [...allProducts].sort((a, b) => {
-        // Sort by price (as a proxy for popularity) or you can add a sales_count field
-        return (b.price || 0) - (a.price || 0);
-    });
-    renderProducts(sortedProducts);
-    const grid = document.getElementById('productsGrid');
-    if(grid) grid.dataset.currentCategory = 'bestselling';
+async function showBestSellingProducts() {
+    try {
+        const response = await fetch('/api/best-selling-products/');
+        const data = await response.json();
+
+        if (data.success && data.products) {
+            renderProducts(data.products);
+            const grid = document.getElementById('productsGrid');
+            if(grid) grid.dataset.currentCategory = 'bestselling';
+        } else {
+            showNotification('Failed to load best-selling products', 'error');
+            // Fallback to all products
+            renderProducts(allProducts);
+        }
+    } catch (error) {
+        console.error('Error loading best-selling products:', error);
+        showNotification('Failed to load best-selling products', 'error');
+        // Fallback to all products
+        renderProducts(allProducts);
+    }
 }
 
 
