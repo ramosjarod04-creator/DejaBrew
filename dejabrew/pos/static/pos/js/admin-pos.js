@@ -164,12 +164,19 @@ function setupEventListeners() {
     // Admin auth required for discount
     if (applyDiscountBtn) applyDiscountBtn.addEventListener('click', requireAdminForDiscount);
 
+    // Storage event listener - ONLY fires when OTHER tabs/windows update localStorage
+    // Removed 'inventoryUpdate' check to prevent infinite loop since saveIngredients()
+    // updates both 'dejabrew_ingredients_v1' and 'inventoryUpdate' simultaneously
     window.addEventListener('storage', (event) => {
         if (event.key === 'productUpdate') {
+            console.log('Storage event: productUpdate detected from another tab');
             showNotification('Product list has been updated.', 'info');
             loadProducts();
         }
-        if (event.key === 'dejabrew_ingredients_v1' || event.key === 'inventoryUpdate') {
+        // NOTE: Checking only 'dejabrew_ingredients_v1' to avoid duplicate triggers
+        // since saveIngredients() updates both keys at once
+        if (event.key === 'dejabrew_ingredients_v1') {
+            console.log('Storage event: ingredients updated from another tab');
             showNotification('Inventory has been updated.', 'info');
             loadIngredients().then(() => {
                 const currentCategory = document.getElementById('productsGrid').dataset.currentCategory || 'all';
