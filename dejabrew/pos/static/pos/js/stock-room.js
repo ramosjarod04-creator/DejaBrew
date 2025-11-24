@@ -455,16 +455,55 @@ function statusClass(status) { const s = (status || '').toLowerCase(); if (s.inc
 
 function showNotification(message, type = 'info') {
     console.log(`[${type.toUpperCase()}] ${message}`);
-    const notificationArea = document.querySelector('.main-header');
-    if (notificationArea) {
-        const note = document.createElement('div');
-        note.textContent = message;
-        note.style.padding = '10px'; note.style.marginTop = '10px'; note.style.borderRadius = '4px';
-        note.style.backgroundColor = type === 'error' ? '#f8d7da' : (type === 'success' ? '#d4edda' : '#d1ecf1');
-        note.style.color = type === 'error' ? '#721c24' : (type === 'success' ? '#155724' : '#0c5460');
-        note.style.border = `1px solid ${type === 'error' ? '#f5c6cb' : (type === 'success' ? '#c3e6cb' : '#bee5eb')}`;
-        notificationArea.parentNode.insertBefore(note, notificationArea.nextSibling);
-        setTimeout(() => note.remove(), 5000);
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    Object.assign(notification.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        padding: '20px 32px',
+        borderRadius: '12px',
+        zIndex: '10000',
+        fontWeight: '600',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+        animation: 'fadeInScale 0.3s ease',
+        minWidth: '300px',
+        maxWidth: '500px',
+        fontSize: '16px',
+        background: '#fff',
+        textAlign: 'center'
+    });
+    const colors = {
+        success: { bg: '#d4edda', color: '#155724', border: '#c3e6cb' },
+        error: { bg: '#f8d7da', color: '#721c24', border: '#f5c6cb' },
+        info: { bg: '#d1ecf1', color: '#0c5460', border: '#bee5eb' }
+    };
+    const color = colors[type] || colors.info;
+    notification.style.background = color.bg;
+    notification.style.color = color.color;
+    notification.style.border = `2px solid ${color.border}`;
+    const styleId = 'notification-keyframes-stock';
+    if (!document.getElementById(styleId)) {
+        const styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        styleElement.textContent = `
+            @keyframes fadeInScale {
+                from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+                to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            }
+            @keyframes fadeOutScale {
+                from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                to { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(styleElement);
     }
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.style.animation = 'fadeOutScale 0.3s ease forwards';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
