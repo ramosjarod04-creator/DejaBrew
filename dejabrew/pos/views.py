@@ -1350,21 +1350,40 @@ def record_waste(request):
 def verify_admin_api(request):
     """
     API endpoint to verify admin credentials for POS discount/void actions.
+    Supports password-only authentication for void operations.
     """
     try:
         data = json.loads(request.body)
         username = data.get('username')
         password = data.get('password')
 
-        if not username or not password:
-            return JsonResponse({'success': False, 'error': 'Username and password required'}, status=400)
+        if not password:
+            return JsonResponse({'success': False, 'error': 'Password required'}, status=400)
 
-        # Authenticate user
         from django.contrib.auth import authenticate
-        user = authenticate(username=username, password=password)
+        from django.contrib.auth.models import User
 
-        if user is None:
-            return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+        # If username is provided, use standard authentication
+        if username:
+            user = authenticate(username=username, password=password)
+            if user is None:
+                return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+        else:
+            # Password-only mode: Try to authenticate against all admin users
+            user = None
+            # Get all admin users (superusers and users with admin profile)
+            admin_users = User.objects.filter(is_active=True).filter(
+                models.Q(is_superuser=True) |
+                models.Q(profile__role='admin')
+            )
+
+            for admin_user in admin_users:
+                if admin_user.check_password(password):
+                    user = admin_user
+                    break
+
+            if user is None:
+                return JsonResponse({'success': False, 'error': 'Invalid admin password'}, status=401)
 
         # Check if user is admin
         is_admin = user.is_superuser or (hasattr(user, 'profile') and user.profile.role == 'admin')
@@ -1372,7 +1391,7 @@ def verify_admin_api(request):
         if not is_admin:
             return JsonResponse({'success': False, 'error': 'User is not an admin'}, status=403)
 
-        return JsonResponse({'success': True, 'is_admin': True})
+        return JsonResponse({'success': True, 'is_admin': True, 'username': user.username})
 
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
@@ -1445,6 +1464,47 @@ def get_product_categories_api(request):
         category_list = [cat for cat in categories if cat and cat.strip()]
 
         return JsonResponse({'success': True, 'categories': category_list})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def rename_coffee_categories_to_drinks(request):
+    """
+    Renames all coffee-related categories to 'Drinks'.
+    """
+    try:
+        # Check if user is admin
+        is_admin = request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.role == 'admin')
+        if not is_admin:
+            return JsonResponse({'success': False, 'error': 'Admin access required'}, status=403)
+
+        coffee_categories = [
+            'Hot Coffee', 'Iced Coffee', 'Frappuccino',
+            'Fruit Tea Series', 'Cheese Macchiato Series',
+            'Matcha Series', 'Non - Coffee Over Iced',
+            'Float Series', 'Holiday Specials'
+        ]
+
+        # Update all products with coffee categories to 'Drinks'
+        updated_count = Item.objects.filter(category__in=coffee_categories).update(category='Drinks')
+
+        # Log the action
+        log_audit(
+            request,
+            'Update Categories',
+            f'Renamed {updated_count} coffee categories to "Drinks"',
+            category='inventory',
+            severity='medium'
+        )
+
+        return JsonResponse({
+            'success': True,
+            'updated_count': updated_count,
+            'message': f'Successfully updated {updated_count} products to "Drinks" category'
+        })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)

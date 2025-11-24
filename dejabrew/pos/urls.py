@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/recent-orders/', views.recent_orders_api, name='recent_orders_api'),
     path('api/best-selling-products/', views.get_best_selling_products_api, name='best_selling_products_api'),
     path('api/product-categories/', views.get_product_categories_api, name='product_categories_api'),
+    path('api/rename-coffee-to-drinks/', views.rename_coffee_categories_to_drinks, name='rename_coffee_to_drinks'),
     path('api/dashboard-sales/', views.dashboard_sales_data, name='dashboard_sales_data'),
     path('api/products/', views.get_products_api, name='get_products_api'),
     path('api/products/create/', views.create_product, name='create_product'),
