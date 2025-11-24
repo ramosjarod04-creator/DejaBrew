@@ -1386,7 +1386,6 @@ function setupAdminPasswordModal() {
     adminPasswordModal = document.getElementById('adminPasswordModal');
     const adminPasswordCancel = document.getElementById('adminPasswordCancel');
     const adminPasswordConfirm = document.getElementById('adminPasswordConfirm');
-    const adminUsername = document.getElementById('adminUsername');
     const adminPassword = document.getElementById('adminPassword');
 
     if (adminPasswordCancel) {
@@ -1398,23 +1397,22 @@ function setupAdminPasswordModal() {
 
     if (adminPasswordConfirm) {
         adminPasswordConfirm.addEventListener('click', async () => {
-            const username = adminUsername.value.trim();
             const password = adminPassword.value.trim();
 
-            if (!username || !password) {
-                showNotification('Please enter both username and password', 'error');
+            if (!password) {
+                showNotification('Please enter admin password', 'error');
                 return;
             }
 
-            // Verify admin credentials via API
-            const isValid = await verifyAdminCredentials(username, password);
+            // Verify admin credentials via API (password-only)
+            const isValid = await verifyAdminCredentials(null, password);
 
             if (isValid) {
                 showNotification('Admin authenticated successfully', 'success');
                 closeAdminPasswordModal();
                 if (adminPasswordResolve) adminPasswordResolve(true);
             } else {
-                showNotification('Invalid admin credentials', 'error');
+                showNotification('Invalid admin password', 'error');
                 adminPassword.value = '';
             }
         });
@@ -1433,8 +1431,11 @@ function setupAdminPasswordModal() {
 function showAdminPasswordModal() {
     return new Promise((resolve) => {
         adminPasswordResolve = resolve;
-        document.getElementById('adminUsername').value = '';
-        document.getElementById('adminPassword').value = '';
+        const adminPassword = document.getElementById('adminPassword');
+        if (adminPassword) {
+            adminPassword.value = '';
+            adminPassword.focus();
+        }
         if (adminPasswordModal) {
             adminPasswordModal.style.display = 'flex';
         }
@@ -1450,13 +1451,19 @@ function closeAdminPasswordModal() {
 
 async function verifyAdminCredentials(username, password) {
     try {
+        const payload = { password };
+        // If username is provided, include it (for discount feature)
+        if (username) {
+            payload.username = username;
+        }
+
         const response = await fetch('/api/verify-admin/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
