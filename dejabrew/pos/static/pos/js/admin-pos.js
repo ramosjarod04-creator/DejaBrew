@@ -165,23 +165,29 @@ function setupEventListeners() {
     if (applyDiscountBtn) applyDiscountBtn.addEventListener('click', requireAdminForDiscount);
 
     // Storage event listener - ONLY fires when OTHER tabs/windows update localStorage
-    // Removed 'inventoryUpdate' check to prevent infinite loop since saveIngredients()
-    // updates both 'dejabrew_ingredients_v1' and 'inventoryUpdate' simultaneously
+    // This allows cross-tab synchronization without creating infinite loops
     window.addEventListener('storage', (event) => {
         if (event.key === 'productUpdate') {
             console.log('Storage event: productUpdate detected from another tab');
             showNotification('Product list has been updated.', 'info');
             loadProducts();
         }
-        // NOTE: Checking only 'dejabrew_ingredients_v1' to avoid duplicate triggers
-        // since saveIngredients() updates both keys at once
+        // When another tab updates ingredients, sync without triggering another save
         if (event.key === 'dejabrew_ingredients_v1') {
             console.log('Storage event: ingredients updated from another tab');
-            showNotification('Inventory has been updated.', 'info');
-            loadIngredients().then(() => {
-                const currentCategory = document.getElementById('productsGrid').dataset.currentCategory || 'all';
-                showProductView(currentCategory);
-            });
+            // Load directly from localStorage to avoid API call and prevent save loop
+            try {
+                const stored = localStorage.getItem('dejabrew_ingredients_v1');
+                if (stored) {
+                    allIngredients = JSON.parse(stored);
+                    console.log(`📦 Synced ${allIngredients.length} ingredients from another tab`);
+                    showNotification('Inventory has been updated.', 'info');
+                    const currentCategory = document.getElementById('productsGrid').dataset.currentCategory || 'all';
+                    showProductView(currentCategory);
+                }
+            } catch (error) {
+                console.error('Error syncing ingredients from storage:', error);
+            }
         }
     });
 
@@ -215,21 +221,24 @@ function setupEventListeners() {
 
 // --- DATA LOADING & SAVING ---
 
-async function loadIngredients() {
+async function loadIngredients(skipSave = false) {
     try {
         const response = await fetch('/api/ingredients/');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        
-        allIngredients = data.results || data; 
-        
+
+        allIngredients = data.results || data;
+
         if (!Array.isArray(allIngredients)) {
              console.error("Fetched ingredients data is not an array:", data);
              allIngredients = [];
         }
-        
+
         console.log(`📦 Loaded ${allIngredients.length} ingredients from server.`);
-        saveIngredients();
+        // Only save to localStorage if not loading from storage event (prevents cross-tab loop)
+        if (!skipSave) {
+            saveIngredients();
+        }
     } catch (error) {
         console.error("Error loading ingredients:", error);
         showNotification("Could not load ingredients. Trying local cache.", "error");
