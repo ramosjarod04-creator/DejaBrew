@@ -1380,6 +1380,77 @@ def verify_admin_api(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @login_required
+def get_best_selling_products_api(request):
+    """
+    API endpoint to get best-selling products based on actual sales data from OrderItem.
+    Returns products sorted by total quantity sold.
+    """
+    try:
+        from django.db.models import Sum, Q
+
+        # Get top-selling products from OrderItem, only include active non-archived items
+        best_sellers = OrderItem.objects.filter(
+            item__is_active=True,
+            item__is_archived=False,
+            order__status='paid'
+        ).values(
+            'item__id',
+            'item__name',
+            'item__category',
+            'item__price',
+            'item__stock',
+            'item__image_url'
+        ).annotate(
+            total_sold=Sum('qty')
+        ).order_by('-total_sold')[:50]  # Top 50 best sellers
+
+        # Convert to list and add recipe data
+        products = []
+        for item in best_sellers:
+            try:
+                product_obj = Item.objects.get(id=item['item__id'])
+                products.append({
+                    'id': item['item__id'],
+                    'name': item['item__name'],
+                    'category': item['item__category'],
+                    'price': float(item['item__price']),
+                    'stock': item['item__stock'],
+                    'image_url': item['item__image_url'] or '',
+                    'recipe': product_obj.recipe,
+                    'total_sold': item['total_sold']
+                })
+            except Item.DoesNotExist:
+                continue
+
+        return JsonResponse({'success': True, 'products': products})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def get_product_categories_api(request):
+    """
+    API endpoint to get unique product categories for dynamic category buttons.
+    Returns distinct categories from active, non-archived products.
+    """
+    try:
+        # Get distinct categories from active products
+        categories = Item.objects.filter(
+            is_active=True,
+            is_archived=False
+        ).values_list('category', flat=True).distinct().order_by('category')
+
+        # Convert to list and filter out empty/None values
+        category_list = [cat for cat in categories if cat and cat.strip()]
+
+        return JsonResponse({'success': True, 'categories': category_list})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
 def order_details_api(request, order_id):
     """
     API endpoint to get the full details of a single order for the receipt modal.
