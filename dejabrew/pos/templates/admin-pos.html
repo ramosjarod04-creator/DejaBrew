@@ -7,6 +7,114 @@
 <link rel="stylesheet" href="{% static 'pos/css/admin-pos.css' %}?v=2">
 {% comment %} This is the new file you need for printing {% endcomment %}
 <link rel="stylesheet" href="{% static 'pos/css/print-receipt.css' %}">
+<style>
+    /* --- RESPONSIVE POS ADJUSTMENTS --- */
+    @media (max-width: 1024px) {
+        /* Stack layout on smaller screens (tablets vertical) */
+        .content {
+            flex-direction: column;
+            height: calc(100vh - 140px); /* Adjust height */
+        }
+
+        .products-col {
+            width: 100%;
+            padding-right: 0;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        /* Hide Cart Column by default on mobile */
+        .cart-col {
+            position: fixed;
+            right: -100%; /* Hidden off-screen */
+            top: 0;
+            height: 100vh;
+            width: 85%;
+            max-width: 400px;
+            background: white;
+            z-index: 2000;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+            transition: right 0.3s ease-in-out;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Class to show cart */
+        .cart-col.is-mobile-open {
+            right: 0;
+        }
+
+        /* Add a close button for mobile cart */
+        .mobile-cart-close {
+            display: block !important; /* Force show */
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #333;
+        }
+
+        /* Adjust Products Grid */
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        /* Mobile Cart Toggle Button (Bottom Right) */
+        .mobile-cart-toggle {
+            display: flex !important; /* Show button */
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1500;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .mobile-cart-count {
+            background: #ff4d4d;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .search-wrap {
+            width: 100%;
+        }
+        .search-wrap input {
+            width: 100%;
+        }
+        .filters-row {
+            flex-wrap: wrap;
+        }
+    }
+
+    /* Overlay for mobile cart */
+    .cart-overlay-open {
+        overflow: hidden;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -22,12 +130,20 @@
 
 <section class="content">
     <div class="products-col">
-        <div class="filters-row">
-            <select id="categorySelect">
-                <option value="all">All Products</option>
-                <option value="drinks">Drinks</option>
-                <option value="special">Special</option>
-            </select>
+        <!-- Category Buttons (Converted from Dropdown) -->
+        <div class="filters-row" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <button class="category-btn active" data-category="all" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #8B4513; background: #8B4513; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                All Products
+            </button>
+            <button class="category-btn" data-category="drinks" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                Drinks
+            </button>
+            <button class="category-btn" data-category="special" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                Special
+            </button>
+            <button class="category-btn" data-category="bestselling" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ffc107; background: #ffc107; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                🔥 Best Selling
+            </button>
         </div>
 
         <div id="productsGrid" class="products-grid">
@@ -35,39 +151,51 @@
     </div>
 
     <aside class="cart-col">
-        <div class="cart-card">
-            <div class="cart-header">
+        <div class="cart-card" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="cart-header" style="position: relative;">
                 <h3>Order Cart (<span id="cartCount">0</span>)</h3>
-                
-                <button class="mobile-cart-close" id="mobileCartClose">&times;</button>
-                
+                <!-- Mobile Close Button -->
+                <button class="mobile-cart-close" id="mobileCartClose" style="display: none;">&times;</button>
+
                 <div class="cart-empty-msg" id="cartEmptyMsg">Cart is empty</div>
             </div>
 
-            <div id="cartItems" class="cart-items">
+            <div id="cartItems" class="cart-items" style="flex: 1; overflow-y: auto;">
                 </div>
 
             <div class="cart-controls">
-                <!-- Discount Button (NEW) -->
+                <!-- Discount Button (Requires Admin) -->
                 <button id="applyDiscountBtn" class="btn secondary" style="margin-bottom: 10px; width: 100%;">
-                    <i class="fa-solid fa-percent"></i> Apply Discount
+                    <i class="fa-solid fa-percent"></i> Apply Discount (Admin)
                 </button>
-                
+
                 <label>Discount (%)</label>
-                <input id="discountInput" type="number" value="0" min="0" max="100" />
+                <input id="discountInput" type="number" value="0" min="0" max="100" readonly style="background: #f5f5f5;" />
 
-                <label>Dining Option</label>
-                <select id="diningOption">
-                    <option value="dine-in">Dine-In</option>
-                    <option value="take-out">Take-Out</option>
-                </select>
+                <!-- Dining Option Buttons (Converted from Dropdown) -->
+                <label style="margin-top: 15px; margin-bottom: 8px;">Dining Option</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="dining-btn active" data-option="dine-in" style="flex: 1; padding: 12px; border: 2px solid #28a745; background: #28a745; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);">
+                        Dine-In
+                    </button>
+                    <button class="dining-btn" data-option="take-out" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        Take-Out
+                    </button>
+                </div>
 
-                <label>Payment Method</label>
-                <select id="paymentMethod">
-                    <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
-                    <option value="Gcash">Gcash</option>
-                </select>
+                <!-- Payment Method Buttons (Converted from Dropdown) -->
+                <label style="margin-top: 10px; margin-bottom: 8px;">Payment Method</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="payment-btn active" data-method="Cash" style="flex: 1; padding: 12px; border: 2px solid #28a745; background: #28a745; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);">
+                        💵 Cash
+                    </button>
+                    <button class="payment-btn" data-method="Gcash" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        📱 GCash
+                    </button>
+                    <button class="payment-btn" data-method="Card" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        💳 Card
+                    </button>
+                </div>
 
                 <div class="totals-row">
                     <div>Subtotal:</div>
@@ -82,23 +210,40 @@
                 <button id="clearCartBtn" class="btn secondary"><i class="fa-solid fa-trash"></i> Clear Cart</button>
             </div>
         </div>
-
-        <div class="recent-card">
-            <h4>Recent Orders</h4>
-            <div id="recentOrders" class="recent-orders">
-                </div>
-        </div>
     </aside>
 </section>
 
-<button class="mobile-cart-toggle" id="mobileCartToggle">
+<!-- Mobile Cart Toggle Button (Hidden on Desktop via CSS) -->
+<button class="mobile-cart-toggle" id="mobileCartToggle" style="display: none;">
     <i class="fa-solid fa-cart-shopping"></i>
-    <span>View Cart</span>
+    <span>Cart</span>
     <span class="mobile-cart-count" id="mobileCartCount">0</span>
 </button>
 
 <div id="printable-receipt" style="display: none;"></div>
 
+<!-- Admin Password Modal (for Discount/Void actions) -->
+<div id="adminPasswordModal" class="payment-modal" style="display: none;">
+    <div class="payment-modal-card">
+        <h3 style="color: #dc3545; margin-bottom: 10px;">🔒 Admin Authentication Required</h3>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Please enter admin credentials to apply discount or void items</p>
+
+        <div class="form-group">
+            <label for="adminUsername">Admin Username</label>
+            <input type="text" id="adminUsername" placeholder="Enter admin username" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="adminPassword">Admin Password</label>
+            <input type="password" id="adminPassword" placeholder="Enter admin password" autocomplete="off">
+        </div>
+
+        <div class="payment-modal-actions">
+            <button id="adminPasswordCancel" class="btn secondary">Cancel</button>
+            <button id="adminPasswordConfirm" class="btn primary" style="background: #dc3545;">Authenticate</button>
+        </div>
+    </div>
+</div>
 
 <div id="paymentModal" class="payment-modal">
     <div class="payment-modal-card">
@@ -124,4 +269,27 @@
 
 {% block extra_js %}
 <script src="{% static 'pos/js/admin-pos.js' %}"></script>
+<script>
+    // --- SIMPLE MOBILE CART TOGGLE LOGIC ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('mobileCartToggle');
+        const closeBtn = document.getElementById('mobileCartClose');
+        const cartCol = document.querySelector('.cart-col');
+        const body = document.body;
+
+        if (toggleBtn && cartCol) {
+            toggleBtn.addEventListener('click', function() {
+                cartCol.classList.add('is-mobile-open');
+                body.classList.add('cart-overlay-open');
+            });
+        }
+
+        if (closeBtn && cartCol) {
+            closeBtn.addEventListener('click', function() {
+                cartCol.classList.remove('is-mobile-open');
+                body.classList.remove('cart-overlay-open');
+            });
+        }
+    });
+</script>
 {% endblock %}

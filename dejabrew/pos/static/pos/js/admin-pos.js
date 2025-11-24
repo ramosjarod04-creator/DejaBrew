@@ -138,13 +138,15 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', async function() {
     await loadIngredients();
     await loadProducts();
-    
-    loadRecentOrders();
+
+    // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
     setupEventListeners();
     updateCartDisplay();
     createAddOnsModal();
     setupDiscountModal();
     setupReceiptPreviewModal();
+    setupButtonControls(); // NEW: Setup button-based controls
+    setupAdminPasswordModal(); // NEW: Setup admin authentication
 });
 
 function setupEventListeners() {
@@ -152,17 +154,14 @@ function setupEventListeners() {
     const processOrderBtn = document.getElementById('processOrderBtn');
     const clearCartBtn = document.getElementById('clearCartBtn');
     const discountInput = document.getElementById('discountInput');
-    const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
-    const categorySelect = document.getElementById('categorySelect');
     const applyDiscountBtn = document.getElementById('applyDiscountBtn');
 
     if (searchInput) searchInput.addEventListener('input', handleSearch);
     if (processOrderBtn) processOrderBtn.addEventListener('click', processOrder);
     if (clearCartBtn) clearCartBtn.addEventListener('click', clearCart);
     if (discountInput) discountInput.addEventListener('input', updateCartTotals);
-    if (backToCategoriesBtn) backToCategoriesBtn.addEventListener('click', showCategoryView);
-    if (categorySelect) categorySelect.addEventListener('change', (e) => showProductView(e.target.value));
-    if (applyDiscountBtn) applyDiscountBtn.addEventListener('click', showDiscountModal);
+    // Admin auth required for discount
+    if (applyDiscountBtn) applyDiscountBtn.addEventListener('click', requireAdminForDiscount);
 
     window.addEventListener('storage', (event) => {
         if (event.key === 'productUpdate') {
@@ -351,9 +350,9 @@ function renderProducts(products) {
             </div>
             <div class="product-footer">
                 <div class="price">₱${parseFloat(product.price).toFixed(2)}</div>
-                ${isDisabled 
+                ${isDisabled
                     ? `<span class="stock-badge" style="background-color: #e55353;">${outOfStockReason}</span>`
-                    : `<button class="add-btn" onclick="addToCart(${product.id})">Add</button>`
+                    : `<button class="add-btn" onclick="addToCart(${product.id})" style="padding: 14px 20px; font-size: 16px; font-weight: 700; min-height: 48px;">Add</button>`
                 }
             </div>
         </div>
@@ -571,6 +570,7 @@ function updateCartDisplay() {
     const cartItemsContainer = document.getElementById('cartItems');
     const cartCount = document.getElementById('cartCount');
     const cartEmptyMsg = document.getElementById('cartEmptyMsg');
+    const mobileCartCount = document.getElementById('mobileCartCount');
 
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = '';
@@ -578,15 +578,18 @@ function updateCartDisplay() {
     } else {
         cartEmptyMsg.style.display = 'none';
         cartItemsContainer.innerHTML = cart.map(item => {
-            const addOnsText = item.addOns && item.addOns.length > 0 
-                ? `<br><small style="color: #666;">+ ${item.addOns.map(a => a.name).join(', ')}</small>` 
+            const addOnsText = item.addOns && item.addOns.length > 0
+                ? `<br><small style="color: #666;">+ ${item.addOns.map(a => a.name).join(', ')}</small>`
                 : '';
-            
+
             return `
             <div class="cart-item">
                 <div class="item-info">
                     <p class="item-name">${escapeHtml(item.name)}${addOnsText}</p>
                     <p class="item-price">₱${item.price.toFixed(2)}</p>
+                    <button class="modify-btn" onclick="modifyProduct(${item.id})" style="margin-top: 5px; padding: 4px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">
+                        <i class="fa-solid fa-pen-to-square"></i> Modify
+                    </button>
                 </div>
                 <div class="item-controls">
                     <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
@@ -601,11 +604,11 @@ function updateCartDisplay() {
         `;
         }).join('');
     }
-    
+
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     cartCount.textContent = totalItems;
-    if(document.getElementById('mobileCartCount')) {
-        document.getElementById('mobileCartCount').textContent = totalItems;
+    if(mobileCartCount) {
+        mobileCartCount.textContent = totalItems;
     }
 
     updateCartTotals();
@@ -1014,7 +1017,7 @@ function closeReceiptPreview() {
     document.getElementById('discountInput').disabled = false;
     loadProducts();
     loadIngredients();
-    loadRecentOrders();
+    // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
     if (cartCol && cartCol.classList.contains('is-mobile-open')) {
         toggleMobileCart();
     }
@@ -1073,21 +1076,10 @@ async function processOrder() {
         return showNotification('Cart is empty', 'error');
     }
 
-    for (let i = 0; i < cart.length; i++) {
-        const item = cart[i];
-        const product = allProducts.find(p => p.id === item.id);
-        
-        if (!item.addOns || item.addOns.length === 0) {
-            if (product && product.category !== 'Add Ons') {
-                const addOns = await showAddOnsModal(item.name);
-                item.addOns = addOns || [];
-            }
-        }
-    }
-    
-    updateCartDisplay();
+    // NOTE: Automatic add-ons prompt removed - users now use the "Modify" button on cart items
+    // to add or change add-ons at any time before processing the order
 
-    const paymentMethod = document.getElementById('paymentMethod').value;
+    const paymentMethod = getSelectedPaymentMethod(); // Use button-based selection
     let paymentDetails = {};
 
     if (paymentMethod === 'Gcash' || paymentMethod === 'Card') {
@@ -1119,7 +1111,7 @@ async function processOrder() {
     });
 
     const discountInfo = window.currentDiscount || { type: 'regular', id: '' };
-    const diningOption = document.getElementById('diningOption').value;
+    const diningOption = getSelectedDiningOption(); // Use button-based selection
 
     const orderData = {
         items: orderItems,
@@ -1147,8 +1139,8 @@ async function processOrder() {
 
         if (response.ok && data.success) {
             showNotification('Order processed successfully!', 'success');
-            
-            // Show receipt preview instead of auto-printing
+
+            // SHOW RECEIPT PREVIEW MODAL instead of auto-printing
             if (data.receipt_html) {
                 showReceiptPreview(data.receipt_html);
             } else {
@@ -1158,11 +1150,12 @@ async function processOrder() {
                 document.getElementById('discountInput').disabled = false;
                 await loadIngredients();
                 await loadProducts();
-                loadRecentOrders();
+                // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
                 if (cartCol && cartCol.classList.contains('is-mobile-open')) {
                     toggleMobileCart();
                 }
             }
+
         } else {
             showNotification(data.error || 'Failed to process order. Please try again.', 'error');
             const currentCategory = document.getElementById('productsGrid').dataset.currentCategory || 'all';
@@ -1184,4 +1177,298 @@ function toggleMobileCart() {
         cartCol.classList.toggle('is-mobile-open');
         document.body.classList.toggle('cart-overlay-open');
     }
+}
+
+
+// ============================================
+// NEW: BUTTON-BASED CONTROLS (CATEGORY, PAYMENT, DINING)
+// ============================================
+
+function setupButtonControls() {
+    // Category Buttons
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active from all
+            categoryBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'white';
+                b.style.color = '#333';
+                b.style.borderColor = '#ddd';
+            });
+            // Add active to clicked
+            this.classList.add('active');
+            const category = this.dataset.category;
+
+            // Special styling for bestselling
+            if (category === 'bestselling') {
+                this.style.background = '#ffc107';
+                this.style.color = '#333';
+                this.style.borderColor = '#ffc107';
+            } else {
+                this.style.background = '#8B4513';
+                this.style.color = 'white';
+                this.style.borderColor = '#8B4513';
+            }
+
+            // Show products for category
+            if (category === 'bestselling') {
+                showBestSellingProducts();
+            } else {
+                showProductView(category);
+            }
+        });
+    });
+
+    // Dining Option Buttons
+    const diningBtns = document.querySelectorAll('.dining-btn');
+    diningBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active from all
+            diningBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'white';
+                b.style.color = '#333';
+                b.style.borderColor = '#ddd';
+                b.style.boxShadow = 'none';
+            });
+            // Add active to clicked with glow effect
+            this.classList.add('active');
+            this.style.background = '#28a745';
+            this.style.color = 'white';
+            this.style.borderColor = '#28a745';
+            this.style.boxShadow = '0 0 15px rgba(40, 167, 69, 0.5)';
+        });
+    });
+
+    // Payment Method Buttons
+    const paymentBtns = document.querySelectorAll('.payment-btn');
+    paymentBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active from all
+            paymentBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'white';
+                b.style.color = '#333';
+                b.style.borderColor = '#ddd';
+                b.style.boxShadow = 'none';
+            });
+            // Add active to clicked with glow effect
+            this.classList.add('active');
+            this.style.background = '#28a745';
+            this.style.color = 'white';
+            this.style.borderColor = '#28a745';
+            this.style.boxShadow = '0 0 15px rgba(40, 167, 69, 0.5)';
+        });
+    });
+}
+
+// Get selected dining option from buttons
+function getSelectedDiningOption() {
+    const activeDiningBtn = document.querySelector('.dining-btn.active');
+    return activeDiningBtn ? activeDiningBtn.dataset.option : 'dine-in';
+}
+
+// Get selected payment method from buttons
+function getSelectedPaymentMethod() {
+    const activePaymentBtn = document.querySelector('.payment-btn.active');
+    return activePaymentBtn ? activePaymentBtn.dataset.method : 'Cash';
+}
+
+// Show Best Selling Products (sorted by sales count from OrderItems)
+function showBestSellingProducts() {
+    // For now, show all products sorted by name
+    // In a real implementation, you'd fetch from an API with sales data
+    const sortedProducts = [...allProducts].sort((a, b) => {
+        // Sort by price (as a proxy for popularity) or you can add a sales_count field
+        return (b.price || 0) - (a.price || 0);
+    });
+    renderProducts(sortedProducts);
+    const grid = document.getElementById('productsGrid');
+    if(grid) grid.dataset.currentCategory = 'bestselling';
+}
+
+
+// ============================================
+// NEW: ADMIN AUTHENTICATION FOR DISCOUNT/VOID
+// ============================================
+
+let adminPasswordModal;
+let adminPasswordResolve = null;
+
+function setupAdminPasswordModal() {
+    adminPasswordModal = document.getElementById('adminPasswordModal');
+    const adminPasswordCancel = document.getElementById('adminPasswordCancel');
+    const adminPasswordConfirm = document.getElementById('adminPasswordConfirm');
+    const adminUsername = document.getElementById('adminUsername');
+    const adminPassword = document.getElementById('adminPassword');
+
+    if (adminPasswordCancel) {
+        adminPasswordCancel.addEventListener('click', () => {
+            closeAdminPasswordModal();
+            if (adminPasswordResolve) adminPasswordResolve(false);
+        });
+    }
+
+    if (adminPasswordConfirm) {
+        adminPasswordConfirm.addEventListener('click', async () => {
+            const username = adminUsername.value.trim();
+            const password = adminPassword.value.trim();
+
+            if (!username || !password) {
+                showNotification('Please enter both username and password', 'error');
+                return;
+            }
+
+            // Verify admin credentials via API
+            const isValid = await verifyAdminCredentials(username, password);
+
+            if (isValid) {
+                showNotification('Admin authenticated successfully', 'success');
+                closeAdminPasswordModal();
+                if (adminPasswordResolve) adminPasswordResolve(true);
+            } else {
+                showNotification('Invalid admin credentials', 'error');
+                adminPassword.value = '';
+            }
+        });
+    }
+
+    if (adminPasswordModal) {
+        adminPasswordModal.addEventListener('click', (e) => {
+            if (e.target === adminPasswordModal) {
+                closeAdminPasswordModal();
+                if (adminPasswordResolve) adminPasswordResolve(false);
+            }
+        });
+    }
+}
+
+function showAdminPasswordModal() {
+    return new Promise((resolve) => {
+        adminPasswordResolve = resolve;
+        document.getElementById('adminUsername').value = '';
+        document.getElementById('adminPassword').value = '';
+        if (adminPasswordModal) {
+            adminPasswordModal.style.display = 'flex';
+        }
+    });
+}
+
+function closeAdminPasswordModal() {
+    if (adminPasswordModal) {
+        adminPasswordModal.style.display = 'none';
+    }
+    adminPasswordResolve = null;
+}
+
+async function verifyAdminCredentials(username, password) {
+    try {
+        const response = await fetch('/api/verify-admin/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+        return data.success === true && data.is_admin === true;
+    } catch (error) {
+        console.error('Error verifying admin:', error);
+        return false;
+    }
+}
+
+async function requireAdminForDiscount() {
+    const isAuthenticated = await showAdminPasswordModal();
+
+    if (isAuthenticated) {
+        // Show the discount modal
+        showDiscountModal();
+    } else {
+        showNotification('Admin authentication required to apply discounts', 'error');
+    }
+}
+
+// Update removeFromCart to require admin auth for void action
+const originalRemoveFromCart = window.removeFromCart;
+window.removeFromCart = async function(productId) {
+    const isAuthenticated = await showAdminPasswordModal();
+
+    if (isAuthenticated) {
+        // Call original remove function
+        if (originalRemoveFromCart) {
+            originalRemoveFromCart(productId);
+        } else {
+            // Fallback implementation
+            const index = cart.findIndex(i => i.id === productId);
+            if (index > -1) {
+                const itemName = cart[index].name;
+                cart.splice(index, 1);
+                updateCartDisplay();
+                showNotification(`${itemName} removed from cart`, 'info');
+            }
+        }
+    } else {
+        showNotification('Admin authentication required to void items', 'error');
+    }
+};
+
+
+// ============================================
+// NEW: MODIFY PRODUCT (ADD-ONS)
+// ============================================
+
+window.modifyProduct = async function(productId) {
+    const item = cart.find(i => i.id === productId);
+    if (!item) return;
+
+    // Pre-select existing add-ons
+    selectedAddOns = item.addOns ? [...item.addOns] : [];
+
+    const addOns = await showAddOnsModalForModify(item.name, item.addOns || []);
+
+    // Update the cart item with new add-ons
+    item.addOns = addOns;
+    updateCartDisplay();
+
+    if (addOns.length > 0) {
+        showNotification(`Add-ons updated for ${item.name}`, 'success');
+    } else {
+        showNotification(`Add-ons removed from ${item.name}`, 'info');
+    }
+}
+
+function showAddOnsModalForModify(productName, existingAddOns = []) {
+    return new Promise((resolve) => {
+        selectedAddOns = [...existingAddOns];
+        addOnsProductName.textContent = productName;
+
+        const addOnsProducts = allProducts.filter(p =>
+            p.category === 'Add Ons' &&
+            (p.stock > 0 || (p.recipe && p.recipe.length > 0))
+        );
+
+        if (addOnsProducts.length === 0) {
+            resolve([]);
+            return;
+        }
+
+        addOnsGrid.innerHTML = addOnsProducts.map(product => {
+            // Check if this add-on is already selected
+            const isSelected = existingAddOns.some(a => a.id === product.id);
+            return `
+                <div class="addon-card ${isSelected ? 'selected' : ''}" data-id="${product.id}" onclick="toggleAddOn(${product.id}, '${escapeJs(product.name)}', ${product.price})">
+                    <img src="${product.image_url || '/static/pos/img/placeholder.jpg'}" alt="${escapeHtml(product.name)}">
+                    <div class="name">${escapeHtml(product.name)}</div>
+                    <div class="price">₱${parseFloat(product.price).toFixed(2)}</div>
+                </div>
+            `;
+        }).join('');
+
+        addOnsModal.classList.add('is-visible');
+        addOnsModalResolve = resolve;
+    });
 }
