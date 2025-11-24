@@ -14,8 +14,25 @@
 .chart-filters button.active { background: #8B4513; color: white; border-color: #8B4513; }
 .font-bold { font-weight: 600; }
 .text-center { text-align: center; }
-.forecast-warn { color: #ff9800; }
-.forecast-critical { color: #dc3545; }
+.forecast-warn {
+    color: #ff6b6b;
+    font-weight: 700;
+    background: #fff3cd;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.forecast-critical {
+    color: #ffffff;
+    font-weight: 900;
+    background: #dc2626;
+    padding: 4px 8px;
+    border-radius: 4px;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
 .status-actions button { padding: 4px 8px; margin: 0 2px; font-size: 12px; border-radius: 4px; cursor: pointer; }
 .status-actions .btn-instock { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
 .status-actions .btn-lowstock { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
