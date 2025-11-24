@@ -1514,24 +1514,46 @@ async function requireAdminForDiscount() {
     }
 }
 
-// Void function with admin authentication
+// Void function with admin authentication and comprehensive error handling
 window.voidItem = async function(productId) {
-    console.log('voidItem called for product:', productId);
+    // Validate input parameters
+    if (productId === null || productId === undefined) {
+        showNotification('Invalid item ID', 'error');
+        return;
+    }
 
-    const isAuthenticated = await showAdminPasswordModal();
-    console.log('Authentication result:', isAuthenticated);
+    // Validate cart exists and is an array
+    if (!Array.isArray(cart)) {
+        showNotification('Cart is not properly initialized', 'error');
+        return;
+    }
 
-    if (isAuthenticated) {
-        // Remove the item from cart
-        const index = cart.findIndex(i => i.id === productId);
-        if (index > -1) {
-            const itemName = cart[index].name;
-            cart.splice(index, 1);
-            updateCartDisplay();
-            showNotification(`${itemName} voided successfully`, 'success');
+    try {
+        // Authenticate admin
+        const isAuthenticated = await showAdminPasswordModal();
+
+        if (!isAuthenticated) {
+            showNotification('Admin authentication required to void items', 'error');
+            return;
         }
-    } else {
-        showNotification('Admin authentication required to void items', 'error');
+
+        // Find the item in cart
+        const index = cart.findIndex(i => i.id === productId);
+
+        if (index === -1) {
+            showNotification('Item not found in cart', 'error');
+            return;
+        }
+
+        // Remove the item from cart
+        const itemName = cart[index].name;
+        cart.splice(index, 1);
+        updateCartDisplay();
+        showNotification(`${itemName} voided successfully`, 'success');
+
+    } catch (error) {
+        console.error('Error voiding item:', error);
+        showNotification('Failed to void item. Please try again.', 'error');
     }
 };
 
