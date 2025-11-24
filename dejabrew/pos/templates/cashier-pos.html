@@ -133,12 +133,20 @@
 
 <section class="content">
     <div class="products-col">
-        <div class="filters-row">
-            <select id="categorySelect">
-                <option value="all">All Products</option>
-                <option value="drinks">Drinks</option>
-                <option value="special">Special</option>
-            </select>
+        <!-- Category Buttons (Converted from Dropdown) -->
+        <div class="filters-row" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <button class="category-btn active" data-category="all" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #8B4513; background: #8B4513; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                All Products
+            </button>
+            <button class="category-btn" data-category="drinks" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                Drinks
+            </button>
+            <button class="category-btn" data-category="special" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                Special
+            </button>
+            <button class="category-btn" data-category="bestselling" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ffc107; background: #ffc107; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                🔥 Best Selling
+            </button>
         </div>
 
         <div id="productsGrid" class="products-grid">
@@ -151,7 +159,7 @@
                 <h3>Order Cart (<span id="cartCount">0</span>)</h3>
                 <!-- Mobile Close Button -->
                 <button class="mobile-cart-close" id="mobileCartClose" style="display: none;">&times;</button>
-                
+
                 <div class="cart-empty-msg" id="cartEmptyMsg">Cart is empty</div>
             </div>
 
@@ -159,26 +167,38 @@
             </div>
 
             <div class="cart-controls">
-                <!-- Discount Button (ADDED) -->
+                <!-- Discount Button (Requires Admin) -->
                 <button id="applyDiscountBtn" class="btn secondary" style="margin-bottom: 10px; width: 100%;">
-                    <i class="fa-solid fa-percent"></i> Apply Discount
+                    <i class="fa-solid fa-percent"></i> Apply Discount (Admin)
                 </button>
-                
+
                 <label>Discount (%)</label>
-                <input id="discountInput" type="number" value="0" min="0" max="100" />
+                <input id="discountInput" type="number" value="0" min="0" max="100" readonly style="background: #f5f5f5;" />
 
-                <label>Dining Option</label>
-                <select id="diningOption">
-                    <option value="dine-in">Dine-In</option>
-                    <option value="take-out">Take-Out</option>
-                </select>
+                <!-- Dining Option Buttons (Converted from Dropdown) -->
+                <label style="margin-top: 15px; margin-bottom: 8px;">Dining Option</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="dining-btn active" data-option="dine-in" style="flex: 1; padding: 12px; border: 2px solid #28a745; background: #28a745; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);">
+                        Dine-In
+                    </button>
+                    <button class="dining-btn" data-option="take-out" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        Take-Out
+                    </button>
+                </div>
 
-                <label>Payment Method</label>
-                <select id="paymentMethod">
-                    <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
-                    <option value="Gcash">Gcash</option>
-                </select>
+                <!-- Payment Method Buttons (Converted from Dropdown) -->
+                <label style="margin-top: 10px; margin-bottom: 8px;">Payment Method</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="payment-btn active" data-method="Cash" style="flex: 1; padding: 12px; border: 2px solid #28a745; background: #28a745; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);">
+                        💵 Cash
+                    </button>
+                    <button class="payment-btn" data-method="Gcash" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        📱 GCash
+                    </button>
+                    <button class="payment-btn" data-method="Card" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        💳 Card
+                    </button>
+                </div>
 
                 <div class="totals-row">
                     <div>Subtotal:</div>
@@ -205,15 +225,38 @@
 
 <div id="printable-receipt" style="display: none;"></div>
 
+<!-- Admin Password Modal (for Discount/Void actions) -->
+<div id="adminPasswordModal" class="payment-modal" style="display: none;">
+    <div class="payment-modal-card">
+        <h3 style="color: #dc3545; margin-bottom: 10px;">🔒 Admin Authentication Required</h3>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Please enter admin credentials to apply discount or void items</p>
+
+        <div class="form-group">
+            <label for="adminUsername">Admin Username</label>
+            <input type="text" id="adminUsername" placeholder="Enter admin username" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="adminPassword">Admin Password</label>
+            <input type="password" id="adminPassword" placeholder="Enter admin password" autocomplete="off">
+        </div>
+
+        <div class="payment-modal-actions">
+            <button id="adminPasswordCancel" class="btn secondary">Cancel</button>
+            <button id="adminPasswordConfirm" class="btn primary" style="background: #dc3545;">Authenticate</button>
+        </div>
+    </div>
+</div>
+
 <div id="paymentModal" class="payment-modal">
     <div class="payment-modal-card">
         <h3 id="paymentModalTitle">Payment Details</h3>
-        
+
         <div class="form-group">
             <label for="paymentCustomerName">Customer Name (Optional)</label>
             <input type="text" id="paymentCustomerName" placeholder="e.g., Juan Dela Cruz">
         </div>
-        
+
         <div class="form-group">
             <label for="paymentRefNum">Reference Number</label>
             <input type="text" id="paymentRefNum" placeholder="Enter transaction ID or Ref #">

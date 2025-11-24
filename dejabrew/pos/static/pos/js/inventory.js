@@ -90,6 +90,13 @@ function renderTable() {
         return;
     }
 
+    // REQUIREMENT: Default sort by lowest usage → highest
+    filteredIngredients.sort((a, b) => {
+        const dailyUseA = consumptionData[a.name] || 0;
+        const dailyUseB = consumptionData[b.name] || 0;
+        return dailyUseA - dailyUseB; // Ascending order (lowest first)
+    });
+
     filteredIngredients.forEach((ing) => {
         const totalStock = (Number(ing.mainStock) || 0) + (Number(ing.stockRoom) || 0);
         let currentStatus = ing.status || 'In Stock';
@@ -119,6 +126,26 @@ function renderTable() {
         const tr = document.createElement('tr');
         const costCellHtml = `<td class="cost-column">${formatPHP(Number(ing.cost || 0))}</td>`;
 
+        // REQUIREMENT: Aggressive visual alerts for low/out of stock (bright red)
+        let rowStyle = '';
+        let statusHtml = '';
+        if (currentStatus.toLowerCase().includes('out')) {
+            rowStyle = 'background-color: #fee2e2 !important; border-left: 4px solid #dc2626 !important;';
+            statusHtml = `<span style="background:#dc2626; color:white; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:700; display:inline-block;">
+                <i class="fa fa-exclamation-triangle"></i> OUT OF STOCK
+            </span>`;
+        } else if (currentStatus.toLowerCase().includes('low')) {
+            rowStyle = 'background-color: #fff3cd !important; border-left: 4px solid #ff6b6b !important;';
+            statusHtml = `<span style="background:#ff6b6b; color:white; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:700; display:inline-block;">
+                <i class="fa fa-exclamation-circle"></i> LOW STOCK
+            </span>`;
+        } else {
+            statusHtml = `<span style="background:#28a745; color:white; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600;">
+                <i class="fa fa-check-circle"></i> In Stock
+            </span>`;
+        }
+
+        tr.style.cssText = rowStyle;
         tr.innerHTML = `
             <td>
                 ${escapeHtml(ing.name)}
@@ -129,7 +156,7 @@ function renderTable() {
             <td>${Number(ing.stockRoom)}</td>
             <td>${escapeHtml(ing.unit)}</td>
             ${costCellHtml}
-            <td><span class="pill ${statusClass(currentStatus)}">${escapeHtml(currentStatus)}</span></td>
+            <td>${statusHtml}</td>
             <td class="text-center">${dailyUse.toFixed(2)} / day</td>
             <td class="text-center font-bold ${daysClass}">${daysUntilEmpty}</td>
             <td class="actions">${actionsHtml}</td>
