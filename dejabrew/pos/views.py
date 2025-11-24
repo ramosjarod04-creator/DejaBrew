@@ -41,6 +41,9 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_permissions(self):
+        # Allow unauthenticated read access for POS operations (list, retrieve)
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
         if self.action in ['update', 'partial_update']:
              return [IsAuthenticated()]
         if self.action in ['create', 'destroy']:
