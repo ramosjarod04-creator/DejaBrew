@@ -1390,22 +1390,50 @@ async function requireAdminForDiscount() {
     }
 }
 
-// Update removeFromCart to require admin auth for void action
+// Update removeFromCart to require admin auth for void action with comprehensive error handling
 const originalRemoveFromCart = window.removeFromCart;
 window.removeFromCart = async function(productId) {
-    const isAuthenticated = await showAdminPasswordModal();
+    // Validate input parameters
+    if (productId === null || productId === undefined) {
+        showNotification('Invalid item ID', 'error');
+        return;
+    }
 
-    if (isAuthenticated) {
-        // Call original remove function
+    // Validate cart exists and is an array
+    if (!Array.isArray(cart)) {
+        showNotification('Cart is not properly initialized', 'error');
+        return;
+    }
+
+    try {
+        // Authenticate admin
+        const isAuthenticated = await showAdminPasswordModal();
+
+        if (!isAuthenticated) {
+            showNotification('Admin authentication required to void items', 'error');
+            return;
+        }
+
+        // Call original remove function if it exists
         if (originalRemoveFromCart) {
             originalRemoveFromCart(productId);
         } else {
             // Fallback implementation
-            cart = cart.filter(item => item.id !== productId);
+            const index = cart.findIndex(i => i.id === productId);
+
+            if (index === -1) {
+                showNotification('Item not found in cart', 'error');
+                return;
+            }
+
+            const itemName = cart[index].name;
+            cart.splice(index, 1);
             updateCartDisplay();
-            showNotification('Item removed from cart', 'info');
+            showNotification(`${itemName} removed from cart`, 'info');
         }
-    } else {
-        showNotification('Admin authentication required to void items', 'error');
+
+    } catch (error) {
+        console.error('Error removing item from cart:', error);
+        showNotification('Failed to remove item. Please try again.', 'error');
     }
 };
