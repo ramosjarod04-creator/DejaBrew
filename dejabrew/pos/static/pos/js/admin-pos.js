@@ -187,7 +187,7 @@ function setupEventListeners() {
     if (mobileCartCloseBtn) {
         mobileCartCloseBtn.addEventListener('click', toggleMobileCart);
     }
-    
+
     paymentModal = document.getElementById('paymentModal');
     paymentModalTitle = document.getElementById('paymentModalTitle');
     paymentCustomerName = document.getElementById('paymentCustomerName');
@@ -195,11 +195,11 @@ function setupEventListeners() {
     paymentModalCancel = document.getElementById('paymentModalCancel');
     paymentModalConfirm = document.getElementById('paymentModalConfirm');
 
-    if (paymentModal) {
+    if (paymentModal && paymentModalCancel && paymentModalConfirm) {
         paymentModalCancel.addEventListener('click', closePaymentModal);
         paymentModalConfirm.addEventListener('click', confirmPaymentDetails);
         paymentModal.addEventListener('click', (e) => {
-            if (e.target === paymentModal) closePaymentModal(); 
+            if (e.target === paymentModal) closePaymentModal();
         });
     }
 }
@@ -247,8 +247,7 @@ async function loadProducts() {
         if (data.success) {
             allProducts = data.products;
             groupProductsByCategory();
-            populateCategorySelect();
-            showCategoryView(); 
+            showCategoryView();
         } else {
             showNotification('Failed to load products', 'error');
         }
@@ -420,11 +419,9 @@ function checkIfCanMakeProduct(product, quantity = 1) {
 function handleSearch() {
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput.value.toLowerCase();
-    
+
     const filteredProducts = allProducts.filter(p => p.name.toLowerCase().includes(searchTerm));
     renderProducts(filteredProducts);
-    
-    document.getElementById('categorySelect').value = 'all';
 }
 
 window.showProductView = (category) => {
@@ -435,7 +432,6 @@ window.showProductView = (category) => {
 
 function showCategoryView() {
     renderProducts(productsByCategory['all'] || []);
-    document.getElementById('categorySelect').value = 'all';
 }
 
 
