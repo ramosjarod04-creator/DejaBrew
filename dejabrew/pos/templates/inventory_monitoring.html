@@ -5,104 +5,63 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'pos/css/inventory.css' %}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-/* Monitoring Specific Styles */
-.monitoring-container {
-    padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
+/* ============================================
+   RESPONSIVE INVENTORY MONITORING STYLES
+   ============================================ */
+
+/* Root Variables */
+:root {
+    --primary-color: #8B4513;
+    --primary-hover: #6b3410;
+    --success-color: #28a745;
+    --success-hover: #218838;
+    --secondary-color: #6c757d;
+    --secondary-hover: #5a6268;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --border-radius: 12px;
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --box-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s ease;
 }
 
+/* Layout Container */
+.monitoring-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Page Header */
 .page-header {
     margin-bottom: 30px;
+    padding: 0 5px;
 }
 
 .page-header h1 {
-    color: #333;
-    margin-bottom: 10px;
+    margin: 0 0 8px 0;
+    color: var(--gray-900);
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
-    color: #666;
-}
-
-/* Filter Section */
-.filter-section {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
-}
-
-.filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.filter-group label {
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #555;
-    font-size: 0.9rem;
-}
-
-.filter-group input,
-.filter-group select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 0.95rem;
-}
-
-.filter-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.btn-primary {
-    background: #8B4513;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #6d3410;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background: #5a6268;
-}
-
-.btn-success {
-    background: #28a745;
-    color: white;
-}
-
-.btn-success:hover {
-    background: #218838;
+    margin: 0;
+    color: var(--gray-500);
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 /* Stats Cards */
@@ -114,46 +73,199 @@
 }
 
 .stat-card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border-left: 4px solid #8B4513;
+    background: #ffffff;
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    border-left: 4px solid var(--primary-color);
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    box-shadow: var(--box-shadow-lg);
+    transform: translateY(-2px);
 }
 
 .stat-card.stock-in {
-    border-left-color: #28a745;
+    border-left-color: var(--success-color);
 }
 
 .stat-card.stock-out {
-    border-left-color: #dc3545;
+    border-left-color: var(--danger-color);
 }
 
 .stat-card.waste {
-    border-left-color: #ffc107;
+    border-left-color: var(--warning-color);
 }
 
 .stat-card.transfers {
-    border-left-color: #17a2b8;
+    border-left-color: var(--info-color);
 }
 
 .stat-card h3 {
-    margin: 0 0 10px 0;
-    color: #666;
-    font-size: 0.9rem;
+    margin: 0 0 12px 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .stat-card .value {
     font-size: 2rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 8px;
+    line-height: 1;
 }
 
 .stat-card .sub-value {
-    color: #666;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Filter Section */
+.filter-section {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 30px;
+}
+
+.filter-section h3 {
+    margin: 0 0 20px 0;
+    font-size: 1rem;
+    color: var(--gray-700);
+    font-weight: 600;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 10px 14px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Button Styles */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--box-shadow);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: white;
+    border: 1px solid var(--secondary-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--secondary-hover);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+    border: 1px solid var(--success-color);
+}
+
+.btn-success:hover:not(:disabled) {
+    background: var(--success-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--box-shadow);
+}
+
+/* Setup Notice */
+.setup-notice {
+    background: #fff3cd;
+    border: 1px solid var(--warning-color);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    margin-bottom: 30px;
+}
+
+.setup-notice h3 {
+    margin: 0 0 12px 0;
+    color: #856404;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.setup-notice p {
+    margin: 0 0 15px 0;
+    color: #856404;
+    line-height: 1.6;
+}
+
+.setup-notice code {
+    background: #ffffff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 5px;
+    font-family: 'Courier New', monospace;
     font-size: 0.9rem;
 }
 
@@ -162,7 +274,7 @@
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 2px solid var(--gray-200);
 }
 
 .tab-button {
@@ -172,17 +284,18 @@
     border-bottom: 3px solid transparent;
     cursor: pointer;
     font-weight: 500;
-    color: #666;
-    transition: all 0.3s;
+    font-size: 14px;
+    color: var(--gray-600);
+    transition: var(--transition);
 }
 
 .tab-button.active {
-    color: #8B4513;
-    border-bottom-color: #8B4513;
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
 }
 
 .tab-button:hover {
-    color: #8B4513;
+    color: var(--primary-color);
 }
 
 .tab-content {
@@ -193,81 +306,122 @@
     display: block;
 }
 
-/* Table Styles */
+/* Table Container */
 .table-container {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background: #ffffff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
     overflow: hidden;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 14px;
 }
 
 .data-table thead {
-    background: #f8f9fa;
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
 }
 
 .data-table th {
-    padding: 12px;
+    padding: 14px 12px;
     text-align: left;
     font-weight: 600;
-    color: #333;
-    border-bottom: 2px solid #dee2e6;
-    font-size: 0.9rem;
+    color: var(--gray-700);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
-.data-table td {
-    padding: 12px;
-    border-bottom: 1px solid #dee2e6;
-    font-size: 0.9rem;
+.data-table tbody tr {
+    border-bottom: 1px solid var(--gray-200);
+    transition: background-color 0.2s ease;
 }
 
 .data-table tbody tr:hover {
-    background: #f8f9fa;
+    background: var(--gray-50);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table td {
+    padding: 14px 12px;
+    color: var(--gray-700);
+    font-size: 14px;
+    vertical-align: middle;
 }
 
 /* Transaction Type Badges */
 .transaction-badge {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
     font-size: 0.8rem;
     font-weight: 600;
 }
 
 .transaction-badge.stock-in {
-    background: #d4edda;
-    color: #155724;
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .transaction-badge.stock-out {
-    background: #f8d7da;
-    color: #721c24;
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 .transaction-badge.waste {
-    background: #fff3cd;
-    color: #856404;
+    background: #fef3c7;
+    color: #92400e;
 }
 
 .transaction-badge.transfer {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #dbeafe;
+    color: #1e40af;
 }
 
-/* Loading State */
-.loading {
+/* Color helpers for ingredients table */
+.text-success {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.text-danger {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.text-warning {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+/* Loading and Empty States */
+.loading,
+.empty-state {
     text-align: center;
-    padding: 40px;
-    color: #666;
+    padding: 40px 20px;
+    color: var(--gray-500);
 }
 
-.loading i {
-    font-size: 2rem;
+.loading-spinner {
+    border: 3px solid var(--gray-200);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
     animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
 }
 
 @keyframes spin {
@@ -275,35 +429,289 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #666;
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    flex-wrap: wrap;
 }
 
-.empty-state i {
-    font-size: 4rem;
-    color: #ddd;
-    margin-bottom: 20px;
+.pagination-info {
+    padding: 0 15px;
+    color: var(--gray-600);
+    font-size: 14px;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Large Desktop (1600px+) */
+@media (min-width: 1600px) {
+    .monitoring-container {
+        padding: 30px;
+    }
+}
+
+/* Desktop (1200px - 1599px) */
+@media (max-width: 1599px) {
+    .monitoring-container {
+        max-width: 1400px;
+    }
+}
+
+/* Laptop/Tablet Landscape (992px - 1199px) */
+@media (max-width: 1199px) {
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .stat-card .value {
+        font-size: 1.75rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+/* Tablet Portrait (768px - 991px) */
+@media (max-width: 991px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     .filter-grid {
         grid-template-columns: 1fr;
     }
 
-    .stats-grid {
-        grid-template-columns: 1fr;
+    .filter-actions {
+        flex-direction: column;
     }
 
-    .table-container {
-        overflow-x: auto;
+    .filter-actions .btn {
+        width: 100%;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        flex: 1;
+        min-width: 140px;
+    }
+}
+
+/* Mobile Landscape (576px - 767px) */
+@media (max-width: 767px) {
+    .monitoring-container {
+        padding: 15px;
+    }
+
+    .page-header {
+        margin-bottom: 20px;
+    }
+
+    .page-header h1 {
+        font-size: 22px;
+    }
+
+    .page-header p {
+        font-size: 13px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .stat-card .value {
+        font-size: 1.5rem;
+    }
+
+    .filter-section {
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+
+    .setup-notice {
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+
+    .tabs {
+        margin-bottom: 15px;
+    }
+
+    .tab-button {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-width: auto;
     }
 
     .data-table {
-        min-width: 800px;
+        font-size: 13px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+
+    .data-table th {
+        font-size: 11px;
+    }
+
+    .pagination-controls {
+        padding: 15px;
+        gap: 8px;
+    }
+
+    .pagination-controls .btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .pagination-info {
+        padding: 0 10px;
+        font-size: 13px;
+    }
+}
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+    .monitoring-container {
+        padding: 12px;
+    }
+
+    .page-header h1 {
+        font-size: 20px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-card h3 {
+        font-size: 0.75rem;
+    }
+
+    .stat-card .value {
+        font-size: 1.375rem;
+    }
+
+    .stat-card .sub-value {
+        font-size: 0.8rem;
+    }
+
+    .filter-section {
+        padding: 16px;
+    }
+
+    .filter-section h3 {
+        font-size: 0.9rem;
+    }
+
+    .setup-notice {
+        padding: 16px;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        font-size: 13px;
+    }
+
+    .tab-button {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+
+    .transaction-badge {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+
+    .pagination-controls .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Extra Small Mobile (360px and below) */
+@media (max-width: 360px) {
+    .monitoring-container {
+        padding: 10px;
+    }
+
+    .page-header h1 {
+        font-size: 18px;
+    }
+
+    .stat-card .value {
+        font-size: 1.25rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 6px 4px;
+        font-size: 10px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .filter-section,
+    .setup-notice,
+    .tabs,
+    .pagination-controls {
+        display: none !important;
+    }
+
+    .table-container {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    .page-header {
+        margin-bottom: 20px;
+    }
+
+    .stats-grid {
+        margin-bottom: 20px;
+        page-break-after: avoid;
+    }
+
+    .tab-content {
+        display: block !important;
+        page-break-before: always;
+    }
+
+    .tab-content:first-child {
+        page-break-before: avoid;
     }
 }
 </style>
@@ -311,14 +719,39 @@
 
 {% block content %}
 <div class="monitoring-container">
+    <!-- Page Header -->
     <div class="page-header">
-        <h1><i class="fas fa-chart-line"></i> Inventory Monitoring</h1>
+        <h1>Inventory Monitoring</h1>
         <p>Track stock movements, usage, and waste with comprehensive filtering and reporting</p>
     </div>
 
-    <!-- Filter Section -->
+    <!-- Summary Stats - MOVED TO TOP -->
+    <div class="stats-grid" id="summary-stats">
+        <div class="stat-card stock-in">
+            <h3>Stock In</h3>
+            <div class="value" id="stock-in-count">0</div>
+            <div class="sub-value" id="stock-in-cost">₱0.00</div>
+        </div>
+        <div class="stat-card stock-out">
+            <h3>Stock Out (Used)</h3>
+            <div class="value" id="stock-out-count">0</div>
+            <div class="sub-value" id="stock-out-cost">₱0.00</div>
+        </div>
+        <div class="stat-card waste">
+            <h3>Waste</h3>
+            <div class="value" id="waste-count">0</div>
+            <div class="sub-value" id="waste-cost">₱0.00</div>
+        </div>
+        <div class="stat-card transfers">
+            <h3>Transfers</h3>
+            <div class="value" id="transfers-count">0</div>
+            <div class="sub-value">Between locations</div>
+        </div>
+    </div>
+
+    <!-- Filter Section - REPOSITIONED BETWEEN STATS AND TABLE -->
     <div class="filter-section">
-        <h3 style="margin-top: 0; margin-bottom: 15px;">Filters</h3>
+        <h3>Filters</h3>
         <div class="filter-grid">
             <div class="filter-group">
                 <label for="start-date">Start Date</label>
@@ -348,126 +781,122 @@
         </div>
         <div class="filter-actions">
             <button class="btn btn-primary" id="apply-filter">
-                <i class="fas fa-search"></i> Apply Filter
+                Apply Filter
             </button>
             <button class="btn btn-secondary" id="reset-filter">
-                <i class="fas fa-undo"></i> Reset
+                Reset
             </button>
             <button class="btn btn-success" id="export-csv">
-                <i class="fas fa-file-excel"></i> Export to Excel
+                Export to Excel
             </button>
         </div>
     </div>
 
     <!-- First Time Setup Notice -->
-    <div id="setup-notice" style="display: none; background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h3 style="margin-top: 0; color: #856404;">
-            <i class="fas fa-info-circle"></i> First Time Setup Required
-        </h3>
-        <p style="margin-bottom: 15px; color: #856404;">
+    <div id="setup-notice" class="setup-notice" style="display: none;">
+        <h3>First Time Setup Required</h3>
+        <p>
             No transaction data found. Click the button below to populate historical data from existing orders and waste logs:
         </p>
         <button id="populate-btn" class="btn btn-primary" style="margin-bottom: 15px;">
-            <i class="fas fa-database"></i> Populate Historical Data
+            Populate Historical Data
         </button>
         <div id="populate-result" style="display: none; margin-top: 10px; padding: 10px; border-radius: 4px;"></div>
-        <p style="margin-bottom: 15px; margin-top: 15px; color: #856404; font-size: 0.9em;">
+        <p style="margin: 15px 0; font-size: 0.9em;">
             <strong>Alternative:</strong> You can also run this command in your terminal:<br>
-            <code style="background: #fff; padding: 5px; display: inline-block; margin-top: 5px;">python manage.py populate_inventory_transactions</code>
+            <code>python manage.py populate_inventory_transactions</code>
         </p>
-        <p style="margin-bottom: 0; color: #856404;">
+        <p style="margin-bottom: 0;">
             <strong>Note:</strong> After populating, all new inventory changes will be automatically tracked.
         </p>
-    </div>
-
-    <!-- Summary Stats -->
-    <div class="stats-grid" id="summary-stats">
-        <div class="stat-card stock-in">
-            <h3><i class="fas fa-arrow-down"></i> Stock In</h3>
-            <div class="value" id="stock-in-count">0</div>
-            <div class="sub-value" id="stock-in-cost">₱0.00</div>
-        </div>
-        <div class="stat-card stock-out">
-            <h3><i class="fas fa-arrow-up"></i> Stock Out (Used)</h3>
-            <div class="value" id="stock-out-count">0</div>
-            <div class="sub-value" id="stock-out-cost">₱0.00</div>
-        </div>
-        <div class="stat-card waste">
-            <h3><i class="fas fa-trash"></i> Waste</h3>
-            <div class="value" id="waste-count">0</div>
-            <div class="sub-value" id="waste-cost">₱0.00</div>
-        </div>
-        <div class="stat-card transfers">
-            <h3><i class="fas fa-exchange-alt"></i> Transfers</h3>
-            <div class="value" id="transfers-count">0</div>
-            <div class="sub-value">Between locations</div>
-        </div>
     </div>
 
     <!-- Tabs -->
     <div class="tabs">
         <button class="tab-button active" data-tab="transactions">
-            <i class="fas fa-list"></i> Transactions
+            Transactions
         </button>
         <button class="tab-button" data-tab="ingredients">
-            <i class="fas fa-cubes"></i> By Ingredient
+            By Ingredient
         </button>
     </div>
 
     <!-- Transactions Tab -->
     <div class="tab-content active" id="transactions-tab">
         <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Date/Time</th>
-                        <th>Ingredient</th>
-                        <th>Type</th>
-                        <th>Quantity</th>
-                        <th>Cost</th>
-                        <th>Main Stock</th>
-                        <th>Stock Room</th>
-                        <th>User</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody id="transactions-tbody">
-                    <tr>
-                        <td colspan="9" class="loading">
-                            <i class="fas fa-spinner"></i><br>
-                            Loading data...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Ingredient</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Cost</th>
+                            <th>Main Stock</th>
+                            <th>Stock Room</th>
+                            <th>User</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-tbody">
+                        <tr>
+                            <td colspan="9" class="loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading data...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-controls" id="transactions-pagination">
+                <button id="firstPageTransactions" class="btn btn-secondary">First</button>
+                <button id="prevPageTransactions" class="btn btn-secondary">Previous</button>
+                <span class="pagination-info">Page <span id="currentPageTransactions">1</span> of <span id="totalPagesTransactions">1</span></span>
+                <button id="nextPageTransactions" class="btn btn-secondary">Next</button>
+                <button id="lastPageTransactions" class="btn btn-secondary">Last</button>
+            </div>
         </div>
     </div>
 
     <!-- Ingredients Summary Tab -->
     <div class="tab-content" id="ingredients-tab">
         <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Ingredient</th>
-                        <th>Category</th>
-                        <th>Stock In</th>
-                        <th>Stock Out</th>
-                        <th>Waste</th>
-                        <th>Total Cost</th>
-                        <th>Current Main</th>
-                        <th>Current Room</th>
-                    </tr>
-                </thead>
-                <tbody id="ingredients-tbody">
-                    <tr>
-                        <td colspan="8" class="loading">
-                            <i class="fas fa-spinner"></i><br>
-                            Loading data...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ingredient</th>
+                            <th>Category</th>
+                            <th>Stock In</th>
+                            <th>Stock Out</th>
+                            <th>Waste</th>
+                            <th>Total Cost</th>
+                            <th>Current Main</th>
+                            <th>Current Room</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ingredients-tbody">
+                        <tr>
+                            <td colspan="8" class="loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading data...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-controls" id="ingredients-pagination">
+                <button id="firstPageIngredients" class="btn btn-secondary">First</button>
+                <button id="prevPageIngredients" class="btn btn-secondary">Previous</button>
+                <span class="pagination-info">Page <span id="currentPageIngredients">1</span> of <span id="totalPagesIngredients">1</span></span>
+                <button id="nextPageIngredients" class="btn btn-secondary">Next</button>
+                <button id="lastPageIngredients" class="btn btn-secondary">Last</button>
+            </div>
         </div>
     </div>
 </div>
@@ -475,5 +904,618 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{% static 'pos/js/inventory_monitoring.js' %}?v=2024112202"></script>
+<script>
+/**
+ * Inventory Monitoring JavaScript with Pagination
+ * Handles filtering, data display, pagination, and export functionality
+ */
+
+// Global state
+let monitoringData = {
+    transactions: [],
+    ingredientSummary: [],
+    summary: {},
+    ingredients: []
+};
+
+// Pagination state
+let transactionsPagination = {
+    currentPage: 1,
+    itemsPerPage: 20,
+    totalItems: 0
+};
+
+let ingredientsPagination = {
+    currentPage: 1,
+    itemsPerPage: 20,
+    totalItems: 0
+};
+
+// CSRF Token setup
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Initialize date filters to show all data (1 year back)
+function initializeDateFilters() {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setFullYear(startDate.getFullYear() - 1);
+
+    document.getElementById('end-date').valueAsDate = endDate;
+    document.getElementById('start-date').valueAsDate = startDate;
+}
+
+// Fetch monitoring data
+async function fetchMonitoringData() {
+    try {
+        showLoading();
+
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        const ingredientId = document.getElementById('ingredient-filter').value;
+        const transactionType = document.getElementById('transaction-type-filter').value;
+
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', new Date(startDate).toISOString());
+        if (endDate) {
+            const endDateTime = new Date(endDate);
+            endDateTime.setHours(23, 59, 59, 999);
+            params.append('end_date', endDateTime.toISOString());
+        }
+        if (ingredientId) params.append('ingredient_id', ingredientId);
+        if (transactionType) params.append('transaction_type', transactionType);
+
+        const response = await fetch(`/api/inventory-monitoring/?${params.toString()}`, {
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch monitoring data');
+
+        const data = await response.json();
+
+        if (data.success) {
+            monitoringData = {
+                transactions: data.transactions || [],
+                ingredientSummary: data.ingredient_summary || [],
+                summary: data.summary || {},
+                ingredients: data.ingredients || []
+            };
+
+            // Reset pagination when data changes
+            transactionsPagination.currentPage = 1;
+            transactionsPagination.totalItems = monitoringData.transactions.length;
+            ingredientsPagination.currentPage = 1;
+            ingredientsPagination.totalItems = monitoringData.ingredientSummary.length;
+
+            updateUI();
+        } else {
+            throw new Error(data.error || 'Unknown error');
+        }
+
+    } catch (error) {
+        console.error('Error fetching monitoring data:', error);
+        showError('Failed to load monitoring data. Please try again.');
+    }
+}
+
+// Show loading state
+function showLoading() {
+    const transactionsTbody = document.getElementById('transactions-tbody');
+    const ingredientsTbody = document.getElementById('ingredients-tbody');
+
+    transactionsTbody.innerHTML = `
+        <tr>
+            <td colspan="9" class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading data...</p>
+            </td>
+        </tr>
+    `;
+
+    ingredientsTbody.innerHTML = `
+        <tr>
+            <td colspan="8" class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading data...</p>
+            </td>
+        </tr>
+    `;
+}
+
+// Show error message
+function showError(message) {
+    const transactionsTbody = document.getElementById('transactions-tbody');
+    transactionsTbody.innerHTML = `
+        <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--danger-color);">
+                <p>${message}</p>
+            </td>
+        </tr>
+    `;
+}
+
+// Update all UI elements
+function updateUI() {
+    updateSummaryStats();
+    updateTransactionsTable();
+    updateIngredientsTable();
+    updateIngredientDropdown();
+    checkForNoData();
+}
+
+// Check if there's no data and show setup notice
+function checkForNoData() {
+    const { transactions } = monitoringData;
+    const setupNotice = document.getElementById('setup-notice');
+
+    if (transactions.length === 0) {
+        setupNotice.style.display = 'block';
+    } else {
+        setupNotice.style.display = 'none';
+    }
+}
+
+// Update summary statistics
+function updateSummaryStats() {
+    const { summary } = monitoringData;
+
+    document.getElementById('stock-in-count').textContent = summary.stock_in?.count || 0;
+    document.getElementById('stock-in-cost').textContent =
+        `₱${(summary.stock_in?.total_cost || 0).toFixed(2)}`;
+
+    document.getElementById('stock-out-count').textContent = summary.stock_out?.count || 0;
+    document.getElementById('stock-out-cost').textContent =
+        `₱${(summary.stock_out?.total_cost || 0).toFixed(2)}`;
+
+    document.getElementById('waste-count').textContent = summary.waste?.count || 0;
+    document.getElementById('waste-cost').textContent =
+        `₱${(summary.waste?.total_cost || 0).toFixed(2)}`;
+
+    document.getElementById('transfers-count').textContent = summary.transfers?.count || 0;
+}
+
+// Pagination helper functions for transactions
+function getTransactionsTotalPages() {
+    return Math.ceil(transactionsPagination.totalItems / transactionsPagination.itemsPerPage);
+}
+
+function getPaginatedTransactions() {
+    const start = (transactionsPagination.currentPage - 1) * transactionsPagination.itemsPerPage;
+    const end = start + transactionsPagination.itemsPerPage;
+    return monitoringData.transactions.slice(start, end);
+}
+
+function updateTransactionsPaginationControls() {
+    const totalPages = getTransactionsTotalPages();
+
+    document.getElementById('currentPageTransactions').textContent = transactionsPagination.currentPage;
+    document.getElementById('totalPagesTransactions').textContent = totalPages;
+
+    const firstBtn = document.getElementById('firstPageTransactions');
+    const prevBtn = document.getElementById('prevPageTransactions');
+    const nextBtn = document.getElementById('nextPageTransactions');
+    const lastBtn = document.getElementById('lastPageTransactions');
+
+    firstBtn.disabled = transactionsPagination.currentPage === 1;
+    prevBtn.disabled = transactionsPagination.currentPage === 1;
+    nextBtn.disabled = transactionsPagination.currentPage >= totalPages;
+    lastBtn.disabled = transactionsPagination.currentPage >= totalPages;
+}
+
+// Update transactions table with pagination
+function updateTransactionsTable() {
+    const tbody = document.getElementById('transactions-tbody');
+    const paginatedTransactions = getPaginatedTransactions();
+
+    if (paginatedTransactions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="empty-state">
+                    <p>No transactions found for the selected filters</p>
+                </td>
+            </tr>
+        `;
+        updateTransactionsPaginationControls();
+        return;
+    }
+
+    tbody.innerHTML = paginatedTransactions.map(txn => {
+        const date = new Date(txn.created_at);
+        const badgeClass = getBadgeClass(txn.transaction_type);
+
+        return `
+            <tr>
+                <td>${formatDateTime(date)}</td>
+                <td>${escapeHtml(txn.ingredient_name)}</td>
+                <td>
+                    <span class="transaction-badge ${badgeClass}">
+                        ${escapeHtml(txn.transaction_type_display)}
+                    </span>
+                </td>
+                <td>${formatQuantity(txn.quantity)} ${escapeHtml(txn.unit)}</td>
+                <td>₱${txn.total_cost.toFixed(2)}</td>
+                <td>${txn.main_stock_after.toFixed(2)} ${escapeHtml(txn.unit)}</td>
+                <td>${txn.stock_room_after.toFixed(2)} ${escapeHtml(txn.unit)}</td>
+                <td>${escapeHtml(txn.user)}</td>
+                <td>${escapeHtml(txn.notes || '-')}</td>
+            </tr>
+        `;
+    }).join('');
+
+    updateTransactionsPaginationControls();
+}
+
+// Pagination helper functions for ingredients
+function getIngredientsTotalPages() {
+    return Math.ceil(ingredientsPagination.totalItems / ingredientsPagination.itemsPerPage);
+}
+
+function getPaginatedIngredients() {
+    const start = (ingredientsPagination.currentPage - 1) * ingredientsPagination.itemsPerPage;
+    const end = start + ingredientsPagination.itemsPerPage;
+    return monitoringData.ingredientSummary.slice(start, end);
+}
+
+function updateIngredientsPaginationControls() {
+    const totalPages = getIngredientsTotalPages();
+
+    document.getElementById('currentPageIngredients').textContent = ingredientsPagination.currentPage;
+    document.getElementById('totalPagesIngredients').textContent = totalPages;
+
+    const firstBtn = document.getElementById('firstPageIngredients');
+    const prevBtn = document.getElementById('prevPageIngredients');
+    const nextBtn = document.getElementById('nextPageIngredients');
+    const lastBtn = document.getElementById('lastPageIngredients');
+
+    firstBtn.disabled = ingredientsPagination.currentPage === 1;
+    prevBtn.disabled = ingredientsPagination.currentPage === 1;
+    nextBtn.disabled = ingredientsPagination.currentPage >= totalPages;
+    lastBtn.disabled = ingredientsPagination.currentPage >= totalPages;
+}
+
+// Update ingredients summary table with pagination
+function updateIngredientsTable() {
+    const tbody = document.getElementById('ingredients-tbody');
+    const paginatedIngredients = getPaginatedIngredients();
+
+    if (paginatedIngredients.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty-state">
+                    <p>No ingredient data found for the selected filters</p>
+                </td>
+            </tr>
+        `;
+        updateIngredientsPaginationControls();
+        return;
+    }
+
+    tbody.innerHTML = paginatedIngredients.map(ing => {
+        return `
+            <tr>
+                <td><strong>${escapeHtml(ing.name)}</strong></td>
+                <td>${escapeHtml(ing.category || '-')}</td>
+                <td class="text-success">+${ing.stock_in.toFixed(2)} ${escapeHtml(ing.unit)}</td>
+                <td class="text-danger">-${ing.stock_out.toFixed(2)} ${escapeHtml(ing.unit)}</td>
+                <td class="text-warning">${ing.waste.toFixed(2)} ${escapeHtml(ing.unit)}</td>
+                <td><strong>₱${ing.total_cost.toFixed(2)}</strong></td>
+                <td>${ing.current_main_stock.toFixed(2)} ${escapeHtml(ing.unit)}</td>
+                <td>${ing.current_stock_room.toFixed(2)} ${escapeHtml(ing.unit)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    updateIngredientsPaginationControls();
+}
+
+// Update ingredient dropdown
+function updateIngredientDropdown() {
+    const select = document.getElementById('ingredient-filter');
+    const currentValue = select.value;
+
+    const options = ['<option value="">All Ingredients</option>'];
+
+    monitoringData.ingredients.forEach(ing => {
+        options.push(`<option value="${ing.id}">${escapeHtml(ing.name)}</option>`);
+    });
+
+    select.innerHTML = options.join('');
+
+    if (currentValue) {
+        select.value = currentValue;
+    }
+}
+
+// Get badge class based on transaction type
+function getBadgeClass(type) {
+    switch(type) {
+        case 'STOCK_IN':
+            return 'stock-in';
+        case 'STOCK_OUT':
+            return 'stock-out';
+        case 'WASTE':
+            return 'waste';
+        case 'TRANSFER_TO_MAIN':
+        case 'TRANSFER_TO_ROOM':
+            return 'transfer';
+        default:
+            return '';
+    }
+}
+
+// Format date/time
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+// Format quantity
+function formatQuantity(qty) {
+    if (qty > 0) {
+        return `+${qty.toFixed(2)}`;
+    } else if (qty < 0) {
+        return qty.toFixed(2);
+    }
+    return qty.toFixed(2);
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// Export to CSV/Excel
+async function exportData() {
+    try {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        const ingredientId = document.getElementById('ingredient-filter').value;
+        const transactionType = document.getElementById('transaction-type-filter').value;
+
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', new Date(startDate).toISOString());
+        if (endDate) {
+            const endDateTime = new Date(endDate);
+            endDateTime.setHours(23, 59, 59, 999);
+            params.append('end_date', endDateTime.toISOString());
+        }
+        if (ingredientId) params.append('ingredient_id', ingredientId);
+        if (transactionType) params.append('transaction_type', transactionType);
+        params.append('format', 'csv');
+
+        const url = `/api/inventory-monitoring/export/?${params.toString()}`;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'inventory_monitoring.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('Failed to export data. Please try again.');
+    }
+}
+
+// Reset filters
+function resetFilters() {
+    initializeDateFilters();
+    document.getElementById('ingredient-filter').value = '';
+    document.getElementById('transaction-type-filter').value = '';
+    fetchMonitoringData();
+}
+
+// Tab switching
+function setupTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            button.classList.add('active');
+            document.getElementById(`${targetTab}-tab`).classList.add('active');
+        });
+    });
+}
+
+// Populate historical data
+async function populateHistoricalData() {
+    const button = document.getElementById('populate-btn');
+    const resultDiv = document.getElementById('populate-result');
+
+    try {
+        button.disabled = true;
+        button.textContent = 'Populating...';
+        resultDiv.style.display = 'none';
+
+        const response = await fetch('/api/inventory-monitoring/populate/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#d4edda';
+            resultDiv.style.color = '#155724';
+            resultDiv.style.border = '1px solid #c3e6cb';
+            resultDiv.innerHTML = `
+                <strong>✓ Success!</strong> Historical data populated successfully.<br>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Stock Out Transactions: ${data.stats.stock_out}</li>
+                    <li>Waste Transactions: ${data.stats.waste}</li>
+                    <li>Total: ${data.stats.total}</li>
+                </ul>
+            `;
+
+            setTimeout(() => {
+                fetchMonitoringData();
+            }, 2000);
+
+        } else {
+            throw new Error(data.error || 'Failed to populate data');
+        }
+
+    } catch (error) {
+        console.error('Error populating historical data:', error);
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#f8d7da';
+        resultDiv.style.color = '#721c24';
+        resultDiv.style.border = '1px solid #f5c6cb';
+        resultDiv.innerHTML = `
+            <strong>✗ Error:</strong> ${error.message}<br>
+            <small>Please try running the command manually or check the console for details.</small>
+        `;
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Populate Historical Data';
+    }
+}
+
+// Setup pagination event listeners for transactions
+function setupTransactionsPagination() {
+    document.getElementById('firstPageTransactions').addEventListener('click', () => {
+        if (transactionsPagination.currentPage !== 1) {
+            transactionsPagination.currentPage = 1;
+            updateTransactionsTable();
+        }
+    });
+
+    document.getElementById('prevPageTransactions').addEventListener('click', () => {
+        if (transactionsPagination.currentPage > 1) {
+            transactionsPagination.currentPage--;
+            updateTransactionsTable();
+        }
+    });
+
+    document.getElementById('nextPageTransactions').addEventListener('click', () => {
+        const totalPages = getTransactionsTotalPages();
+        if (transactionsPagination.currentPage < totalPages) {
+            transactionsPagination.currentPage++;
+            updateTransactionsTable();
+        }
+    });
+
+    document.getElementById('lastPageTransactions').addEventListener('click', () => {
+        const totalPages = getTransactionsTotalPages();
+        if (transactionsPagination.currentPage !== totalPages) {
+            transactionsPagination.currentPage = totalPages;
+            updateTransactionsTable();
+        }
+    });
+}
+
+// Setup pagination event listeners for ingredients
+function setupIngredientsPagination() {
+    document.getElementById('firstPageIngredients').addEventListener('click', () => {
+        if (ingredientsPagination.currentPage !== 1) {
+            ingredientsPagination.currentPage = 1;
+            updateIngredientsTable();
+        }
+    });
+
+    document.getElementById('prevPageIngredients').addEventListener('click', () => {
+        if (ingredientsPagination.currentPage > 1) {
+            ingredientsPagination.currentPage--;
+            updateIngredientsTable();
+        }
+    });
+
+    document.getElementById('nextPageIngredients').addEventListener('click', () => {
+        const totalPages = getIngredientsTotalPages();
+        if (ingredientsPagination.currentPage < totalPages) {
+            ingredientsPagination.currentPage++;
+            updateIngredientsTable();
+        }
+    });
+
+    document.getElementById('lastPageIngredients').addEventListener('click', () => {
+        const totalPages = getIngredientsTotalPages();
+        if (ingredientsPagination.currentPage !== totalPages) {
+            ingredientsPagination.currentPage = totalPages;
+            updateIngredientsTable();
+        }
+    });
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', () => {
+    initializeDateFilters();
+    setupTabs();
+    setupTransactionsPagination();
+    setupIngredientsPagination();
+
+    fetchMonitoringData();
+
+    // Event listeners
+    document.getElementById('apply-filter').addEventListener('click', () => {
+        console.log('Apply Filter clicked');
+        console.log('Start Date:', document.getElementById('start-date').value);
+        console.log('End Date:', document.getElementById('end-date').value);
+        fetchMonitoringData();
+    });
+
+    document.getElementById('reset-filter').addEventListener('click', resetFilters);
+    document.getElementById('export-csv').addEventListener('click', exportData);
+
+    const populateBtn = document.getElementById('populate-btn');
+    if (populateBtn) {
+        populateBtn.addEventListener('click', populateHistoricalData);
+    }
+
+    // Allow enter key to apply filter
+    document.querySelectorAll('.filter-group input, .filter-group select').forEach(element => {
+        element.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                fetchMonitoringData();
+            }
+        });
+    });
+
+    const dateInputs = [document.getElementById('start-date'), document.getElementById('end-date')];
+    dateInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            console.log('Date changed to:', input.value);
+        });
+    });
+});
+</script>
 {% endblock %}
