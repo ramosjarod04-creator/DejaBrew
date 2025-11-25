@@ -388,9 +388,11 @@ def compute_inventory_forecast(items_with_predictions, IngredientModel, RecipeEx
     inventory_forecast = []
 
     for ing in all_ingredients:
-        current = float(getattr(ing, 'mainStock', 0) or 0)
+        # Get current stock (using mainStock or stock field)
+        current_stock = float(getattr(ing, 'mainStock', None) or getattr(ing, 'stock', 0) or 0)
+        current = current_stock
         forecast_levels = []
-        
+
         # Determine number of periods based on aggregation
         if period == 'weekly':
             num_periods = (days + 6) // 7  # Round up to weeks
@@ -398,61 +400,68 @@ def compute_inventory_forecast(items_with_predictions, IngredientModel, RecipeEx
             num_periods = (days + 29) // 30  # Round up to months
         else:
             num_periods = days  # Daily
-        
+
+        # Calculate total consumption across all periods
+        total_usage = 0.0
+
         # Calculate consumption per period
         for period_idx in range(num_periods):
             period_consumption = 0.0
-            
+
             # Iterate through all items
             for item_name, preds in items_with_predictions.items():
                 recipe = RecipeExtractor(item_name)
                 if not recipe:
                     continue
-                
+
                 # Find this ingredient in the recipe
                 for rec in recipe:
                     rec_ing_name = rec.get('ingredient')
                     qty_per_item = float(rec.get('quantity', 0) or 0)
                     if not rec_ing_name or qty_per_item == 0:
                         continue
-                    
+
                     # Match ingredient
                     matched = None
                     if rec_ing_name in ing_map:
                         matched = ing_map[rec_ing_name]
                     else:
                         matched = match_ingredient_name(rec_ing_name, all_ingredients)
-                    
+
                     if matched and matched.id == ing.id:
                         # Get predicted quantity for this period
                         if period_idx < len(preds):
                             predicted_qty = preds[period_idx]
                         else:
                             predicted_qty = 0
-                        
+
                         period_consumption += predicted_qty * qty_per_item
-            
+
+            total_usage += period_consumption
             current -= period_consumption
             forecast_levels.append(current)
-        
+
         # Determine days to empty
-        days_to_empty = None
+        days_until_depleted = None
         for i, level in enumerate(forecast_levels):
             if level <= 0:
                 # Calculate actual days based on period type
                 if period == 'weekly':
-                    days_to_empty = (i + 1) * 7
+                    days_until_depleted = (i + 1) * 7
                 elif period == 'monthly':
-                    days_to_empty = (i + 1) * 30
+                    days_until_depleted = (i + 1) * 30
                 else:
-                    days_to_empty = i + 1
+                    days_until_depleted = i + 1
                 break
-        
-        inventory_forecast.append({
-            'name': ing.name,
-            'unit': getattr(ing, 'unit', ''),
-            'forecast': [round(x, 2) for x in forecast_levels],
-            'days_to_empty': days_to_empty
-        })
-    
+
+        # Only include ingredients that are actually used in the forecast
+        if total_usage > 0:
+            inventory_forecast.append({
+                'ingredient': ing.name,  # Changed from 'name' to 'ingredient'
+                'current_stock': current_stock,  # Added current stock
+                'total_usage': total_usage,  # Added total usage
+                'unit': getattr(ing, 'unit', ''),
+                'days_until_depleted': days_until_depleted  # Changed from 'days_to_empty'
+            })
+
     return inventory_forecast
