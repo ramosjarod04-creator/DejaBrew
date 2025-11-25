@@ -1615,6 +1615,22 @@ function setupAdminPasswordModal() {
 
 function showAdminPasswordModal() {
     console.log('showAdminPasswordModal called');
+
+    // **CRITICAL FIX**: If modal is already visible, don't create a new promise
+    // This prevents double authentication scenarios
+    if (adminPasswordModal && adminPasswordModal.classList.contains('is-visible')) {
+        console.warn('⚠️ Modal already visible! Returning existing promise to prevent duplicate auth.');
+        // Return a promise that will be resolved by the existing modal flow
+        return new Promise((resolve) => {
+            // Store this resolve function so when the modal completes, both promises resolve
+            const originalResolve = adminPasswordResolve;
+            adminPasswordResolve = (result) => {
+                if (originalResolve) originalResolve(result);
+                resolve(result);
+            };
+        });
+    }
+
     return new Promise((resolve) => {
         adminPasswordResolve = resolve;
         isAuthenticating = false; // Reset authentication flag
@@ -1626,17 +1642,18 @@ function showAdminPasswordModal() {
         if (passwordField) passwordField.value = '';
 
         if (adminPasswordModal) {
+            console.log('✅ Showing admin modal');
             adminPasswordModal.classList.add('is-visible');
             document.body.classList.add('modal-open');  // Lock body scroll
             // Focus on username field for better UX
             setTimeout(() => {
                 if (usernameField) {
                     usernameField.focus();
-                    console.log('Username field focused');
+                    console.log('✅ Username field focused');
                 }
             }, 150);
         } else {
-            console.error('adminPasswordModal is null!');
+            console.error('❌ adminPasswordModal is null!');
         }
     });
 }
@@ -1646,6 +1663,7 @@ function closeAdminPasswordModal() {
     if (adminPasswordModal) {
         adminPasswordModal.classList.remove('is-visible');
         document.body.classList.remove('modal-open');  // Unlock body scroll
+        console.log('✅ Modal closed and body unlocked');
     }
     adminPasswordResolve = null;
     isAuthenticating = false; // Reset authentication flag
