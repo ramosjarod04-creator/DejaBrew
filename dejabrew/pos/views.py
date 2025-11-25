@@ -1402,6 +1402,60 @@ def verify_admin_api(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @login_required
+@require_http_methods(["POST"])
+def log_void_action(request):
+    """
+    API endpoint to log void actions to the audit trail.
+    Records when an admin voids a cart item in the POS system.
+    """
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        item_name = data.get('item_name')
+        item_price = data.get('item_price')
+        quantity = data.get('quantity', 1)
+        terminal = data.get('terminal', 'POS')
+
+        if not item_name:
+            return JsonResponse({'success': False, 'error': 'Item name required'}, status=400)
+
+        # Get the authenticated user
+        user = request.user
+
+        # Verify user is admin
+        is_admin = user.is_superuser or (hasattr(user, 'profile') and user.profile.role == 'admin')
+
+        if not is_admin:
+            return JsonResponse({'success': False, 'error': 'Only admins can void items'}, status=403)
+
+        # Get client IP address
+        ip_address = get_client_ip(request)
+
+        # Create detailed audit log entry
+        description = f"Voided item: {item_name} (ID: {item_id}, Price: ${item_price}, Qty: {quantity}) from {terminal}"
+
+        AuditTrail.objects.create(
+            user=user,
+            action='Void Item',
+            description=description,
+            ip_address=ip_address,
+            category='sales',
+            severity='medium'
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Void action logged successfully',
+            'admin_username': user.username
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        print(f"Error logging void action: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
 def get_best_selling_products_api(request):
     """
     API endpoint to get best-selling products based on actual sales data from OrderItem.
