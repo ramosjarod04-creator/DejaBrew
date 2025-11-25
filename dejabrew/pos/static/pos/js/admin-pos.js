@@ -1558,8 +1558,10 @@ function setupAdminPasswordModal() {
 
         if (isValid) {
             showNotification('Admin authenticated successfully', 'success');
+            // CRITICAL: Call resolve BEFORE closing modal (which nulls the resolve function)
+            const resolveFunc = adminPasswordResolve;
             closeAdminPasswordModal();
-            if (adminPasswordResolve) adminPasswordResolve(true);
+            if (resolveFunc) resolveFunc(true);
         } else {
             // Error message is already shown in verifyAdminCredentials
             adminPassword.value = '';
@@ -1605,6 +1607,9 @@ function showAdminPasswordModal() {
         document.getElementById('adminPassword').value = '';
         if (adminPasswordModal) {
             adminPasswordModal.classList.add('is-visible');
+            document.body.classList.add('modal-open');  // Lock body scroll
+            // Focus on username field for better UX
+            setTimeout(() => document.getElementById('adminUsername')?.focus(), 100);
         }
     });
 }
@@ -1612,6 +1617,7 @@ function showAdminPasswordModal() {
 function closeAdminPasswordModal() {
     if (adminPasswordModal) {
         adminPasswordModal.classList.remove('is-visible');
+        document.body.classList.remove('modal-open');  // Unlock body scroll
     }
     adminPasswordResolve = null;
 }
