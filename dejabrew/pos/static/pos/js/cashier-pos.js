@@ -1555,7 +1555,8 @@ function setupAdminPasswordModal() {
                 closeAdminPasswordModal();
                 if (resolveFunc) {
                     console.log('Resolving authentication promise with success');
-                    resolveFunc(true);
+                    // Return credentials along with success status
+                    resolveFunc({ success: true, username: username, password: password });
                 }
             } else {
                 // Error message is already shown in verifyAdminCredentials
@@ -1574,7 +1575,7 @@ function setupAdminPasswordModal() {
     adminPasswordCancel.addEventListener('click', () => {
         console.log('Authentication cancelled by user');
         closeAdminPasswordModal();
-        if (adminPasswordResolve) adminPasswordResolve(false);
+        if (adminPasswordResolve) adminPasswordResolve({ success: false });
     });
 
     // Authenticate button handler
@@ -1604,7 +1605,7 @@ function setupAdminPasswordModal() {
         if (e.target === adminPasswordModal) {
             console.log('Modal closed by backdrop click');
             closeAdminPasswordModal();
-            if (adminPasswordResolve) adminPasswordResolve(false);
+            if (adminPasswordResolve) adminPasswordResolve({ success: false });
         }
     });
 
@@ -1705,9 +1706,9 @@ window.voidItem = async function(productId) {
     try {
         // Authenticate admin
         console.log('Requesting admin authentication for void action...');
-        const isAuthenticated = await showAdminPasswordModal();
+        const authResult = await showAdminPasswordModal();
 
-        if (!isAuthenticated) {
+        if (!authResult || !authResult.success) {
             showNotification('Admin authentication required to void items', 'error');
             return;
         }
@@ -1726,7 +1727,7 @@ window.voidItem = async function(productId) {
         const itemPrice = voidedItem.price;
         const itemQuantity = voidedItem.quantity || 1;
 
-        // Log void action to audit trail (server-side)
+        // Log void action to audit trail (server-side) with admin credentials
         try {
             const auditResponse = await fetch('/api/log-void-action/', {
                 method: 'POST',
@@ -1739,7 +1740,9 @@ window.voidItem = async function(productId) {
                     item_name: itemName,
                     item_price: itemPrice,
                     quantity: itemQuantity,
-                    terminal: 'Cashier POS'
+                    terminal: 'Cashier POS',
+                    admin_username: authResult.username,
+                    admin_password: authResult.password
                 })
             });
 

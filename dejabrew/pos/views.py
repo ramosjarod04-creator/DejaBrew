@@ -1407,6 +1407,7 @@ def log_void_action(request):
     """
     API endpoint to log void actions to the audit trail.
     Records when an admin voids a cart item in the POS system.
+    Accepts admin credentials for verification since the logged-in user may be a cashier.
     """
     try:
         data = json.loads(request.body)
@@ -1416,17 +1417,38 @@ def log_void_action(request):
         quantity = data.get('quantity', 1)
         terminal = data.get('terminal', 'POS')
 
+        # Get admin credentials from request
+        admin_username = data.get('admin_username')
+        admin_password = data.get('admin_password')
+
         if not item_name:
             return JsonResponse({'success': False, 'error': 'Item name required'}, status=400)
 
-        # Get the authenticated user
-        user = request.user
+        # Verify admin credentials if provided (for cashier POS)
+        if admin_username and admin_password:
+            from django.contrib.auth import authenticate
+            admin_user = authenticate(username=admin_username, password=admin_password)
 
-        # Verify user is admin
-        is_admin = user.is_superuser or (hasattr(user, 'profile') and user.profile.role == 'admin')
+            if admin_user is None:
+                return JsonResponse({'success': False, 'error': 'Invalid admin credentials'}, status=401)
 
-        if not is_admin:
-            return JsonResponse({'success': False, 'error': 'Only admins can void items'}, status=403)
+            # Verify the authenticated user is actually an admin
+            is_admin = admin_user.is_superuser or (hasattr(admin_user, 'profile') and admin_user.profile.role == 'admin')
+
+            if not is_admin:
+                return JsonResponse({'success': False, 'error': 'User is not an admin'}, status=403)
+
+            # Use the authenticated admin for logging
+            user_for_audit = admin_user
+        else:
+            # If no admin credentials provided, use the current logged-in user (for admin POS)
+            user_for_audit = request.user
+
+            # Verify current user is admin
+            is_admin = user_for_audit.is_superuser or (hasattr(user_for_audit, 'profile') and user_for_audit.profile.role == 'admin')
+
+            if not is_admin:
+                return JsonResponse({'success': False, 'error': 'Admin credentials required for void action'}, status=403)
 
         # Get client IP address
         ip_address = get_client_ip(request)
@@ -1435,7 +1457,7 @@ def log_void_action(request):
         description = f"Voided item: {item_name} (ID: {item_id}, Price: ${item_price}, Qty: {quantity}) from {terminal}"
 
         AuditTrail.objects.create(
-            user=user,
+            user=user_for_audit,
             action='Void Item',
             description=description,
             ip_address=ip_address,
@@ -1446,7 +1468,7 @@ def log_void_action(request):
         return JsonResponse({
             'success': True,
             'message': 'Void action logged successfully',
-            'admin_username': user.username
+            'admin_username': user_for_audit.username
         })
 
     except json.JSONDecodeError:
