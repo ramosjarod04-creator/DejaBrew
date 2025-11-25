@@ -303,17 +303,17 @@ function renderProducts(products) {
         const statusClass = product.status.replace(' ', '-');
         const statusBadge = `<span class="badge badge-${statusClass}">${product.status}</span>`;
         // --- END OF FIX ---
-        
-        const recipeInfo = product.recipe && product.recipe.length > 0 ? 
+
+        const recipeInfo = product.recipe && product.recipe.length > 0 ?
             `<br><small style="color: #666;">🧪 ${product.recipe.length} ingredient(s)</small>` : '';
-        
+
         return `
             <tr data-product-id="${product.id}">
                 <td>
                     <div class="product-info">
-                        ${product.image_url ? 
+                        ${product.image_url ?
                             `<img src="${product.image_url}" alt="${product.name}" class="product-thumb" onerror="this.src='${placeholderImageUrl}'; this.nextElementSibling.style.display='none';" />
-                             <div class="product-thumb-placeholder" style="display:none;">No Image</div>` : 
+                             <div class="product-thumb-placeholder" style="display:none;">No Image</div>` :
                             `<div class="product-thumb-placeholder">No Image</div>`
                         }
                         <div>
@@ -326,11 +326,11 @@ function renderProducts(products) {
                 <td>${escapeHtml(product.category)}</td>
                 <td style="font-weight: 600;">₱${parseFloat(product.price).toFixed(2)}</td>
                 <td>${product.stock}</td>
-                <td>${statusBadge}</td> <!-- This line adds the status badge to the table -->
+                <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <button onclick="openEditModal(${product.id})" class="btn-icon" title="Edit Product"><i class="fa fa-edit"></i></button>
-                        <button onclick="confirmDeleteProduct(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}')" class="btn-icon btn-danger" title="Delete Product"><i class="fa fa-trash"></i></button>
+                        <button class="btn-icon edit-product-btn" data-product-id="${product.id}" title="Edit Product"><i class="fa fa-edit"></i></button>
+                        <button class="btn-icon btn-danger delete-product-btn" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" title="Delete Product"><i class="fa fa-trash"></i></button>
                     </div>
                 </td>
             </tr>
@@ -338,6 +338,35 @@ function renderProducts(products) {
     }).join('');
 
     updatePaginationControls();
+
+    // Attach event listeners using event delegation
+    attachProductActionListeners();
+}
+
+function attachProductActionListeners() {
+    const tbody = document.querySelector('#productTable tbody');
+    if (!tbody) return;
+
+    // Remove existing listener to avoid duplicates
+    const oldTbody = tbody.cloneNode(true);
+    tbody.parentNode.replaceChild(oldTbody, tbody);
+
+    // Add event delegation for edit and delete buttons
+    oldTbody.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.edit-product-btn');
+        const deleteBtn = e.target.closest('.delete-product-btn');
+
+        if (editBtn) {
+            const productId = parseInt(editBtn.dataset.productId);
+            console.log('✏️ Edit button clicked for product ID:', productId);
+            openEditModal(productId);
+        } else if (deleteBtn) {
+            const productId = parseInt(deleteBtn.dataset.productId);
+            const productName = deleteBtn.dataset.productName;
+            console.log('🗑️ Delete button clicked for product:', productName);
+            confirmDeleteProduct(productId, productName);
+        }
+    });
 }
 
 function escapeHtml(text) {
@@ -523,9 +552,6 @@ function openEditModal(productId) {
     setTimeout(() => document.getElementById('productName')?.focus(), 100);
 }
 
-// Make function globally accessible for inline onclick handlers
-window.openEditModal = openEditModal;
-
 function closeModal() {
     const modal = document.getElementById('productModal');
     if (modal) modal.style.display = 'none';
@@ -619,9 +645,6 @@ function confirmDeleteProduct(productId, productName) {
         deleteProduct(productId);
     }
 }
-
-// Make function globally accessible for inline onclick handlers
-window.confirmDeleteProduct = confirmDeleteProduct;
 
 async function deleteProduct(productId) {
     try {
