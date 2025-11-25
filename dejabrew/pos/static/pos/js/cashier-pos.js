@@ -1519,27 +1519,49 @@ function setupAdminPasswordModal() {
         });
     }
 
+    // Handler function for authentication
+    const handleAuthentication = async () => {
+        const username = adminUsername.value.trim();
+        const password = adminPassword.value.trim();
+
+        if (!username || !password) {
+            showNotification('Please enter both username and password', 'error');
+            return;
+        }
+
+        // Verify admin credentials via API
+        const isValid = await verifyAdminCredentials(username, password);
+
+        if (isValid) {
+            showNotification('Admin authenticated successfully', 'success');
+            // CRITICAL: Call resolve BEFORE closing modal (which nulls the resolve function)
+            const resolveFunc = adminPasswordResolve;
+            closeAdminPasswordModal();
+            if (resolveFunc) resolveFunc(true);
+        } else {
+            // Error message is already shown in verifyAdminCredentials
+            adminPassword.value = '';
+            adminUsername.focus();
+        }
+    };
+
     if (adminPasswordConfirm) {
-        adminPasswordConfirm.addEventListener('click', async () => {
-            const username = adminUsername.value.trim();
-            const password = adminPassword.value.trim();
+        adminPasswordConfirm.addEventListener('click', handleAuthentication);
+    }
 
-            if (!username || !password) {
-                showNotification('Please enter both username and password', 'error');
-                return;
+    // Add Enter key support on both fields
+    if (adminPassword) {
+        adminPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleAuthentication();
             }
+        });
+    }
 
-            // Verify admin credentials via API
-            const isValid = await verifyAdminCredentials(username, password);
-
-            if (isValid) {
-                showNotification('Admin authenticated successfully', 'success');
-                closeAdminPasswordModal();
-                if (adminPasswordResolve) adminPasswordResolve(true);
-            } else {
-                // Error message is already shown in verifyAdminCredentials
-                adminPassword.value = '';
-                adminUsername.focus();
+    if (adminUsername) {
+        adminUsername.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleAuthentication();
             }
         });
     }
@@ -1561,6 +1583,9 @@ function showAdminPasswordModal() {
         document.getElementById('adminPassword').value = '';
         if (adminPasswordModal) {
             adminPasswordModal.classList.add('is-visible');
+            document.body.classList.add('modal-open');  // Lock body scroll
+            // Focus on username field for better UX
+            setTimeout(() => document.getElementById('adminUsername')?.focus(), 100);
         }
     });
 }
@@ -1568,6 +1593,7 @@ function showAdminPasswordModal() {
 function closeAdminPasswordModal() {
     if (adminPasswordModal) {
         adminPasswordModal.classList.remove('is-visible');
+        document.body.classList.remove('modal-open');  // Unlock body scroll
     }
     adminPasswordResolve = null;
 }
