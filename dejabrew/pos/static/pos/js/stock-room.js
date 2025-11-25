@@ -2,11 +2,15 @@
 
 // --- GLOBAL STATE ---
 let allIngredients = [];
+let filteredIngredients = []; // For search/filter results
+let currentPage = 1;
+const itemsPerPage = 20; // Match Sales Monitoring
 let editingIngredientId = null; // Store ID for transfers
 let currentEditingIngredientId = null; // Store ID for add/edit
 
-// --- NEW: Declare DOM vars with let ---
+// --- DOM VARIABLES ---
 let tbody, searchInput, categoryFilter, transferModal, closeModalBtn, cancelModalBtn, transferForm, statValueEl, statIngredientsEl, statLowEl, ingredientModal, ingredientForm, closeIngredientModalBtn, cancelIngredientBtn, addIngredientBtn;
+let firstPageBtn, prevPageBtn, nextPageBtn, lastPageBtn, currentPageDisplay, totalPagesDisplay;
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -15,8 +19,8 @@ document.addEventListener('DOMContentLoaded', async () => {
          USER_ROLE = 'staff'; // Fallback to least privileged
     }
     console.log("Initializing Stock Room. Role:", USER_ROLE);
-    
-    // --- NEW: Assign DOM vars here, inside DOMContentLoaded ---
+
+    // Assign DOM elements
     tbody = document.querySelector("#inventoryTable tbody");
     searchInput = document.getElementById("searchInput");
     categoryFilter = document.getElementById("categoryFilter");
@@ -32,12 +36,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeIngredientModalBtn = document.getElementById("closeIngredientModal");
     cancelIngredientBtn = document.getElementById("cancelIngredient");
     addIngredientBtn = document.getElementById("addIngredientBtn");
-    
+
+    // Pagination elements
+    firstPageBtn = document.getElementById("firstPageBtn");
+    prevPageBtn = document.getElementById("prevPageBtn");
+    nextPageBtn = document.getElementById("nextPageBtn");
+    lastPageBtn = document.getElementById("lastPageBtn");
+    currentPageDisplay = document.getElementById("currentPageDisplay");
+    totalPagesDisplay = document.getElementById("totalPagesDisplay");
+
     await loadIngredients(); // Load from API
-    renderTable();
+    applyFilters(); // Apply filters and render
     updateStats();
     populateCategoryFilter();
-    setupEventListeners(); // Now this will work
+    setupEventListeners();
     applyRolePermissions(); // Apply admin/staff view
 });
 
@@ -49,6 +61,7 @@ async function loadIngredients() {
         if (!response.ok) throw new Error('Failed to fetch ingredients');
         const data = await response.json();
         allIngredients = data.results || data; // Handle DRF pagination
+        filteredIngredients = [...allIngredients]; // Initialize filtered list
         console.log(`✅ Loaded ${allIngredients.length} ingredients for Stock Room.`);
     } catch (error) {
         console.error("Error loading ingredients:", error);
@@ -60,32 +73,80 @@ function getCSRFToken() {
     return document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
 }
 
+// --- PAGINATION FUNCTIONS ---
+function getTotalPages() {
+    return Math.ceil(filteredIngredients.length / itemsPerPage);
+}
+
+function getPaginatedIngredients() {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredIngredients.slice(start, end);
+}
+
+function updatePaginationControls() {
+    if (!firstPageBtn || !prevPageBtn || !nextPageBtn || !lastPageBtn) return;
+
+    const totalPages = getTotalPages();
+
+    // Update page numbers
+    if (currentPageDisplay) currentPageDisplay.textContent = currentPage;
+    if (totalPagesDisplay) totalPagesDisplay.textContent = totalPages;
+
+    // Enable/disable buttons
+    firstPageBtn.disabled = currentPage === 1;
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage >= totalPages || totalPages === 0;
+    lastPageBtn.disabled = currentPage >= totalPages || totalPages === 0;
+
+    // Visual feedback
+    [firstPageBtn, prevPageBtn, nextPageBtn, lastPageBtn].forEach(btn => {
+        if (btn.disabled) {
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        } else {
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
+}
+
+// --- FILTER FUNCTION ---
+function applyFilters() {
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    const category = categoryFilter?.value || 'all';
+
+    filteredIngredients = allIngredients.filter(ing => {
+        const matchesSearch = searchTerm === '' || ing.name.toLowerCase().includes(searchTerm);
+        const matchesCategory = category === 'all' || ing.category === category;
+        return matchesSearch && matchesCategory;
+    });
+
+    currentPage = 1; // Reset to first page when filters change
+    renderTable();
+}
+
 // --- UI RENDERING & STATS ---
 function renderTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    const category = categoryFilter?.value || 'all';
-    
-    // Determine colspan based on role
+
     const headerCells = document.querySelectorAll("#inventoryTable thead th");
     let colCount = headerCells.length;
 
-    if (allIngredients.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; padding: 20px; color: #999;">No ingredients found in stock room.</td></tr>`;
+    if (filteredIngredients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; padding: 20px; color: #999;">No ingredients found matching filters.</td></tr>`;
+        updatePaginationControls();
         return;
     }
 
-    allIngredients.forEach((ing) => {
-        const matchesSearch = searchTerm === '' || ing.name.toLowerCase().includes(searchTerm);
-        const matchesCategory = category === 'all' || ing.category === category;
-        if (!matchesSearch || !matchesCategory) return;
+    const paginatedIngredients = getPaginatedIngredients();
 
+    paginatedIngredients.forEach((ing) => {
         // Status based on stockRoom level
         let status = 'In Stock';
         if ((ing.stockRoom || 0) <= 0) status = 'Out of Stock';
         else if ((ing.stockRoom || 0) < (ing.reorder || 0)) status = 'Low Stock';
-
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -99,16 +160,16 @@ function renderTable() {
                 <button class="btn btn-sm" data-action="transfer" data-id="${ing.id}">
                     <i class="fa fa-exchange-alt"></i> Transfer
                 </button>
-                <!-- Add admin edit/delete buttons -->
                 <button class="btn-icon admin-only" data-action="edit" data-id="${ing.id}" title="Edit"><i class="fa fa-pen"></i></button>
                 <button class="btn-icon btn-danger admin-only" data-action="delete" data-id="${ing.id}" title="Delete"><i class="fa fa-trash"></i></button>
             </td>
         `;
         tbody.appendChild(tr);
     });
-    
+
     // Re-apply admin visibility after rendering
     applyRolePermissions();
+    updatePaginationControls();
 }
 
 function updateStats() {
@@ -123,17 +184,17 @@ function updateStats() {
 function populateCategoryFilter() {
     if (!categoryFilter) return;
     const categories = [...new Set(allIngredients.map(ing => ing.category).filter(Boolean))].sort();
-    
+
     const ingCategorySelect = document.getElementById("ingCategory");
     categoryFilter.innerHTML = '<option value="all">All Categories</option>';
     if (ingCategorySelect) ingCategorySelect.innerHTML = '';
-    
+
     categories.forEach(cat => {
         const option = new Option(cat, cat);
         categoryFilter.appendChild(option);
         if (ingCategorySelect) ingCategorySelect.appendChild(option.cloneNode(true));
     });
-    
+
     if (!categories.includes('other')) {
          const otherOption = new Option('other', 'other');
          categoryFilter.appendChild(otherOption);
@@ -143,8 +204,8 @@ function populateCategoryFilter() {
 
 // --- EVENT LISTENERS ---
 function setupEventListeners() {
-    if(searchInput) searchInput.addEventListener('input', renderTable);
-    if(categoryFilter) categoryFilter.addEventListener('change', renderTable);
+    if(searchInput) searchInput.addEventListener('input', applyFilters);
+    if(categoryFilter) categoryFilter.addEventListener('change', applyFilters);
 
     // Transfer Modal
     if(closeModalBtn) closeModalBtn.addEventListener('click', closeTransferModal);
@@ -163,6 +224,37 @@ function setupEventListeners() {
     });
     if(ingredientForm) ingredientForm.addEventListener('submit', handleIngredientFormSubmit);
 
+    // Pagination event listeners
+    if(firstPageBtn) firstPageBtn.addEventListener('click', () => {
+        if (currentPage !== 1) {
+            currentPage = 1;
+            renderTable();
+        }
+    });
+
+    if(prevPageBtn) prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTable();
+        }
+    });
+
+    if(nextPageBtn) nextPageBtn.addEventListener('click', () => {
+        const totalPages = getTotalPages();
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderTable();
+        }
+    });
+
+    if(lastPageBtn) lastPageBtn.addEventListener('click', () => {
+        const totalPages = getTotalPages();
+        if (currentPage !== totalPages && totalPages > 0) {
+            currentPage = totalPages;
+            renderTable();
+        }
+    });
+
     // Table action buttons
     if(tbody) {
         tbody.addEventListener('click', (e) => {
@@ -171,7 +263,7 @@ function setupEventListeners() {
 
             const action = button.dataset.action;
             const ingredientId = parseInt(button.dataset.id, 10);
-            
+
             if (action === 'transfer') {
                 openTransferModal(ingredientId);
             }
@@ -191,9 +283,8 @@ function setupEventListeners() {
     window.addEventListener('storage', (event) => {
         if (event.key === 'inventoryUpdate') {
             showNotification('Stock updated from another tab. Refreshing...', 'info');
-            // Re-run initialization to get fresh data
             loadIngredients().then(() => {
-                renderTable();
+                applyFilters();
                 updateStats();
             });
         }
@@ -204,22 +295,17 @@ function setupEventListeners() {
 function applyRolePermissions() {
     const adminElements = document.querySelectorAll('.admin-only');
     if (!adminElements) return;
-    
+
     adminElements.forEach(el => {
         if (USER_ROLE === 'admin') {
-            // --- THIS IS THE FIX ---
-            // If the element is a modal, DO NOTHING to its display.
-            // Let the open/close functions handle its visibility.
             if (el.classList.contains('modal')) {
-                // Do nothing.
+                // Don't change modal display
             } else if (el.tagName === 'BUTTON' || el.classList.contains('btn-icon')) {
                  el.style.display = 'inline-block';
             } else {
                  el.style.display = 'block';
             }
-            // --- END FIX ---
         } else {
-            // If not admin, hide all admin-only elements
             el.style.display = 'none';
         }
     });
@@ -233,30 +319,30 @@ function openTransferModal(ingredientId) {
         showNotification("Ingredient not found.", "error");
         return;
     }
-    editingIngredientId = ingredientId; // Store the ID for transfer
+    editingIngredientId = ingredientId;
 
     document.getElementById('modalTitle').textContent = `Transfer ${ingredient.name}`;
     document.getElementById('ingredientName').textContent = ingredient.name;
     document.getElementById('currentStockRoom').textContent = `${Number(ingredient.stockRoom || 0)} ${ingredient.unit}`;
     document.getElementById('currentMainStock').textContent = `${Number(ingredient.mainStock || 0)} ${ingredient.unit}`;
-    
+
     const qtyInput = document.getElementById('transferQty');
     qtyInput.value = 1;
     qtyInput.max = Number(ingredient.stockRoom || 0);
-    qtyInput.min = 1; // Can only transfer positive amounts
+    qtyInput.min = 1;
 
-    if(transferModal) transferModal.classList.add('visible'); // Use class to show
+    if(transferModal) transferModal.classList.add('visible');
 }
 
 function closeTransferModal() {
-    if(transferModal) transferModal.classList.remove('visible'); // Use class to hide
+    if(transferModal) transferModal.classList.remove('visible');
     if(transferForm) transferForm.reset();
-    editingIngredientId = null; // Clear the ID
+    editingIngredientId = null;
 }
 
 async function handleTransferSubmit(e) {
     e.preventDefault();
-    if (!editingIngredientId) return; // Should have an ID if modal is open
+    if (!editingIngredientId) return;
 
     const quantity = parseFloat(document.getElementById('transferQty').value);
     const ingredient = allIngredients.find(ing => ing.id === editingIngredientId);
@@ -283,14 +369,13 @@ async function handleTransferSubmit(e) {
         stockRoom: currentStockRoom - quantity,
         mainStock: currentMainStock + quantity
     };
-    
+
     // Auto-update status based on new mainStock
     if (updatedData.mainStock > (ingredient.reorder || 0)) {
         updatedData.status = 'In Stock';
     } else if (updatedData.mainStock > 0) {
         updatedData.status = 'Low Stock';
     } else {
-        // Only set to Out of Stock if both are zero
         if (updatedData.stockRoom <= 0) {
             updatedData.status = 'Out of Stock';
         } else {
@@ -313,12 +398,12 @@ async function handleTransferSubmit(e) {
             throw new Error(errorData.detail || JSON.stringify(errorData));
         }
 
-        // Notify other tabs that inventory has changed
+        // Notify other tabs
         localStorage.setItem('inventoryUpdate', Date.now().toString());
 
-        // Update successful, reload data and UI
-        await loadIngredients(); // Fetch updated list from server
-        renderTable();
+        // Reload data and UI
+        await loadIngredients();
+        applyFilters();
         updateStats();
         closeTransferModal();
         showNotification(`${quantity} ${ingredient.unit} of ${ingredient.name} transferred successfully!`, 'success');
@@ -337,7 +422,7 @@ function openIngredientModal(id = null) {
     if (id) {
         const ingredient = allIngredients.find(ing => ing.id === id);
         if (!ingredient) return;
-        
+
         currentEditingIngredientId = id;
         document.getElementById('ingredientModalTitle').textContent = 'Edit Ingredient';
         document.getElementById('ingId').value = ingredient.id;
@@ -346,7 +431,6 @@ function openIngredientModal(id = null) {
         document.getElementById('ingMainStock').value = ingredient.mainStock;
         document.getElementById('ingStockRoom').value = ingredient.stockRoom;
         document.getElementById('ingUnit').value = ingredient.unit;
-        // document.getElementById('ingReorder').value = ingredient.reorder; // Your modal HTML doesn't have reorder
         document.getElementById('ingCost').value = ingredient.cost;
     } else {
         currentEditingIngredientId = null;
@@ -374,17 +458,15 @@ async function handleIngredientFormSubmit(e) {
         stockRoom: parseFloat(document.getElementById('ingStockRoom').value || 0),
         unit: document.getElementById('ingUnit').value.trim(),
         cost: parseFloat(document.getElementById('ingCost').value || 0),
-        // reorder: parseFloat(document.getElementById('ingReorder').value || 0) // Add reorder if input exists
     };
 
     if (!data.name || !data.unit) {
         showNotification('Name and Unit are required.', 'error');
         return;
     }
-    
-    // Auto-set status based on mainStock
-    // Use a reorder value of 0 if not present
-    const reorderPoint = data.reorder || 0; 
+
+    // Auto-set status
+    const reorderPoint = data.reorder || 0;
     if (data.mainStock > reorderPoint) {
         data.status = 'In Stock';
     } else if (data.mainStock > 0) {
@@ -393,10 +475,10 @@ async function handleIngredientFormSubmit(e) {
          if (data.stockRoom <= 0) {
             data.status = 'Out of Stock';
          } else {
-            data.status = 'Low Stock'; // Still low, but not out
+            data.status = 'Low Stock';
          }
     }
-    
+
     const url = currentEditingIngredientId ? `/api/ingredients/${currentEditingIngredientId}/` : '/api/ingredients/';
     const method = currentEditingIngredientId ? 'PATCH' : 'POST';
 
@@ -407,14 +489,14 @@ async function handleIngredientFormSubmit(e) {
             body: JSON.stringify(data)
         });
         if (!response.ok) { const errorData = await response.json(); throw new Error(JSON.stringify(errorData)); }
-        
-        localStorage.setItem('inventoryUpdate', Date.now().toString()); // Notify other tabs
-        
+
+        localStorage.setItem('inventoryUpdate', Date.now().toString());
+
         closeIngredientModal();
-        await loadIngredients(); // Reload data
-        renderTable();
+        await loadIngredients();
+        applyFilters();
         updateStats();
-        populateCategoryFilter(); // Repopulate in case of new category
+        populateCategoryFilter();
         showNotification(`Ingredient ${currentEditingIngredientId ? 'updated' : 'added'}.`, 'success');
     } catch (error) {
         console.error('Failed to save ingredient:', error);
@@ -431,12 +513,12 @@ async function confirmDelete(id) {
                 headers: { 'X-CSRFToken': getCSRFToken() }
             });
             if (!response.ok) { throw new Error('Failed to delete.'); }
-            
-            localStorage.setItem('inventoryUpdate', Date.now().toString()); // Notify other tabs
-            
+
+            localStorage.setItem('inventoryUpdate', Date.now().toString());
+
             showNotification('Ingredient deleted.', 'success');
-            await loadIngredients(); // Reload data
-            renderTable();
+            await loadIngredients();
+            applyFilters();
             updateStats();
             populateCategoryFilter();
         } catch (error) {
@@ -506,4 +588,3 @@ function showNotification(message, type = 'info') {
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
-
