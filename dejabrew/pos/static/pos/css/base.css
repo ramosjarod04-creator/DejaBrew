@@ -795,6 +795,32 @@ textarea:disabled {
 .overflow-x-auto { overflow-x: auto; }
 .overflow-y-auto { overflow-y: auto; }
 
+/* Responsive visibility utilities */
+.hide-on-mobile { display: block; }
+.show-on-mobile { display: none; }
+.hide-on-tablet { display: block; }
+.show-on-tablet { display: none; }
+.hide-on-desktop { display: block; }
+.show-on-desktop { display: none; }
+
+@media (max-width: 768px) {
+    .hide-on-mobile { display: none !important; }
+    .show-on-mobile { display: block !important; }
+    .show-on-mobile-flex { display: flex !important; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .hide-on-tablet { display: none !important; }
+    .show-on-tablet { display: block !important; }
+    .show-on-tablet-flex { display: flex !important; }
+}
+
+@media (min-width: 1025px) {
+    .hide-on-desktop { display: none !important; }
+    .show-on-desktop { display: block !important; }
+    .show-on-desktop-flex { display: flex !important; }
+}
+
 /* ============================
    MOBILE HEADER (hidden on desktop)
    ============================ */
@@ -1183,6 +1209,159 @@ textarea:disabled {
     th, td {
         padding: 6px 4px;
         font-size: 10px;
+    }
+}
+
+/* ============================
+   ADDITIONAL MOBILE ENHANCEMENTS
+   ============================ */
+
+/* Touch-friendly minimum sizes */
+@media (max-width: 768px) {
+    /* Ensure all interactive elements are at least 44x44px (Apple HIG guideline) */
+    button,
+    .btn,
+    a.btn,
+    input[type="submit"],
+    input[type="button"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Better tap targets for navigation */
+    .nav-menu a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Improved hamburger button */
+    .hamburger-btn {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Better form inputs on mobile */
+    input,
+    select,
+    textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+        min-height: 44px;
+    }
+
+    /* Improved sidebar transitions */
+    .sidebar {
+        transition: left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        will-change: transform;
+    }
+
+    /* Smooth overlay fade */
+    .sidebar-overlay {
+        transition: opacity 0.3s ease;
+        opacity: 0;
+    }
+
+    .sidebar-overlay.active {
+        opacity: 1;
+    }
+
+    /* Prevent body scroll when sidebar is open */
+    body.sidebar-open {
+        overflow: hidden;
+    }
+
+    /* Better touch scrolling */
+    .main-content,
+    .sidebar,
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Stack buttons on mobile */
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .btn-group .btn {
+        width: 100%;
+    }
+
+    /* Improved card spacing on mobile */
+    .card + .card {
+        margin-top: var(--spacing-md);
+    }
+
+    /* Better modal on mobile */
+    .modal-content,
+    .modal-card {
+        width: 95%;
+        max-width: none;
+        margin: var(--spacing-md);
+    }
+
+    /* Sticky headers for tables */
+    .table-responsive {
+        position: relative;
+    }
+
+    .table-responsive thead th {
+        position: sticky;
+        top: 0;
+        background: var(--gray-50);
+        z-index: 10;
+    }
+
+    /* Better spacing for mobile header */
+    .mobile-header {
+        padding: var(--spacing-md) var(--spacing-lg);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Improved logout button on mobile */
+    .logout-section {
+        position: static;
+        margin-top: auto;
+        padding-top: var(--spacing-lg);
+    }
+
+    .logout-btn {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .sidebar::-webkit-scrollbar {
+        width: 0;
+        background: transparent;
+    }
+
+    /* Better focus states for mobile */
+    *:focus-visible {
+        outline: 3px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+}
+
+/* Safe area insets for notched devices (iPhone X+) */
+@supports (padding: env(safe-area-inset-bottom)) {
+    .mobile-header {
+        padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
+    }
+
+    .sidebar {
+        padding-bottom: max(var(--spacing-lg), env(safe-area-inset-bottom));
+    }
+
+    .main-content {
+        padding-bottom: max(var(--spacing-xl), env(safe-area-inset-bottom));
     }
 }
 

@@ -1,3 +1,8 @@
+/* ============================
+   ADMIN POS PAGE - Specific Styles Only
+   Base layout handled by base.css
+   ============================ */
+
 :root {
   --accent: #ff9800;
   --muted: #98a3ad;
@@ -8,23 +13,7 @@
   --maxcontent: 1200px;
 }
 
-* {
-  box-sizing: border-box;
-}
-html, body {
-  height: 100%;
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  color: var(--text);
-  background: #f5f6f8;
-  -webkit-font-smoothing: antialiased;
-}
-
-.main-content {
-  flex: 1;
-  padding: 22px;
-  overflow: auto;
-}
+/* POS-specific overrides only - DO NOT override body, html, or .main-content base styles */
 
 .header {
   display: flex;
@@ -517,9 +506,7 @@ body.cart-overlay-open::before {
 
 /* Tablets */
 @media (max-width: 1024px) {
-    .main-content {
-        padding: 15px;
-    }
+    /* DO NOT override .main-content - handled by base.css */
 
     .content {
         grid-template-columns: 1fr 280px;
@@ -538,10 +525,7 @@ body.cart-overlay-open::before {
 
 /* Mobile devices */
 @media (max-width: 768px) {
-    .main-content {
-        margin-left: 0;
-        padding: 10px;
-    }
+    /* DO NOT override .main-content - handled by base.css */
 
     .header {
         flex-direction: column;
