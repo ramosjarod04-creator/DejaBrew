@@ -7,161 +7,893 @@
 <link rel="stylesheet" href="{% static 'pos/css/inventory.css' %}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-/* Modal Styles (Copied from inventory.html) */
+/* ============================================
+   RESPONSIVE STOCK ROOM STYLES
+   ============================================ */
+
+/* Root Variables */
+:root {
+    --primary-color: #8B4513;
+    --primary-hover: #6b3410;
+    --success-color: #28a745;
+    --danger-color: #dc2626;
+    --warning-color: #fbbf24;
+    --info-color: #3b82f6;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --border-radius: 12px;
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --box-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s ease;
+}
+
+/* Layout Container */
+.stock-room-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header Styles */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 0 5px;
+    gap: 20px;
+}
+
+.header-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.header-left h1 {
+    margin: 0 0 5px 0;
+    font-size: 28px;
+    color: var(--gray-900);
+    font-weight: 700;
+}
+
+.header-left .subtitle {
+    margin: 0;
+    color: var(--gray-500);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.tag.stock-room-tag {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Stats Section - Side by Side Grid */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: #ffffff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    box-shadow: var(--box-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.stat-card .label {
+    font-size: 14px;
+    color: var(--gray-500);
+    font-weight: 500;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-card .value {
+    font-size: 32px;
+    color: var(--gray-900);
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Filter Section - Modern Design */
+.filter-section {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 30px;
+}
+
+.filter-section h3 {
+    margin: 0 0 20px 0;
+    font-size: 1rem;
+    color: var(--gray-700);
+    font-weight: 600;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 10px 14px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Button Styles */
+.btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn.primary {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.btn.primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--box-shadow-lg);
+}
+
+.btn.ghost {
+    background: transparent;
+    color: var(--gray-600);
+    border: 1px solid var(--gray-300);
+}
+
+.btn.ghost:hover {
+    background: var(--gray-50);
+    color: var(--gray-700);
+}
+
+.btn-secondary {
+    background: var(--gray-600);
+    color: white;
+    border: 1px solid var(--gray-600);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--gray-700);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.btn-icon {
+    padding: 6px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.btn-icon:hover {
+    background: var(--gray-200);
+    transform: scale(1.05);
+}
+
+.btn-icon.btn-danger {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+.btn-icon.btn-danger:hover {
+    background: #fecaca;
+}
+
+/* Table Card */
+.card.table-card {
+    background: #ffffff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.card-header h2 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    color: var(--gray-900);
+    font-weight: 600;
+}
+
+.card-header .muted {
+    margin: 0;
+    color: var(--gray-500);
+    font-size: 14px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#inventoryTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+#inventoryTable thead {
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+#inventoryTable th {
+    padding: 14px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+#inventoryTable tbody tr {
+    border-bottom: 1px solid var(--gray-200);
+    transition: background-color 0.2s ease;
+}
+
+#inventoryTable tbody tr:hover {
+    background: var(--gray-50);
+}
+
+#inventoryTable tbody tr:last-child {
+    border-bottom: none;
+}
+
+#inventoryTable td {
+    padding: 14px 12px;
+    color: var(--gray-700);
+    vertical-align: middle;
+}
+
+/* Category & Status Badges */
+.badge-cat {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-cat.base { background: #dbeafe; color: #1e40af; }
+.badge-cat.dairy { background: #fef3c7; color: #92400e; }
+.badge-cat.syrup { background: #e9d5ff; color: #6b21a8; }
+.badge-cat.topping { background: #fce7f3; color: #9f1239; }
+.badge-cat.other { background: var(--gray-200); color: var(--gray-700); }
+
+.pill {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.pill.instock { background: #d1fae5; color: #065f46; }
+.pill.lowstock { background: #fef3c7; color: #92400e; }
+.pill.out { background: #fee2e2; color: #991b1b; }
+
+/* Actions Column */
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    flex-wrap: wrap;
+}
+
+.pagination-info {
+    padding: 0 15px;
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+/* Modal Styles */
 .admin-only { display: none; }
-button.admin-only.visible { display: inline-block; vertical-align: middle; }
+button.admin-only.visible { display: inline-flex; vertical-align: middle; }
 div.modal.admin-only.visible { display: flex !important; }
 
 .modal {
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.6);
-    display: none; /* Hidden by default */
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 20px;
 }
+
 .modal.visible {
-    display: flex; /* Show when visible class is added */
+    display: flex;
     opacity: 1;
     visibility: visible;
 }
+
 .modal-card {
     background-color: #fff;
     padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     width: 90%;
     max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
     transform: scale(0.95);
     transition: transform 0.3s ease;
 }
+
 .modal.visible .modal-card {
     transform: scale(1);
 }
+
 .modal-close {
     position: absolute;
     top: 15px;
     right: 15px;
     background: none;
     border: none;
-    font-size: 24px;
-    color: #888;
+    font-size: 28px;
+    color: var(--gray-400);
     cursor: pointer;
     line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition);
 }
+
 .modal-close:hover {
-    color: #333;
+    color: var(--gray-700);
+    background: var(--gray-100);
 }
+
 .modal-card h3 {
     margin-top: 0;
     margin-bottom: 25px;
-    color: #333;
+    color: var(--gray-900);
     font-size: 1.5rem;
+    font-weight: 600;
     text-align: center;
 }
-#ingredientForm label {
+
+.modal-card label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
-    color: #555;
+    color: var(--gray-700);
     font-size: 0.9rem;
 }
-#ingredientForm input,
-#ingredientForm select {
+
+.modal-card input,
+.modal-card select {
     width: 100%;
     padding: 12px 15px;
     margin-bottom: 18px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
     box-sizing: border-box;
     font-size: 1rem;
+    transition: var(--transition);
 }
-#ingredientForm input:focus,
-#ingredientForm select:focus {
-    border-color: #8B4513;
+
+.modal-card input:focus,
+.modal-card select:focus {
+    border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.2);
+    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
 }
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 15px;
     margin-top: 30px;
+    flex-wrap: wrap;
 }
+
 .modal-actions .btn {
     padding: 12px 25px;
     font-size: 1rem;
-    border-radius: 6px;
+}
+
+.stock-info {
+    background: var(--gray-50);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    border: 1px solid var(--gray-200);
+}
+
+.stock-info span {
+    font-size: 14px;
+    color: var(--gray-600);
+}
+
+.stock-info b {
+    color: var(--gray-900);
+    font-weight: 700;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+    .stock-room-container {
+        padding: 30px;
+    }
+}
+
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) {
+    .stock-room-container {
+        max-width: 1200px;
+    }
+}
+
+/* Laptop/Tablet Landscape (992px - 1199px) */
+@media (max-width: 1199px) {
+    .header-left h1 {
+        font-size: 24px;
+    }
+
+    .stat-card .value {
+        font-size: 28px;
+    }
+}
+
+/* Tablet Portrait (768px - 991px) */
+@media (max-width: 991px) {
+    .main-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .stats {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .filter-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Mobile Landscape (576px - 767px) */
+@media (max-width: 767px) {
+    .stock-room-container {
+        padding: 15px;
+    }
+
+    .main-header {
+        margin-bottom: 20px;
+    }
+
+    .header-left h1 {
+        font-size: 22px;
+    }
+
+    .header-left .subtitle {
+        font-size: 13px;
+    }
+
+    .btn {
+        padding: 9px 14px;
+        font-size: 13px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .stat-card .value {
+        font-size: 26px;
+    }
+
+    .filter-section {
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+
+    .card-header {
+        padding: 16px 18px;
+    }
+
+    .card-header h2 {
+        font-size: 16px;
+    }
+
+    .table-wrapper {
+        margin: 0 -15px;
+        padding: 0 15px;
+    }
+
+    #inventoryTable {
+        font-size: 13px;
+    }
+
+    #inventoryTable th,
+    #inventoryTable td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+
+    #inventoryTable th {
+        font-size: 11px;
+    }
+
+    .pagination-controls {
+        padding: 15px;
+        gap: 8px;
+    }
+
+    .pagination-controls .btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .pagination-info {
+        padding: 0 10px;
+        font-size: 13px;
+    }
+
+    .modal {
+        padding: 10px;
+    }
+
+    .modal-card {
+        padding: 20px;
+        max-height: 85vh;
+    }
+
+    .modal-card h3 {
+        font-size: 1.25rem;
+        margin-bottom: 20px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .modal-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+    .stock-room-container {
+        padding: 12px;
+    }
+
+    .header-left h1 {
+        font-size: 20px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-card .label {
+        font-size: 12px;
+    }
+
+    .stat-card .value {
+        font-size: 24px;
+    }
+
+    .filter-section {
+        padding: 16px;
+    }
+
+    .filter-section h3 {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        font-size: 13px;
+    }
+
+    #inventoryTable th,
+    #inventoryTable td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+
+    .pagination-controls .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .modal-card {
+        padding: 18px;
+    }
+
+    .modal-card input,
+    .modal-card select {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Extra Small Mobile (360px and below) */
+@media (max-width: 360px) {
+    .stock-room-container {
+        padding: 10px;
+    }
+
+    .header-left h1 {
+        font-size: 18px;
+    }
+
+    .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .stat-card .value {
+        font-size: 22px;
+    }
+
+    #inventoryTable {
+        font-size: 11px;
+    }
+
+    #inventoryTable th,
+    #inventoryTable td {
+        padding: 6px 4px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .filter-section,
+    .pagination-controls,
+    .actions,
+    .modal {
+        display: none !important;
+    }
+
+    .card.table-card {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+
+    #inventoryTable th,
+    #inventoryTable td {
+        padding: 8px;
+        font-size: 11px;
+    }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Add user_role data for JS -->
 {{ user_role|json_script:"user-role-data" }}
 
-<header class="main-header">
-    <div class="header-left">
-        <h1>Stock Room (Inventory B)</h1>
-        <p class="subtitle">Manage reserve inventory and transfer stock to the main floor</p>
+<div class="stock-room-container">
+    <header class="main-header">
+        <div class="header-left">
+            <h1>Stock Room (Inventory B)</h1>
+            <p class="subtitle">Manage reserve inventory and transfer stock to the main floor</p>
+        </div>
+        <div class="header-right">
+            <div class="tag stock-room-tag">Reserve Inventory</div>
+        </div>
+    </header>
+
+    <!-- Stats Section - Side by Side -->
+    <section class="stats">
+        <div class="stat-card">
+            <div class="label">Total Ingredients</div>
+            <div class="value" id="statIngredients">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Low Stock Alerts</div>
+            <div class="value" id="statLow">0</div>
+        </div>
+    </section>
+
+    <!-- Filter Section - Modern Design -->
+    <div class="filter-section">
+        <h3>Filter Inventory</h3>
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label for="searchInput">Search Ingredients</label>
+                <input type="search" id="searchInput" placeholder="Search by name...">
+            </div>
+            <div class="filter-group">
+                <label for="categoryFilter">Category</label>
+                <select id="categoryFilter">
+                    <option value="all">All Categories</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button id="addIngredientBtn" class="btn primary admin-only">
+                <i class="fa fa-plus"></i> Add Ingredient
+            </button>
+        </div>
     </div>
 
-    <div class="header-right">
-        <div class="tag stock-room-tag">Reserve Inventory</div>
-    </div>
-</header>
-
-<section class="stats">
-    <div class="stat-card">
-        <div class="label">Total Ingredients</div>
-        <div class="value" id="statIngredients">0</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">Low Stock Alerts</div>
-        <div class="value" id="statLow">0</div>
-    </div>
-</section>
-
-<section class="card table-card">
-    <div class="card-header">
-        <div>
+    <!-- Table Card -->
+    <section class="card table-card">
+        <div class="card-header">
             <h2>Stock Room Inventory</h2>
             <p class="muted">This is your reserve stock. Transfer items to the Main Inventory to make them available for sale.</p>
         </div>
-        <div class="filters-row">
-            <input id="searchInput" type="search" placeholder="Search ingredients...">
-            <select id="categoryFilter">
-                <option value="all">All Categories</option>
-            </select>
-            <!-- ADDED "Add Ingredient" Button -->
-            <button id="addIngredientBtn" class="btn primary admin-only"><i class="fa fa-plus"></i> Add Ingredient</button>
-        </div>
-    </div>
 
-    <div class="table-wrapper">
-        <table id="inventoryTable">
-            <thead>
-                <tr>
-                    <th>Ingredient Name</th>
-                    <th>Category</th>
-                    <th>Stock Room Qty</th>
-                    <th>Main Stock Qty</th>
-                    <th>Unit</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="table-wrapper">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Ingredient Name</th>
+                        <th>Category</th>
+                        <th>Stock Room Qty</th>
+                        <th>Main Stock Qty</th>
+                        <th>Unit</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">Loading inventory...</td></tr>
                 </tbody>
-        </table>
-    </div>
-</section>
+            </table>
+        </div>
 
+        <!-- Pagination Controls -->
+        <div class="pagination-controls">
+            <button id="firstPageBtn" class="btn btn-secondary">First</button>
+            <button id="prevPageBtn" class="btn btn-secondary">Previous</button>
+            <span class="pagination-info">Page <span id="currentPageDisplay">1</span> of <span id="totalPagesDisplay">1</span></span>
+            <button id="nextPageBtn" class="btn btn-secondary">Next</button>
+            <button id="lastPageBtn" class="btn btn-secondary">Last</button>
+        </div>
+    </section>
+</div>
+
+<!-- Transfer Modal -->
 <div id="transferModal" class="modal">
     <div class="modal-card">
         <button class="modal-close" id="closeModal">&times;</button>
@@ -186,7 +918,7 @@ div.modal.admin-only.visible { display: flex !important; }
     </div>
 </div>
 
-<!-- ADDED ingredientModal -->
+<!-- Add/Edit Ingredient Modal -->
 <div id="ingredientModal" class="modal admin-only">
     <div class="modal-card">
         <button class="modal-close" id="closeIngredientModal">&times;</button>
@@ -206,7 +938,7 @@ div.modal.admin-only.visible { display: flex !important; }
             <input id="ingUnit" name="unit" placeholder="e.g., ml, g" required>
             <label>Cost per Unit (₱)</label>
             <input type="number" step="0.01" id="ingCost" name="cost" min="0" required>
-            
+
             <div class="modal-actions">
                 <button type="submit" class="btn primary">Save</button>
                 <button type="button" class="btn ghost" id="cancelIngredient">Cancel</button>
@@ -217,7 +949,6 @@ div.modal.admin-only.visible { display: flex !important; }
 {% endblock %}
 
 {% block extra_js %}
-<!-- ADDED user_role script -->
 <script>
     let USER_ROLE = 'unknown';
     try {

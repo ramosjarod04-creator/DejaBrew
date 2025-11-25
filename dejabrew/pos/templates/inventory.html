@@ -876,12 +876,55 @@ div.modal.admin-only.visible {
     }
 }
 
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    flex-wrap: wrap;
+}
+
+.pagination-info {
+    padding: 0 15px;
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+.btn-secondary {
+    background: var(--gray-600);
+    color: white;
+    border: 1px solid var(--gray-600);
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--gray-700);
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Print Styles */
 @media print {
     .header-actions,
     .filters-row,
     .admin-actions,
     .status-actions,
+    .pagination-controls,
     .modal {
         display: none !important;
     }
@@ -895,6 +938,31 @@ div.modal.admin-only.visible {
     #inventoryTable td {
         padding: 8px;
         font-size: 11px;
+    }
+}
+
+/* Responsive pagination on mobile */
+@media (max-width: 767px) {
+    .pagination-controls {
+        padding: 15px;
+        gap: 8px;
+    }
+
+    .pagination-controls .btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .pagination-info {
+        padding: 0 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination-controls .btn {
+        padding: 6px 10px;
+        font-size: 12px;
     }
 }
 </style>
@@ -983,6 +1051,15 @@ div.modal.admin-only.visible {
                         <tr><td colspan="10" style="text-align: center; padding: 20px; color: #999;">Loading inventory...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-controls">
+                <button id="firstPageBtn" class="btn btn-secondary">First</button>
+                <button id="prevPageBtn" class="btn btn-secondary">Previous</button>
+                <span class="pagination-info">Page <span id="currentPageDisplay">1</span> of <span id="totalPagesDisplay">1</span></span>
+                <button id="nextPageBtn" class="btn btn-secondary">Next</button>
+                <button id="lastPageBtn" class="btn btn-secondary">Last</button>
             </div>
         </div>
     </section>

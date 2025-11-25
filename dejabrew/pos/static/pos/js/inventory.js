@@ -1,10 +1,13 @@
 // inventory.js - Unified Inventory Management for Admin & Staff
 
 let allIngredients = [];
+let filteredIngredients = []; // For search/filter results
 let consumptionData = {};
 let inventoryForecastChart;
 let editingIngredientId = null;
 let currentForecastPeriod = 'daily';
+let currentPage = 1;
+const itemsPerPage = 20; // Match Sales Monitoring & Stock Room
 
 // USER_ROLE is defined globally in the HTML <script> tag BEFORE this script runs
 
@@ -28,9 +31,10 @@ async function init() {
 
     await loadIngredients();
     await fetchConsumptionData();
+    filteredIngredients = [...allIngredients]; // Initialize filtered list
     populateCategoryFilter();
     populateWasteModalSelect();
-    renderTable();
+    applyFilters(); // Use applyFilters instead of renderTable
     updateStatsUI();
     await renderInventoryForecast(currentForecastPeriod);
     setupEventListeners();
@@ -68,27 +72,60 @@ function getCSRFToken() {
     return document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
 }
 
-function renderTable() {
-    const tbody = document.querySelector("#inventoryTable tbody");
-    if (!tbody) return;
-    tbody.innerHTML = '';
+// --- PAGINATION FUNCTIONS ---
+function getTotalPages() {
+    return Math.ceil(filteredIngredients.length / itemsPerPage);
+}
 
+function getPaginatedIngredients() {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredIngredients.slice(start, end);
+}
+
+function updatePaginationControls() {
+    const firstPageBtn = document.getElementById('firstPageBtn');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const lastPageBtn = document.getElementById('lastPageBtn');
+    const currentPageDisplay = document.getElementById('currentPageDisplay');
+    const totalPagesDisplay = document.getElementById('totalPagesDisplay');
+
+    if (!firstPageBtn || !prevPageBtn || !nextPageBtn || !lastPageBtn) return;
+
+    const totalPages = getTotalPages();
+
+    // Update page numbers
+    if (currentPageDisplay) currentPageDisplay.textContent = currentPage;
+    if (totalPagesDisplay) totalPagesDisplay.textContent = totalPages;
+
+    // Enable/disable buttons
+    firstPageBtn.disabled = currentPage === 1;
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage >= totalPages || totalPages === 0;
+    lastPageBtn.disabled = currentPage >= totalPages || totalPages === 0;
+
+    // Visual feedback
+    [firstPageBtn, prevPageBtn, nextPageBtn, lastPageBtn].forEach(btn => {
+        if (btn.disabled) {
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        } else {
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
+}
+
+function applyFilters() {
     const q = (document.getElementById("searchInput")?.value || '').trim().toLowerCase();
     const catFilter = document.getElementById("categoryFilter")?.value || 'all';
-    
-    const headerCells = document.querySelectorAll("#inventoryTable thead th");
-    let colCount = headerCells.length > 0 ? headerCells.length : 10;
 
-    const filteredIngredients = allIngredients.filter(ing => {
+    filteredIngredients = allIngredients.filter(ing => {
         const matchesQ = q === '' || ing.name.toLowerCase().includes(q) || (ing.category || '').toLowerCase().includes(q);
         const matchesCat = catFilter === 'all' || ing.category === catFilter;
         return matchesQ && matchesCat;
     });
-
-    if (filteredIngredients.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; padding: 20px; color: #999;">No ingredients found${q || catFilter !== 'all' ? ' matching filters' : '.'} ${USER_ROLE === 'admin' ? ' Add ingredients using the button above.' : ''}</td></tr>`;
-        return;
-    }
 
     // REQUIREMENT: Default sort by lowest usage → highest
     filteredIngredients.sort((a, b) => {
@@ -97,7 +134,29 @@ function renderTable() {
         return dailyUseA - dailyUseB; // Ascending order (lowest first)
     });
 
-    filteredIngredients.forEach((ing) => {
+    currentPage = 1; // Reset to first page when filters change
+    renderTable();
+}
+
+function renderTable() {
+    const tbody = document.querySelector("#inventoryTable tbody");
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const headerCells = document.querySelectorAll("#inventoryTable thead th");
+    let colCount = headerCells.length > 0 ? headerCells.length : 10;
+
+    if (filteredIngredients.length === 0) {
+        const q = (document.getElementById("searchInput")?.value || '').trim();
+        const catFilter = document.getElementById("categoryFilter")?.value || 'all';
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; padding: 20px; color: #999;">No ingredients found${q || catFilter !== 'all' ? ' matching filters' : '.'} ${USER_ROLE === 'admin' ? ' Add ingredients using the button above.' : ''}</td></tr>`;
+        updatePaginationControls();
+        return;
+    }
+
+    const paginatedIngredients = getPaginatedIngredients();
+
+    paginatedIngredients.forEach((ing) => {
         const totalStock = (Number(ing.mainStock) || 0) + (Number(ing.stockRoom) || 0);
         let currentStatus = ing.status || 'In Stock';
 
@@ -163,9 +222,10 @@ function renderTable() {
         `;
         tbody.appendChild(tr);
     });
-    
+
     applyColumnVisibility();
     applyRolePermissions();
+    updatePaginationControls();
 }
 
 function applyColumnVisibility() {
@@ -458,8 +518,44 @@ function setupEventListeners() {
     if (addBtn) addBtn.addEventListener('click', () => openIngredientModal());
 
     document.getElementById('refreshBtn')?.addEventListener('click', init);
-    document.getElementById('searchInput')?.addEventListener('input', renderTable);
-    document.getElementById('categoryFilter')?.addEventListener('change', renderTable);
+    document.getElementById('searchInput')?.addEventListener('input', applyFilters);
+    document.getElementById('categoryFilter')?.addEventListener('change', applyFilters);
+
+    // Pagination event listeners
+    const firstPageBtn = document.getElementById('firstPageBtn');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const lastPageBtn = document.getElementById('lastPageBtn');
+
+    if (firstPageBtn) firstPageBtn.addEventListener('click', () => {
+        if (currentPage !== 1) {
+            currentPage = 1;
+            renderTable();
+        }
+    });
+
+    if (prevPageBtn) prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTable();
+        }
+    });
+
+    if (nextPageBtn) nextPageBtn.addEventListener('click', () => {
+        const totalPages = getTotalPages();
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderTable();
+        }
+    });
+
+    if (lastPageBtn) lastPageBtn.addEventListener('click', () => {
+        const totalPages = getTotalPages();
+        if (currentPage !== totalPages && totalPages > 0) {
+            currentPage = totalPages;
+            renderTable();
+        }
+    });
 
     document.querySelector("#inventoryTable tbody")?.addEventListener('click', async (e) => {
         const actionElement = e.target.closest('[data-action]');
