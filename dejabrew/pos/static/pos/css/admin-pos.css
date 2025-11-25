@@ -564,6 +564,20 @@ body.modal-open {
    RESPONSIVE DESIGN
    ============================ */
 
+/* CRITICAL: Fix for mobile responsiveness */
+@media (max-width: 768px) {
+    .content {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+    }
+
+    .products-col,
+    .cart-col {
+        width: 100% !important;
+    }
+}
+
 /* Tablets */
 @media (max-width: 1024px) {
     /* DO NOT override .main-content - handled by base.css */
