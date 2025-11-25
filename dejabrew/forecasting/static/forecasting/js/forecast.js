@@ -180,20 +180,27 @@ document.addEventListener('DOMContentLoaded', function() {
         inventoryData.forEach(ingredient => {
             const tr = document.createElement('tr');
 
+            // Safety: Ensure numeric values exist and default to 0 if undefined
+            const currentStock = ingredient.current_stock ?? 0;
+            const totalUsage = ingredient.total_usage ?? 0;
+            const daysUntilDepleted = ingredient.days_until_depleted;
+            const unit = ingredient.unit || '';
+            const ingredientName = ingredient.ingredient || 'Unknown';
+
             // Determine status and color
             let statusText = '';
             let statusColor = '';
 
-            if (ingredient.days_until_depleted === null || ingredient.days_until_depleted === 'N/A') {
+            if (daysUntilDepleted === null || daysUntilDepleted === 'N/A' || daysUntilDepleted === undefined) {
                 statusText = '✓ OK';
                 statusColor = '#28a745'; // Green
-            } else if (ingredient.days_until_depleted <= 0) {
+            } else if (daysUntilDepleted <= 0) {
                 statusText = '⚠️ OUT OF STOCK';
                 statusColor = '#dc2626'; // Red
-            } else if (ingredient.days_until_depleted <= 3) {
+            } else if (daysUntilDepleted <= 3) {
                 statusText = '⚠️ CRITICAL';
                 statusColor = '#dc2626'; // Red
-            } else if (ingredient.days_until_depleted <= 7) {
+            } else if (daysUntilDepleted <= 7) {
                 statusText = '⚠️ LOW';
                 statusColor = '#f59e0b'; // Orange
             } else {
@@ -201,11 +208,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusColor = '#28a745'; // Green
             }
 
+            // Format days until depleted with safety check
+            const daysDisplay = (daysUntilDepleted === null || daysUntilDepleted === 'N/A' || daysUntilDepleted === undefined)
+                ? 'N/A'
+                : `${daysUntilDepleted} days`;
+
             tr.innerHTML = `
-                <td><strong>${ingredient.ingredient}</strong></td>
-                <td>${ingredient.current_stock.toFixed(2)} ${ingredient.unit || ''}</td>
-                <td>${ingredient.total_usage.toFixed(2)} ${ingredient.unit || ''}</td>
-                <td>${ingredient.days_until_depleted === null || ingredient.days_until_depleted === 'N/A' ? 'N/A' : ingredient.days_until_depleted + ' days'}</td>
+                <td><strong>${ingredientName}</strong></td>
+                <td>${currentStock.toFixed(2)} ${unit}</td>
+                <td>${totalUsage.toFixed(2)} ${unit}</td>
+                <td>${daysDisplay}</td>
                 <td style="color: ${statusColor}; font-weight: 600;">${statusText}</td>
             `;
             inventoryTableBody.appendChild(tr);
