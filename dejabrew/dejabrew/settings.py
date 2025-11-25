@@ -10,7 +10,9 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.254.197', 'localhost', '127.0.0.1']
+# Allow all hosts in development for network access via ipconfig
+# When running with 'python manage.py runserver 0.0.0.0:8000', this allows access from any IP
+ALLOWED_HOSTS = ['*']  # In production, replace with specific domains/IPs
 
 INSTALLED_APPS = [
     'django.contrib.admin',
