@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const productInput = document.getElementById('product_name_input');
     const daysInput = document.getElementById('days_input');
     const tableBody = document.getElementById('specificForecastTable').querySelector('tbody');
+    const inventoryTableBody = document.getElementById('inventoryForecastTable').querySelector('tbody');
     const errorDiv = document.getElementById('forecastError');
     const chartCanvas = document.getElementById('specificProductChart');
 
@@ -79,10 +80,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // --- 5. Render the Chart ---
             renderChart(forecastData, productName);
 
+            // --- 6. Populate Inventory Depletion Table ---
+            if (data.inventory_forecast) {
+                populateInventoryTable(data.inventory_forecast);
+            }
+
         } catch (error) {
             console.error('Error running specific forecast:', error);
             errorDiv.textContent = `Error: ${error.message}`;
             tableBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Failed to get forecast.</td></tr>';
+            inventoryTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Run a forecast to see inventory depletion.</td></tr>';
         }
     }
 
@@ -158,6 +165,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+        });
+    }
+
+    function populateInventoryTable(inventoryData) {
+        // Clear the table
+        inventoryTableBody.innerHTML = '';
+
+        if (!inventoryData || inventoryData.length === 0) {
+            inventoryTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No inventory data available.</td></tr>';
+            return;
+        }
+
+        inventoryData.forEach(ingredient => {
+            const tr = document.createElement('tr');
+
+            // Determine status and color
+            let statusText = '';
+            let statusColor = '';
+
+            if (ingredient.days_until_depleted === null || ingredient.days_until_depleted === 'N/A') {
+                statusText = '✓ OK';
+                statusColor = '#28a745'; // Green
+            } else if (ingredient.days_until_depleted <= 0) {
+                statusText = '⚠️ OUT OF STOCK';
+                statusColor = '#dc2626'; // Red
+            } else if (ingredient.days_until_depleted <= 3) {
+                statusText = '⚠️ CRITICAL';
+                statusColor = '#dc2626'; // Red
+            } else if (ingredient.days_until_depleted <= 7) {
+                statusText = '⚠️ LOW';
+                statusColor = '#f59e0b'; // Orange
+            } else {
+                statusText = '✓ OK';
+                statusColor = '#28a745'; // Green
+            }
+
+            tr.innerHTML = `
+                <td><strong>${ingredient.ingredient}</strong></td>
+                <td>${ingredient.current_stock.toFixed(2)} ${ingredient.unit || ''}</td>
+                <td>${ingredient.total_usage.toFixed(2)} ${ingredient.unit || ''}</td>
+                <td>${ingredient.days_until_depleted === null || ingredient.days_until_depleted === 'N/A' ? 'N/A' : ingredient.days_until_depleted + ' days'}</td>
+                <td style="color: ${statusColor}; font-weight: 600;">${statusText}</td>
+            `;
+            inventoryTableBody.appendChild(tr);
         });
     }
 });
