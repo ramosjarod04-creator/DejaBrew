@@ -1,13 +1,15 @@
 # In your app: forecasting/views.py
 import json
+import os
 import pandas as pd # Import pandas
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 # --- UPDATED IMPORTS ---
 from forecasting.forecasting_service import (
-    predict_for_item, compute_inventory_forecast, list_available_models, 
+    predict_for_item, compute_inventory_forecast, list_available_models,
     map_item_to_article, load_live_db_data, load_kaggle_data
 )
 # --- END UPDATED IMPORTS ---
@@ -17,6 +19,12 @@ from datetime import timedelta # Import timedelta
 from django.utils import timezone # Import timezone
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth # Import Trunc functions
 from decimal import Decimal # Import Decimal
+
+# Get forecasting data directory path
+FORECASTING_DATA_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'forecasting_data'
+)
 
 
 # Helper to extract recipe given an item name
@@ -243,3 +251,105 @@ def predict_api(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_POST
+def upload_model_view(request):
+    """
+    Upload View: Accepts a .joblib model file trained in Google Colab
+    and saves it to forecasting_data/latest_colab_model.joblib
+
+    Endpoint: /upload_model/
+    Method: POST
+    Accepts: multipart/form-data with 'model_file' field
+    """
+    try:
+        if 'model_file' not in request.FILES:
+            return JsonResponse({
+                'success': False,
+                'error': 'No model_file provided in request'
+            }, status=400)
+
+        uploaded_file = request.FILES['model_file']
+
+        # Validate file extension
+        if not uploaded_file.name.endswith('.joblib'):
+            return JsonResponse({
+                'success': False,
+                'error': 'File must be a .joblib file'
+            }, status=400)
+
+        # Ensure forecasting_data directory exists
+        os.makedirs(FORECASTING_DATA_DIR, exist_ok=True)
+
+        # Save to latest_colab_model.joblib
+        save_path = os.path.join(FORECASTING_DATA_DIR, 'latest_colab_model.joblib')
+
+        with open(save_path, 'wb') as f:
+            for chunk in uploaded_file.chunks():
+                f.write(chunk)
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Model uploaded successfully',
+            'saved_to': save_path
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@require_GET
+def metrics_dashboard_view(request):
+    """
+    Metrics View: Reads latest_metrics.json and returns the data
+    Can be used both as JSON API or to render a template
+
+    Endpoint: /metrics_dashboard/
+    Method: GET
+
+    Query params:
+    - format=json : Returns JSON response (default)
+    - format=html : Renders template with metrics data
+    """
+    try:
+        metrics_file = os.path.join(FORECASTING_DATA_DIR, 'latest_metrics.json')
+
+        if not os.path.exists(metrics_file):
+            return JsonResponse({
+                'success': False,
+                'error': 'No metrics file found. Please run model retraining first.'
+            }, status=404)
+
+        # Read metrics from file
+        with open(metrics_file, 'r', encoding='utf-8') as f:
+            metrics_data = json.load(f)
+
+        # Check if user wants HTML or JSON response
+        response_format = request.GET.get('format', 'json')
+
+        if response_format == 'html':
+            # Render template with metrics data
+            return render(request, 'forecasting/metrics_dashboard.html', {
+                'metrics': metrics_data
+            })
+        else:
+            # Return JSON response
+            return JsonResponse({
+                'success': True,
+                'metrics': metrics_data
+            })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

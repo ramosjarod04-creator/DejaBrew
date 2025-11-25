@@ -2,14 +2,22 @@
 
 import os
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
 import joblib
 import json
+from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db.models import Sum, F
 
 # --- UPDATED: Import from forecasting_service ---
-from forecasting.forecasting_service import load_live_db_data, load_kaggle_data 
+from forecasting.forecasting_service import (
+    load_live_db_data,
+    load_kaggle_data,
+    pivot_daily,
+    create_date_features
+) 
 
 # --- Get paths from your train_models.py ---
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -20,18 +28,19 @@ MODEL_PREFIX = 'model_'
 MODEL_DIR = DATA_DIR
 
 
-# --- These functions are copied directly from train_models.py ---
-def pivot_daily(df):
-    daily = df.pivot_table(index='date', columns='article', values='quantity', aggfunc='sum').fillna(0)
-    return daily
+def save_metrics_json(metrics_dict):
+    """
+    Save metrics dictionary to forecasting_data/latest_metrics.json
 
-def create_date_features(df_index):
-    df = pd.DataFrame(index=df_index)
-    df['day_of_week'] = df.index.dayofweek
-    df['month'] = df.index.month
-    df['day_of_year'] = df.index.dayofyear
-    df['year'] = df.index.year
-    return df
+    Args:
+        metrics_dict: Dictionary containing test metrics for all trained models
+    """
+    metrics_file = os.path.join(DATA_DIR, 'latest_metrics.json')
+
+    with open(metrics_file, 'w', encoding='utf-8') as f:
+        json.dump(metrics_dict, f, ensure_ascii=False, indent=2)
+
+    return metrics_file
 
 
 # --- This is the main Django command ---
@@ -75,34 +84,65 @@ class Command(BaseCommand):
         top_articles = list(dict.fromkeys(top_bakery + top_coffee))
 
         self.stdout.write(f"\nTraining models for {len(top_articles)} products:")
-        
+
         X = create_date_features(daily.index)
-        trained_list = [] 
+        trained_list = []
+        all_metrics = []  # Store metrics for each trained model
 
         for article in top_articles:
             if article not in daily.columns:
                 self.stdout.write(f"Skipping {article} (not in data)")
                 continue
             y = daily[article]
-            
+
             split = int(len(X) * 0.8)
             if split < 5: # Need at least 5 data points to train
                 self.stdout.write(f"Skipping {article} (not enough data)")
                 continue
-                
-            X_train, y_train = X.iloc[:split], y.iloc[:split]
-            
+
+            # Create train/test split (80/20)
+            X_train, X_test = X.iloc[:split], X.iloc[split:]
+            y_train, y_test = y.iloc[:split], y.iloc[split:]
+
             try:
+                # Train the model
                 model = GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=42)
                 model.fit(X_train, y_train)
-                
+
+                # --- CALCULATE TEST SET METRICS ---
+                y_pred_test = model.predict(X_test)
+
+                # Calculate MAE, R², MAPE, and Accuracy on TEST SET
+                test_mae = mean_absolute_error(y_test, y_pred_test)
+                test_r2 = r2_score(y_test, y_pred_test)
+                test_mape = np.mean(np.abs((y_test - y_pred_test) / (y_test + 1))) * 100
+                test_accuracy = max(0, 100 - test_mape)
+
+                # Save the model
                 safe_name = article.lower().replace(' ', '_').replace('/', '_')
                 fname = f"{MODEL_PREFIX}{safe_name}.joblib"
-                
+
                 joblib.dump(model, os.path.join(MODEL_DIR, fname))
-                self.stdout.write(f"Saved model for {article} -> {fname}")
+
+                # Store metrics for this model
+                article_metrics = {
+                    'article': article,
+                    'test_mae': round(test_mae, 2),
+                    'test_r2': round(test_r2, 4),
+                    'test_mape': round(test_mape, 2),
+                    'test_accuracy': round(test_accuracy, 2),
+                    'train_size': len(X_train),
+                    'test_size': len(X_test)
+                }
+                all_metrics.append(article_metrics)
                 trained_list.append(article)
-                
+
+                # Print test metrics to terminal
+                self.stdout.write(
+                    f"✓ {article:<35} | Test Accuracy: {test_accuracy:>6.2f}% | "
+                    f"R²: {test_r2:>6.4f} | MAE: {test_mae:>6.2f}"
+                )
+
             except Exception as e:
                 self.stdout.write(f"!! FAILED to train model for {article}: {e}")
 
@@ -111,8 +151,29 @@ class Command(BaseCommand):
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(trained_list, f, ensure_ascii=False, indent=2)
 
-        self.stdout.write("\n--- Training complete! ---")
+        # --- 5. SAVE METRICS TO latest_metrics.json ---
+        metrics_summary = {
+            'trained_date': datetime.now().isoformat(),
+            'total_models_trained': len(trained_list),
+            'models': all_metrics,
+            'average_metrics': {
+                'test_accuracy': round(np.mean([m['test_accuracy'] for m in all_metrics]), 2) if all_metrics else 0,
+                'test_r2': round(np.mean([m['test_r2'] for m in all_metrics]), 4) if all_metrics else 0,
+                'test_mae': round(np.mean([m['test_mae'] for m in all_metrics]), 2) if all_metrics else 0
+            }
+        }
+
+        metrics_file = save_metrics_json(metrics_summary)
+        self.stdout.write(f"\n✓ Metrics saved to: {metrics_file}")
+
+        # Print summary of metrics
+        self.stdout.write("\n--- Training Complete! ---")
         self.stdout.write(f"Successfully trained {len(trained_list)} models.")
+        if all_metrics:
+            self.stdout.write(f"\nAverage Test Metrics:")
+            self.stdout.write(f"  Accuracy: {metrics_summary['average_metrics']['test_accuracy']:.2f}%")
+            self.stdout.write(f"  R² Score: {metrics_summary['average_metrics']['test_r2']:.4f}")
+            self.stdout.write(f"  MAE: {metrics_summary['average_metrics']['test_mae']:.2f}")
 
         # --- 5. CLEANUP (from train_models.py) ---
         self.stdout.write("\nCleaning up old, unused model files...")

@@ -66,5 +66,8 @@ urlpatterns = [
     path('sales-monitoring/', views.sales_monitoring_view, name='sales_monitoring'),
     path('api/sales-monitoring/', views.sales_monitoring_api, name='api_sales_monitoring'),
 
-    path('forecasting/api/predict/', forecast_views.predict_api, name='forecast_predict_api')
+    # Forecasting endpoints
+    path('forecasting/api/predict/', forecast_views.predict_api, name='forecast_predict_api'),
+    path('upload_model/', forecast_views.upload_model_view, name='upload_model'),
+    path('metrics_dashboard/', forecast_views.metrics_dashboard_view, name='metrics_dashboard'),
 ]
