@@ -174,12 +174,15 @@ function setupEventListeners() {
             showNotification('Product list has been updated.', 'info', true); // Debounced
             loadProducts();
         }
-        if (event.key === 'inventoryUpdate') {
-            console.log('Storage event: inventoryUpdate detected from another tab');
+        if (event.key === 'inventoryUpdate' || event.key === 'dejabrew_ingredients_v1') {
+            console.log('Storage event: inventory updated from another tab');
             showNotification('Inventory has been updated.', 'info', true); // Debounced
-            loadIngredients();
+            // DO NOT call loadIngredients() here - it makes API calls and causes infinite loops
+            // Instead, reload products which will recalculate stock from the ingredients in memory
             const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
-            showProductView(currentCategory);
+            loadProducts().then(() => {
+                showProductView(currentCategory);
+            });
         }
     });
 
