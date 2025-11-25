@@ -606,9 +606,19 @@ window.addToCart = function(productId) {
     showNotification(`${product.name} added to cart`, 'success');
 }
 
-window.updateQuantity = function(productId, change) {
+window.updateQuantity = async function(productId, change) {
     const item = cart.find(i => i.id === productId);
     if (!item) return;
+
+    // Require admin authentication for quantity decrease
+    if (change < 0) {
+        const isAuthenticated = await showAdminPasswordModal();
+        if (!isAuthenticated) {
+            showNotification('Admin authentication required to decrease quantity', 'error');
+            return;
+        }
+    }
+
     const newQuantity = item.quantity + change;
 
     if (newQuantity <= 0) {
@@ -635,12 +645,12 @@ window.updateQuantity = function(productId, change) {
         showNotification('Cannot exceed available stock', 'error');
         return;
     }
-    
+
     item.quantity = newQuantity;
     updateCartDisplay();
 }
 
-window.setQuantity = function(productId, value) {
+window.setQuantity = async function(productId, value) {
     const item = cart.find(i => i.id === productId);
     if (!item) return;
 
@@ -651,6 +661,16 @@ window.setQuantity = function(productId, value) {
         newQuantity = 1;
     } else if (newQuantity > 999) {
         newQuantity = 999;
+    }
+
+    // Require admin authentication for quantity decrease
+    if (newQuantity < item.quantity) {
+        const isAuthenticated = await showAdminPasswordModal();
+        if (!isAuthenticated) {
+            showNotification('Admin authentication required to decrease quantity', 'error');
+            updateCartDisplay(); // Reset to original value
+            return;
+        }
     }
 
     const hasStock = (item.stock || 0) > 0;
@@ -1501,6 +1521,7 @@ function setupAdminPasswordModal() {
     adminPasswordModal = document.getElementById('adminPasswordModal');
     const adminPasswordCancel = document.getElementById('adminPasswordCancel');
     const adminPasswordConfirm = document.getElementById('adminPasswordConfirm');
+    const adminUsername = document.getElementById('adminUsername');
     const adminPassword = document.getElementById('adminPassword');
 
     if (adminPasswordCancel) {
@@ -1512,24 +1533,25 @@ function setupAdminPasswordModal() {
 
     // Handler function for authentication
     const handleAuthentication = async () => {
+        const username = adminUsername.value.trim();
         const password = adminPassword.value.trim();
 
-        if (!password) {
-            showNotification('Please enter admin password', 'error');
+        if (!username || !password) {
+            showNotification('Please enter both username and password', 'error');
             return;
         }
 
-        // Verify admin credentials via API (password-only)
-        const isValid = await verifyAdminCredentials(null, password);
+        // Verify admin credentials via API
+        const isValid = await verifyAdminCredentials(username, password);
 
         if (isValid) {
             showNotification('Admin authenticated successfully', 'success');
             closeAdminPasswordModal();
             if (adminPasswordResolve) adminPasswordResolve(true);
         } else {
-            showNotification('Invalid admin password', 'error');
+            // Error message is already shown in verifyAdminCredentials
             adminPassword.value = '';
-            adminPassword.focus();
+            adminUsername.focus();
         }
     };
 
@@ -1537,9 +1559,17 @@ function setupAdminPasswordModal() {
         adminPasswordConfirm.addEventListener('click', handleAuthentication);
     }
 
-    // Add Enter key support
+    // Add Enter key support on both fields
     if (adminPassword) {
         adminPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleAuthentication();
+            }
+        });
+    }
+
+    if (adminUsername) {
+        adminUsername.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 handleAuthentication();
             }
@@ -1559,11 +1589,8 @@ function setupAdminPasswordModal() {
 function showAdminPasswordModal() {
     return new Promise((resolve) => {
         adminPasswordResolve = resolve;
-        const adminPassword = document.getElementById('adminPassword');
-        if (adminPassword) {
-            adminPassword.value = '';
-            adminPassword.focus();
-        }
+        document.getElementById('adminUsername').value = '';
+        document.getElementById('adminPassword').value = '';
         if (adminPasswordModal) {
             adminPasswordModal.style.display = 'flex';
         }
@@ -1583,19 +1610,13 @@ async function verifyAdminCredentials(username, password) {
         console.log('Username:', username);
         console.log('Password length:', password ? password.length : 0);
 
-        const payload = { password };
-        // If username is provided, include it (for discount feature)
-        if (username) {
-            payload.username = username;
-        }
-
         const response = await fetch('/api/verify-admin/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ username, password })
         });
 
         console.log('Response status:', response.status);

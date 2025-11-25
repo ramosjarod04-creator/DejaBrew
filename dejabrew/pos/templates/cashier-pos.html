@@ -133,20 +133,9 @@
 
 <section class="content">
     <div class="products-col">
-        <!-- Category Buttons (Converted from Dropdown) -->
-        <div class="filters-row" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-            <button class="category-btn active" data-category="all" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #8B4513; background: #8B4513; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                All Products
-            </button>
-            <button class="category-btn" data-category="drinks" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                Drinks
-            </button>
-            <button class="category-btn" data-category="special" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                Special
-            </button>
-            <button class="category-btn" data-category="bestselling" style="flex: 1; min-width: 120px; padding: 12px; border: 2px solid #ffc107; background: #ffc107; color: #333; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                🔥 Best Selling
-            </button>
+        <!-- Category Buttons (Dynamically Generated) -->
+        <div id="categoryButtonsContainer" class="filters-row" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <!-- Buttons will be generated dynamically by JavaScript -->
         </div>
 
         <div id="productsGrid" class="products-grid">
