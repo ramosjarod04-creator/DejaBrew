@@ -332,22 +332,25 @@ def handle_uploaded_file(f):
     try:
         save_dir = os.path.join(settings.BASE_DIR, 'pos', 'static', 'pos', 'img')
         os.makedirs(save_dir, exist_ok=True)
-        
+
         fname, ext = os.path.splitext(f.name)
         safe_fname = "".join(c for c in fname if c.isalnum() or c in ('_','-')).rstrip()
         unique_filename = f"{safe_fname}_{int(time.time())}{ext}"
-        
+
         save_path = os.path.join(save_dir, unique_filename)
 
-        with default_storage.open(save_path, 'wb+') as destination:
+        # Use regular file operations instead of default_storage for static files
+        with open(save_path, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
-        
+
         url_path = f'/static/pos/img/{unique_filename}'
         return url_path
-        
+
     except Exception as e:
         print(f"⚠️ Error saving uploaded file: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def login_view(request):
