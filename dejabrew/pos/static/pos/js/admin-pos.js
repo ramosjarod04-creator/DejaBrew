@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     createAddOnsModal();
     setupDiscountModal();
     setupReceiptPreviewModal();
+    setupOrderCompleteModal(); // Initialize Order Complete Modal
     setupButtonControls(); // NEW: Setup button-based controls
     setupAdminPasswordModal(); // NEW: Setup admin authentication
 });
@@ -1106,18 +1107,94 @@ function setupReceiptPreviewModal() {
     });
 }
 
+// ============================================
+// ORDER COMPLETE MODAL
+// ============================================
+
+let storedReceiptHTML = null;
+
+function showOrderCompleteModal(orderId, total, paymentMethod, receiptHTML) {
+    storedReceiptHTML = receiptHTML;
+
+    const modal = document.getElementById('orderCompleteModal');
+    const orderNumber = document.getElementById('orderCompleteNumber');
+    const orderTotal = document.getElementById('orderCompleteTotal');
+    const orderPayment = document.getElementById('orderCompletePayment');
+
+    if (modal && orderNumber && orderTotal && orderPayment) {
+        orderNumber.textContent = `#${orderId}`;
+        orderTotal.textContent = `₱${parseFloat(total).toFixed(2)}`;
+        orderPayment.textContent = paymentMethod;
+
+        modal.style.display = 'flex';
+        showNotification('Order processed successfully!', 'success');
+    }
+}
+
+function closeOrderCompleteModal() {
+    const modal = document.getElementById('orderCompleteModal');
+    if (modal) {
+        modal.style.display = 'none';
+
+        // Clear cart and reload
+        clearCart();
+        window.currentDiscount = null;
+        document.getElementById('discountInput').disabled = false;
+        loadProducts();
+
+        const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
+        showProductView(currentCategory);
+
+        storedReceiptHTML = null;
+    }
+}
+
+function setupOrderCompleteModal() {
+    const viewReceiptBtn = document.getElementById('orderCompleteViewReceipt');
+    const closeBtn = document.getElementById('orderCompleteClose');
+    const modal = document.getElementById('orderCompleteModal');
+
+    if (viewReceiptBtn) {
+        viewReceiptBtn.addEventListener('click', () => {
+            // Close the order complete modal
+            modal.style.display = 'none';
+
+            // Show the receipt preview if available
+            if (storedReceiptHTML) {
+                showReceiptPreview(storedReceiptHTML);
+            }
+            storedReceiptHTML = null;
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            closeOrderCompleteModal();
+        });
+    }
+
+    // Close on clicking outside the modal card
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeOrderCompleteModal();
+            }
+        });
+    }
+}
+
 function showReceiptPreview(receiptHTML) {
     if (receiptPreviewContent && receiptHTML) {
         // Save for printing later
         currentReceiptHTML = receiptHTML;
-        
+
         // Inject HTML - wrap in a div to ensure centering/sizing
         receiptPreviewContent.innerHTML = `
             <div style="width: 300px; margin: 0 auto; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; color: #000; text-align: left;">
                 ${receiptHTML}
             </div>
         `;
-        
+
         // Strip out any <style> tags that affect 'body' to prevent preview from breaking page
         const styles = receiptPreviewContent.getElementsByTagName('style');
         for (let i = styles.length - 1; i >= 0; i--) {
@@ -1267,25 +1344,8 @@ async function processOrder() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            showNotification('Order processed successfully!', 'success');
-
-            // SHOW RECEIPT PREVIEW MODAL instead of auto-printing
-            if (data.receipt_html) {
-                showReceiptPreview(data.receipt_html);
-            } else {
-                // Fallback if no HTML returned
-                clearCart();
-                window.currentDiscount = null;
-                document.getElementById('discountInput').disabled = false;
-                // Only reload products - ingredients updated server-side
-                await loadProducts();
-                const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
-                showProductView(currentCategory);
-                // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
-                if (cartCol && cartCol.classList.contains('is-mobile-open')) {
-                    toggleMobileCart();
-                }
-            }
+            // Show Order Complete Modal instead of just notification
+            showOrderCompleteModal(data.order_id, orderData.total, paymentMethod, data.receipt_html);
 
         } else {
             showNotification(data.error || 'Failed to process order. Please try again.', 'error');
@@ -1519,6 +1579,10 @@ function closeAdminPasswordModal() {
 
 async function verifyAdminCredentials(username, password) {
     try {
+        console.log('Verifying admin credentials...');
+        console.log('Username:', username);
+        console.log('Password length:', password ? password.length : 0);
+
         const payload = { password };
         // If username is provided, include it (for discount feature)
         if (username) {
@@ -1534,10 +1598,19 @@ async function verifyAdminCredentials(username, password) {
             body: JSON.stringify(payload)
         });
 
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
+
+        if (!data.success) {
+            console.error('Authentication failed:', data.error);
+            showNotification(data.error || 'Authentication failed', 'error');
+        }
+
         return data.success === true && data.is_admin === true;
     } catch (error) {
         console.error('Error verifying admin:', error);
+        showNotification('Network error during authentication', 'error');
         return false;
     }
 }

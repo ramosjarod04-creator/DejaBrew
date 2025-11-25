@@ -177,28 +177,32 @@ body {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
     }
 
-    /* HAMBURGER - HIGHLY VISIBLE WITH GOLD ACCENT */
+    /* HAMBURGER - HIGHLY VISIBLE WITH PRIMARY (NAVY) COLOR */
     .hamburger-btn {
         display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         align-items: center !important;
         justify-content: center !important;
         width: 48px !important;
         height: 48px !important;
-        background: var(--secondary-color) !important;
-        border: none !important;
+        background: var(--primary-color) !important;
+        border: 2px solid var(--secondary-color) !important;
         border-radius: var(--border-radius) !important;
-        color: var(--gray-900) !important;
+        color: white !important;
         font-size: 24px !important;
         font-weight: bold !important;
         cursor: pointer !important;
         transition: var(--transition) !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 0 8px rgba(240, 175, 25, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2) !important;
         z-index: 2001 !important;
     }
 
     .hamburger-btn:hover {
-        background: var(--secondary-hover) !important;
+        background: var(--primary-hover) !important;
+        border-color: var(--secondary-light) !important;
         transform: scale(1.05) !important;
+        box-shadow: 0 0 12px rgba(240, 175, 25, 0.6), 0 4px 8px rgba(0, 0, 0, 0.3) !important;
     }
 
     .hamburger-btn:active {
