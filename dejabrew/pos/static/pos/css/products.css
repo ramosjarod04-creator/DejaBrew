@@ -1,115 +1,95 @@
-/* Global */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Inter', sans-serif;
-  display: flex;
-  background: #f8f9fb;
-  color: #1e2a31;
-}
+/* ============================
+   PRODUCTS PAGE - Specific Styles Only
+   Base layout handled by base.css
+   ============================ */
 
-/* Sidebar */
-.sidebar {
-  width: 250px;
-  background: #0f2130;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  position: fixed;
-  padding: 20px;
-}
-.logo { font-size: 18px; font-weight: 600; margin-bottom: 30px; }
-.profile { display: flex; align-items: center; margin-bottom: 30px; }
-.avatar {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: #ff9800; color: #fff; display: flex;
-  align-items: center; justify-content: center; font-weight: 600;
-  margin-right: 10px;
-}
-.role { font-size: 13px; color: #ccc; }
-.nav { flex: 1; }
-.nav-item {
-  display: block; padding: 10px; color: #ccc; border-radius: 6px;
-  margin: 5px 0; text-decoration: none; transition: 0.3s;
-}
-.nav-item:hover, .nav-item.active {
-  background: #ff9800; color: #fff; transform: translateX(4px);
-}
-.logout { text-decoration: none; color: #fff; margin-top: auto; }
-
-/* Main */
-.main { margin-left: 270px; padding: 20px; flex: 1; }
-.header {
-  display: flex; justify-content: space-between; align-items: center;
+/* Products page-specific stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 15px;
   margin-bottom: 20px;
 }
-.header h1 { font-size: 24px; }
-.header p { color: #666; font-size: 14px; margin-top: 5px; }
 
-/* Buttons */
-.btn {
-  padding: 8px 16px; border: none; border-radius: 6px;
-  cursor: pointer; transition: 0.3s;
-}
-.btn-primary { background: #ff9800; color: #fff; }
-.btn-orange { background: #ff9800; color: #fff; }
-.btn-gray { background: #ddd; color: #333; }
-.btn-ghost { background: transparent; color: #666; border: 1px solid #ddd; }
-.btn:hover { box-shadow: 0 0 8px rgba(255,152,0,0.5); }
-
-/* Stats Cards */
-.stats {
-  display: grid; grid-template-columns: repeat(4,1fr);
-  gap: 15px; margin-bottom: 20px;
-}
 .stat-card {
-  background: #fff; border: 1px solid #eee; border-radius: 10px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 20px; text-align: left;
+  padding: 20px;
+  text-align: left;
 }
-.stat-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
-.card {
-  background: #fff; border: 1px solid #eee; border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 20px; text-align: left;
-}
-.card h2 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
 
-/* Filters */
+.stat-card h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+/* Products filters */
 .filters {
-  display: flex; gap: 10px; flex-wrap: wrap;
-  align-items: center; margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 20px;
 }
+
 .filters input, .filters select {
-  padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
 }
 
-/* Table */
-.table-section h2 { margin-bottom: 5px; }
-.subtitle { color: #777; margin-bottom: 10px; }
+/* Products table */
+.table-section h2 {
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #777;
+  margin-bottom: 10px;
+}
+
 .table-container {
-  background: #fff; border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1); overflow-x: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  overflow-x: auto;
 }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px; text-align: left; font-size: 14px; }
-th { background: #f1f3f6; }
-tr:nth-child(even) { background: #fafafa; }
-tr:hover { background: #f9f9f9; }
 
+/* Product badges */
 .badge {
-  padding: 5px 10px; border-radius: 20px; font-size: 12px; color: #fff;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #fff;
 }
-.badge.black { background: #1e2a31; }
-.badge.gray { background: #888; }
-.badge.red { background: #e74c3c; }
+
+.badge.black {
+  background: #1e2a31;
+}
+
+.badge.gray {
+  background: #888;
+}
+
+.badge.red {
+  background: #e74c3c;
+}
 
 .actions i {
-  cursor: pointer; margin: 0 5px; transition: 0.2s;
+  cursor: pointer;
+  margin: 0 5px;
+  transition: 0.2s;
 }
-.actions i:hover { transform: scale(1.1); }
 
-/* --- UPDATED: Modal with Scrollable Content --- */
+.actions i:hover {
+  transform: scale(1.1);
+}
+
+/* Products Modal */
 .modal {
   display: none;
   position: fixed;
@@ -120,7 +100,7 @@ tr:hover { background: #f9f9f9; }
   background: rgba(0,0,0,0.5);
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* Prevent body scroll */
+  overflow: hidden;
   z-index: 1000;
 }
 
@@ -129,14 +109,13 @@ tr:hover { background: #f9f9f9; }
   border-radius: 12px;
   width: 90%;
   max-width: 600px;
-  max-height: 90vh; /* Limit modal height */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 5px 20px rgba(0,0,0,0.3);
   position: relative;
 }
 
-/* Modal title stays at top */
 .modal-content h2 {
   padding: 20px 30px;
   margin: 0;
@@ -145,7 +124,6 @@ tr:hover { background: #f9f9f9; }
   font-size: 20px;
 }
 
-/* Close button */
 .close-btn {
   position: absolute;
   top: 20px;
@@ -162,15 +140,13 @@ tr:hover { background: #f9f9f9; }
   color: #000;
 }
 
-/* Scrollable form container */
 .modal-form-container {
   overflow-y: auto;
   overflow-x: hidden;
-  flex: 1; /* Takes up remaining space */
+  flex: 1;
   padding: 20px 30px;
 }
 
-/* Custom scrollbar for modal */
 .modal-form-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -189,7 +165,6 @@ tr:hover { background: #f9f9f9; }
   background: #555;
 }
 
-/* Form styling */
 .modal-content form {
   display: flex;
   flex-direction: column;
@@ -212,14 +187,13 @@ tr:hover { background: #f9f9f9; }
   color: #333;
 }
 
-/* Action buttons stay at bottom */
 .modal-actions {
   padding: 20px 30px;
   border-top: 1px solid #eee;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  flex-shrink: 0; /* Prevent buttons from shrinking */
+  flex-shrink: 0;
   background: #fff;
 }
 
@@ -243,9 +217,8 @@ tr:hover { background: #f9f9f9; }
   margin-bottom: 15px;
 }
 
-/* Recipe ingredients list with scrolling */
 #recipeIngredients {
-  max-height: 300px; /* Limit ingredients list height */
+  max-height: 300px;
   overflow-y: auto;
   padding-right: 5px;
   margin-bottom: 10px;
@@ -269,7 +242,6 @@ tr:hover { background: #f9f9f9; }
   background: #999;
 }
 
-/* Ingredient row styling */
 .ingredient-row {
   display: flex;
   gap: 10px;
@@ -307,7 +279,6 @@ tr:hover { background: #f9f9f9; }
   color: #a71d2a;
 }
 
-/* Image preview styling */
 .image-preview-container {
   display: flex;
   gap: 20px;
@@ -326,45 +297,14 @@ tr:hover { background: #f9f9f9; }
   flex: 1;
 }
 
-/* --- END MODAL UPDATES --- */
-
-/* Responsive */
+/* Responsive adjustments */
 @media (max-width: 1024px) {
-  .main {
-    margin-left: 200px;
-    padding: 15px;
-  }
-
   .stats {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  table {
-    font-size: 13px;
-  }
-
-  th, td {
-    padding: 10px;
-  }
-}
-
-@media (max-width: 900px) {
-  .main { margin-left: 0; padding: 15px; }
-  .sidebar { position: relative; width: 100%; height: auto; flex-direction: row; }
-  .stats { grid-template-columns: 1fr 1fr; }
-  .modal-content { max-width: 95%; }
 }
 
 @media (max-width: 768px) {
-  .main {
-    margin-left: 0;
-    padding: 10px;
-  }
-
-  h1 {
-    font-size: 20px;
-  }
-
   .stats {
     grid-template-columns: 1fr;
   }
@@ -377,22 +317,6 @@ tr:hover { background: #f9f9f9; }
   .filters input,
   .filters select {
     width: 100%;
-  }
-
-  /* Table horizontal scroll */
-  .table-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  table {
-    min-width: 700px;
-    font-size: 12px;
-  }
-
-  th, td {
-    padding: 8px;
-    white-space: nowrap;
   }
 
   .modal-content {
@@ -412,24 +336,11 @@ tr:hover { background: #f9f9f9; }
   .modal-actions {
     padding: 15px 20px;
   }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 600px) {
   .btn {
     padding: 8px 12px;
     font-size: 13px;
-  }
-
-  table {
-    min-width: 600px;
-    font-size: 11px;
-  }
-
-  th, td {
-    padding: 6px;
   }
 }

@@ -103,21 +103,32 @@
     {% block extra_js %}{% endblock %}
 
     <script>
-        // Mobile hamburger menu toggle
+        // Mobile hamburger menu toggle with body scroll lock
         document.addEventListener('DOMContentLoaded', function() {
             const hamburgerBtn = document.getElementById('hamburgerBtn');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
+            const body = document.body;
 
             if (hamburgerBtn && sidebar && overlay) {
+                // Toggle sidebar and body scroll lock
                 hamburgerBtn.addEventListener('click', function() {
-                    sidebar.classList.toggle('mobile-open');
+                    const isOpen = sidebar.classList.toggle('mobile-open');
                     overlay.classList.toggle('active');
+
+                    // Prevent body scroll when sidebar is open
+                    if (isOpen) {
+                        body.classList.add('sidebar-open');
+                    } else {
+                        body.classList.remove('sidebar-open');
+                    }
                 });
 
+                // Close sidebar when clicking overlay
                 overlay.addEventListener('click', function() {
                     sidebar.classList.remove('mobile-open');
                     overlay.classList.remove('active');
+                    body.classList.remove('sidebar-open');
                 });
 
                 // Close sidebar when clicking a link on mobile
@@ -127,8 +138,27 @@
                         if (window.innerWidth <= 768) {
                             sidebar.classList.remove('mobile-open');
                             overlay.classList.remove('active');
+                            body.classList.remove('sidebar-open');
                         }
                     });
+                });
+
+                // Close sidebar on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+                        sidebar.classList.remove('mobile-open');
+                        overlay.classList.remove('active');
+                        body.classList.remove('sidebar-open');
+                    }
+                });
+
+                // Close sidebar on window resize to desktop
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth > 768 && sidebar.classList.contains('mobile-open')) {
+                        sidebar.classList.remove('mobile-open');
+                        overlay.classList.remove('active');
+                        body.classList.remove('sidebar-open');
+                    }
                 });
             }
         });
