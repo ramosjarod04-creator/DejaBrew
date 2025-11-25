@@ -126,6 +126,27 @@ function setupEventListeners() {
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
     if (clearBtn) clearBtn.addEventListener('click', clearFilters);
 
+    // --- NEW: Set up event delegation for edit/delete buttons on the table ---
+    const productTable = document.getElementById('productTable');
+    if (productTable) {
+        productTable.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-product-btn');
+            const deleteBtn = e.target.closest('.delete-product-btn');
+
+            if (editBtn) {
+                const productId = parseInt(editBtn.dataset.productId);
+                console.log('✏️ Edit button clicked for product ID:', productId);
+                openEditModal(productId);
+            } else if (deleteBtn) {
+                const productId = parseInt(deleteBtn.dataset.productId);
+                const productName = deleteBtn.dataset.productName;
+                console.log('🗑️ Delete button clicked for product:', productName);
+                confirmDeleteProduct(productId, productName);
+            }
+        });
+        console.log('✅ Table event delegation attached');
+    }
+
     const modal = document.getElementById('productModal');
     if (modal) {
         modal.addEventListener('click', function(e) {
@@ -338,35 +359,6 @@ function renderProducts(products) {
     }).join('');
 
     updatePaginationControls();
-
-    // Attach event listeners using event delegation
-    attachProductActionListeners();
-}
-
-function attachProductActionListeners() {
-    const tbody = document.querySelector('#productTable tbody');
-    if (!tbody) return;
-
-    // Remove existing listener to avoid duplicates
-    const oldTbody = tbody.cloneNode(true);
-    tbody.parentNode.replaceChild(oldTbody, tbody);
-
-    // Add event delegation for edit and delete buttons
-    oldTbody.addEventListener('click', function(e) {
-        const editBtn = e.target.closest('.edit-product-btn');
-        const deleteBtn = e.target.closest('.delete-product-btn');
-
-        if (editBtn) {
-            const productId = parseInt(editBtn.dataset.productId);
-            console.log('✏️ Edit button clicked for product ID:', productId);
-            openEditModal(productId);
-        } else if (deleteBtn) {
-            const productId = parseInt(deleteBtn.dataset.productId);
-            const productName = deleteBtn.dataset.productName;
-            console.log('🗑️ Delete button clicked for product:', productName);
-            confirmDeleteProduct(productId, productName);
-        }
-    });
 }
 
 function escapeHtml(text) {
@@ -402,26 +394,48 @@ function clearFilters() {
 function openAddModal() {
     console.log('🚀 openAddModal called!');
     editingProductId = null;
-    document.getElementById('modalTitle').textContent = 'Add New Product';
-    document.getElementById('productForm').reset();
-    document.getElementById('productCategory').value = '';
+
+    const modalTitle = document.getElementById('modalTitle');
+    const productForm = document.getElementById('productForm');
+    const productCategory = document.getElementById('productCategory');
+    const imagePreview = document.getElementById('imagePreview');
+    const productImageFile = document.getElementById('productImageFile');
+    const productImageUrl = document.getElementById('productImageUrl');
+    const modal = document.getElementById('productModal');
+
+    console.log('Elements check:', {
+        modalTitle: !!modalTitle,
+        productForm: !!productForm,
+        productCategory: !!productCategory,
+        imagePreview: !!imagePreview,
+        productImageFile: !!productImageFile,
+        productImageUrl: !!productImageUrl,
+        modal: !!modal
+    });
+
+    if (modalTitle) modalTitle.textContent = 'Add New Product';
+    if (productForm) productForm.reset();
+    if (productCategory) productCategory.value = '';
 
     // --- NEW: Reset image preview ---
-    document.getElementById('imagePreview').src = placeholderImageUrl;
-    document.getElementById('productImageFile').value = null;
-    document.getElementById('productImageUrl').value = '';
+    if (imagePreview) imagePreview.src = placeholderImageUrl;
+    if (productImageFile) productImageFile.value = null;
+    if (productImageUrl) productImageUrl.value = '';
     // --- END NEW ---
 
     ensureRecipeSectionExists();
 
-    document.getElementById('recipeIngredients').innerHTML = '';
+    const recipeIngredients = document.getElementById('recipeIngredients');
+    if (recipeIngredients) recipeIngredients.innerHTML = '';
     addIngredientRow();
 
-    const modal = document.getElementById('productModal');
     console.log('Modal element found:', !!modal);
     if (modal) {
+        console.log('Current modal display:', modal.style.display);
         modal.style.display = 'flex';
-        console.log('✅ Modal display set to flex');
+        console.log('✅ Modal display set to:', modal.style.display);
+        // Force a reflow to ensure the style is applied
+        modal.offsetHeight;
     } else {
         console.error('❌ Modal element not found!');
     }
