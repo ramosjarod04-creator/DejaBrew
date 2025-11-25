@@ -433,6 +433,8 @@ function openAddModal() {
     if (modal) {
         console.log('Current modal display:', modal.style.display);
         modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
         console.log('✅ Modal display set to:', modal.style.display);
         // Force a reflow to ensure the style is applied
         modal.offsetHeight;
@@ -562,17 +564,26 @@ function openEditModal(productId) {
         addIngredientRow();
     }
 
-    document.getElementById('productModal').style.display = 'flex';
+    const modal = document.getElementById('productModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+    }
     setTimeout(() => document.getElementById('productName')?.focus(), 100);
 }
 
 function closeModal() {
     const modal = document.getElementById('productModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+    }
     const form = document.getElementById('productForm');
     if (form) form.reset();
     editingProductId = null;
-    
+
     // --- NEW: Reset image preview on close ---
     document.getElementById('imagePreview').src = placeholderImageUrl;
     document.getElementById('productImageFile').value = null;
