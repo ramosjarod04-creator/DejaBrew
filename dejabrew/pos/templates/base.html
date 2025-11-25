@@ -9,9 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/9a4a7f4d6f.js" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="{% static 'pos/css/base.css' %}?v=2.0">
+    <link rel="stylesheet" href="{% static 'pos/css/base.css' %}?v=3.0">
 
     {% block extra_css %}{% endblock %}
+
+    <!-- CRITICAL: Load responsive override LAST to override all inline styles -->
+    <link rel="stylesheet" href="{% static 'pos/css/responsive-override.css' %}?v=3.0">
 </head>
 <body>
     <!-- Mobile Header with Hamburger -->
