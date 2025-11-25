@@ -9,6 +9,10 @@ let mobileCartToggleBtn;
 let mobileCartCloseBtn;
 let cartCol;
 
+// Debouncing variables for notifications
+let lastNotificationTime = {};
+const NOTIFICATION_DEBOUNCE_MS = 5000; // Only show same notification once every 5 seconds
+
 // --- PAYMENT MODAL VARIABLES ---
 let paymentModal;
 let paymentModalTitle;
@@ -77,7 +81,18 @@ function escapeJs(str) {
     return String(str).replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 }
 
-function showNotification(message, type = 'info') {
+function showNotification(message, type = 'info', debounce = false) {
+    // Debounce check - prevent duplicate notifications
+    if (debounce) {
+        const now = Date.now();
+        const key = `${message}-${type}`;
+        if (lastNotificationTime[key] && (now - lastNotificationTime[key]) < NOTIFICATION_DEBOUNCE_MS) {
+            console.log(`Debounced notification: ${message}`);
+            return; // Skip this notification
+        }
+        lastNotificationTime[key] = now;
+    }
+
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
@@ -169,7 +184,7 @@ function setupEventListeners() {
     window.addEventListener('storage', (event) => {
         if (event.key === 'productUpdate') {
             console.log('Storage event: productUpdate detected from another tab');
-            showNotification('Product list has been updated.', 'info');
+            showNotification('Product list has been updated.', 'info', true); // Debounced
             loadProducts();
         }
         // When another tab updates ingredients, sync without triggering another save
@@ -179,11 +194,15 @@ function setupEventListeners() {
             try {
                 const stored = localStorage.getItem('dejabrew_ingredients_v1');
                 if (stored) {
-                    allIngredients = JSON.parse(stored);
-                    console.log(`📦 Synced ${allIngredients.length} ingredients from another tab`);
-                    showNotification('Inventory has been updated.', 'info');
-                    const currentCategory = document.getElementById('productsGrid').dataset.currentCategory || 'all';
-                    showProductView(currentCategory);
+                    const parsedIngredients = JSON.parse(stored);
+                    // Only update if data actually changed
+                    if (JSON.stringify(parsedIngredients) !== JSON.stringify(allIngredients)) {
+                        allIngredients = parsedIngredients;
+                        console.log(`📦 Synced ${allIngredients.length} ingredients from another tab`);
+                        showNotification('Inventory has been updated.', 'info', true); // Debounced
+                        const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
+                        showProductView(currentCategory);
+                    }
                 }
             } catch (error) {
                 console.error('Error syncing ingredients from storage:', error);
@@ -227,17 +246,29 @@ async function loadIngredients(skipSave = false) {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 
-        allIngredients = data.results || data;
+        const newIngredients = data.results || data;
 
-        if (!Array.isArray(allIngredients)) {
+        if (!Array.isArray(newIngredients)) {
              console.error("Fetched ingredients data is not an array:", data);
              allIngredients = [];
+             return;
         }
 
-        console.log(`📦 Loaded ${allIngredients.length} ingredients from server.`);
-        // Only save to localStorage if not loading from storage event (prevents cross-tab loop)
+        console.log(`📦 Loaded ${newIngredients.length} ingredients from server.`);
+
+        // Only save if data changed and skipSave is false (prevents unnecessary storage events)
         if (!skipSave) {
-            saveIngredients();
+            const dataChanged = JSON.stringify(newIngredients) !== JSON.stringify(allIngredients);
+            if (dataChanged) {
+                allIngredients = newIngredients;
+                saveIngredients();
+                console.log('✓ Ingredients data changed, saved to localStorage');
+            } else {
+                allIngredients = newIngredients;
+                console.log('✓ Ingredients data unchanged, skipping save');
+            }
+        } else {
+            allIngredients = newIngredients;
         }
     } catch (error) {
         console.error("Error loading ingredients:", error);
@@ -1107,8 +1138,14 @@ function closeReceiptPreview() {
     clearCart();
     window.currentDiscount = null;
     document.getElementById('discountInput').disabled = false;
+
+    // Only reload products - ingredients will be updated via storage event from server
     loadProducts();
-    loadIngredients();
+
+    // Refresh the current product view to show updated stock
+    const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
+    showProductView(currentCategory);
+
     // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
     if (cartCol && cartCol.classList.contains('is-mobile-open')) {
         toggleMobileCart();
@@ -1240,8 +1277,10 @@ async function processOrder() {
                 clearCart();
                 window.currentDiscount = null;
                 document.getElementById('discountInput').disabled = false;
-                await loadIngredients();
+                // Only reload products - ingredients updated server-side
                 await loadProducts();
+                const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
+                showProductView(currentCategory);
                 // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
                 if (cartCol && cartCol.classList.contains('is-mobile-open')) {
                     toggleMobileCart();

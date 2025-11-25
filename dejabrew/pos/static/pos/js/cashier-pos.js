@@ -5,6 +5,10 @@ let allProducts = [];
 let productsByCategory = {};
 let allIngredients = [];
 
+// Debouncing variables for notifications
+let lastNotificationTime = {};
+const NOTIFICATION_DEBOUNCE_MS = 5000; // Only show same notification once every 5 seconds
+
 // --- PAYMENT MODAL VARIABLES ---
 let paymentModal;
 let paymentModalTitle;
@@ -71,7 +75,18 @@ function escapeJs(str) {
     return String(str).replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 }
 
-function showNotification(message, type = 'info') {
+function showNotification(message, type = 'info', debounce = false) {
+    // Debounce check - prevent duplicate notifications
+    if (debounce) {
+        const now = Date.now();
+        const key = `${message}-${type}`;
+        if (lastNotificationTime[key] && (now - lastNotificationTime[key]) < NOTIFICATION_DEBOUNCE_MS) {
+            console.log(`Debounced notification: ${message}`);
+            return; // Skip this notification
+        }
+        lastNotificationTime[key] = now;
+    }
+
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
@@ -156,14 +171,18 @@ function setupEventListeners() {
 
     window.addEventListener('storage', (event) => {
         if (event.key === 'productUpdate') {
-            showNotification('Product list has been updated.', 'info');
+            showNotification('Product list has been updated.', 'info', true); // Debounced
             loadProducts();
         }
-         if (event.key === 'inventoryUpdate') {
-            showNotification('Inventory has been updated.', 'info');
-            loadIngredients();
-            const currentCategory = document.getElementById('productsGrid').dataset.currentCategory || 'all';
-            showProductView(currentCategory);
+        if (event.key === 'inventoryUpdate' || event.key === 'dejabrew_ingredients_v1') {
+            console.log('Storage event: inventory updated from another tab');
+            showNotification('Inventory has been updated.', 'info', true); // Debounced
+            // DO NOT call loadIngredients() here - it makes API calls and causes infinite loops
+            // Instead, reload products which will recalculate stock from the ingredients in memory
+            const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
+            loadProducts().then(() => {
+                showProductView(currentCategory);
+            });
         }
     });
 
@@ -969,8 +988,14 @@ function closeReceiptPreview() {
     clearCart();
     window.currentDiscount = null;
     document.getElementById('discountInput').disabled = false;
+
+    // Only reload products - ingredients will be updated via storage event from server
     loadProducts();
-    loadIngredients();
+
+    // Refresh the current product view to show updated stock
+    const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
+    showProductView(currentCategory);
+
     // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
     if (cartCol && cartCol.classList.contains('is-mobile-open')) {
         toggleMobileCart();
