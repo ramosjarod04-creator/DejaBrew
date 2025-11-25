@@ -71,25 +71,21 @@ class Command(BaseCommand):
         # --- 3. TRAIN MODELS (Logic from train_models.py) ---
         daily = pivot_daily(df)
 
+        # ✅ TRAIN ALL PRODUCTS (removed top_n filtering)
+        # Get all unique products sorted by sales volume
         all_sales = daily.sum().sort_values(ascending=False)
-        
-        # Use provided article lists if available, otherwise just use top-selling
-        if not bakery_articles:
-            bakery_articles = all_sales.head(10).index.tolist()
-        if not coffee_articles:
-            coffee_articles = all_sales.head(30).index.tolist()[10:] # Guess
 
-        top_bakery = all_sales[all_sales.index.isin(bakery_articles)].head(10).index.tolist()
-        top_coffee = all_sales[all_sales.index.isin(coffee_articles)].head(20).index.tolist()
-        top_articles = list(dict.fromkeys(top_bakery + top_coffee))
+        # Train models for ALL products in the dataset
+        all_articles = all_sales.index.tolist()
 
-        self.stdout.write(f"\nTraining models for {len(top_articles)} products:")
+        self.stdout.write(f"\n🚀 Training models for ALL {len(all_articles)} products in dataset:")
+        self.stdout.write(f"   (Previously limited to top 30, now training everything!)\n")
 
         X = create_date_features(daily.index)
         trained_list = []
         all_metrics = []  # Store metrics for each trained model
 
-        for article in top_articles:
+        for article in all_articles:
             if article not in daily.columns:
                 self.stdout.write(f"Skipping {article} (not in data)")
                 continue

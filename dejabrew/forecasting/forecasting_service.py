@@ -390,6 +390,11 @@ def compute_inventory_forecast(items_with_predictions, IngredientModel, RecipeEx
     for ing in all_ingredients:
         # Get current stock (using mainStock or stock field)
         current_stock = float(getattr(ing, 'mainStock', None) or getattr(ing, 'stock', 0) or 0)
+
+        # Skip ingredients with no stock at all
+        if current_stock <= 0:
+            continue
+
         current = current_stock
         forecast_levels = []
 
@@ -443,25 +448,28 @@ def compute_inventory_forecast(items_with_predictions, IngredientModel, RecipeEx
 
         # Determine days to empty
         days_until_depleted = None
-        for i, level in enumerate(forecast_levels):
-            if level <= 0:
-                # Calculate actual days based on period type
-                if period == 'weekly':
-                    days_until_depleted = (i + 1) * 7
-                elif period == 'monthly':
-                    days_until_depleted = (i + 1) * 30
-                else:
-                    days_until_depleted = i + 1
-                break
 
-        # Only include ingredients that are actually used in the forecast
+        # Only calculate depletion if there's actual usage
         if total_usage > 0:
-            inventory_forecast.append({
-                'ingredient': ing.name,  # Changed from 'name' to 'ingredient'
-                'current_stock': current_stock,  # Added current stock
-                'total_usage': total_usage,  # Added total usage
-                'unit': getattr(ing, 'unit', ''),
-                'days_until_depleted': days_until_depleted  # Changed from 'days_to_empty'
-            })
+            for i, level in enumerate(forecast_levels):
+                if level <= 0:
+                    # Calculate actual days based on period type
+                    if period == 'weekly':
+                        days_until_depleted = (i + 1) * 7
+                    elif period == 'monthly':
+                        days_until_depleted = (i + 1) * 30
+                    else:
+                        days_until_depleted = i + 1
+                    break
+        # If no usage, days_until_depleted stays None (displays as 'N/A')
+
+        # ✅ RETURN ALL INGREDIENTS WITH STOCK (removed total_usage > 0 filter)
+        inventory_forecast.append({
+            'ingredient': ing.name,
+            'current_stock': current_stock,
+            'total_usage': total_usage,  # Can be 0 for unused ingredients
+            'unit': getattr(ing, 'unit', ''),
+            'days_until_depleted': days_until_depleted  # None if no usage
+        })
 
     return inventory_forecast
