@@ -735,34 +735,70 @@
 
 <div class="long-card-section">
     <div class="chart-container">
-        <h2>Specific Product Forecast</h2>
-        <p>Run a forecast for a single product</p>
-        <div class="forecast-controls" style="flex-direction: column; align-items: stretch;">
-          <div style="margin-bottom: 15px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Search & Select Product:</label>
-            <input type="text" id="product_search" placeholder="Type to search products..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 10px;">
-            <div id="product_dropdown_container">
-              <select id="product_dropdown" size="1" class="closed">
-                <option value="" disabled selected>-- Click to select a product --</option>
-              </select>
-            </div>
-          </div>
-          <div style="display: flex; gap: 15px; align-items: flex-end;">
-            <label style="flex: 1;">Days: <input id="days_input" type="number" value="7" min="1" max="90" style="width: 100%;" /></label>
-            <button id="runForecastButton" style="flex: 1;">Run Forecast</button>
-          </div>
+        <h2>Sales & Inventory Forecast</h2>
+        <p>Predict sales and ingredient depletion for any product</p>
+
+        <!-- FORECAST CONTROLS -->
+        <div class="forecast-controls">
+            <label>
+                Product Name:
+                <input type="text" id="product_name_input" placeholder="e.g., Latte, Cappuccino" style="width: 100%; max-width: 250px;" />
+            </label>
+            <label>
+                Days to Forecast:
+                <input type="number" id="days_input" value="7" min="1" max="90" style="width: 100px;" />
+            </label>
+            <button id="runForecastButton">Run Forecast</button>
         </div>
+
+        <!-- ERROR MESSAGE -->
         <div id="forecastError"></div>
-        <div style="position: relative; max-height: 200px;">
-            <canvas id="specificProductChart" width="400" height="180"></canvas>
+
+        <!-- SALES FORECAST CHART -->
+        <div style="margin: 20px 0;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Sales Forecast Chart</h3>
+            <div style="position: relative; height: 250px;">
+                <canvas id="specificProductChart"></canvas>
+            </div>
         </div>
-        <div class="forecast-table-area table-wrapper-scrollable">
-          <table id="specificForecastTable">
-            <thead><tr><th>Date</th><th>Predicted Sales</th></tr></thead>
-            <tbody>
-                <tr><td colspan="2" style="text-align: center;">Run a forecast to see results.</td></tr>
-            </tbody>
-          </table>
+
+        <!-- SALES FORECAST TABLE -->
+        <div class="table-wrapper-scrollable" style="margin-bottom: 20px;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Predicted Sales</h3>
+            <table id="specificForecastTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Predicted Sales</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="2" style="text-align: center;">Run a forecast to see results.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- INVENTORY DEPLETION TABLE -->
+        <div class="table-wrapper-scrollable">
+            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Inventory Depletion Forecast</h3>
+            <table id="inventoryForecastTable">
+                <thead>
+                    <tr>
+                        <th>Ingredient</th>
+                        <th>Current Stock</th>
+                        <th>Total Usage</th>
+                        <th>Days Until Depleted</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Run a forecast to see inventory depletion.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -1342,166 +1378,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
     }
-
-    // --- FORECAST DROPDOWN CLICK BEHAVIOR ---
-    const productDropdown = document.getElementById('product_dropdown');
-    const productSearchInput = document.getElementById('product_search');
-    const runForecastButton = document.getElementById('runForecastButton');
-    const daysInput = document.getElementById('days_input');
-    const forecastError = document.getElementById('forecastError');
-    const specificProductChart = document.getElementById('specificProductChart');
-    const specificForecastTable = document.getElementById('specificForecastTable').querySelector('tbody');
-    let specificProductChartInstance = null;
-
-    let allProducts = [];
-    let filteredProducts = [];
-    let dropdownOpen = false;
-
-    // Toggle dropdown on click
-    if (productDropdown) {
-        productDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (dropdownOpen) {
-                closeDropdown();
-            } else {
-                openDropdown();
-            }
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!productDropdown.contains(e.target) && !productSearchInput.contains(e.target)) {
-                closeDropdown();
-            }
-        });
-
-        // When option is selected, close dropdown
-        productDropdown.addEventListener('change', function() {
-            closeDropdown();
-        });
-    }
-
-    function openDropdown() {
-        productDropdown.classList.remove('closed');
-        productDropdown.classList.add('open');
-        productDropdown.size = 5;
-        dropdownOpen = true;
-    }
-
-    function closeDropdown() {
-        productDropdown.classList.remove('open');
-        productDropdown.classList.add('closed');
-        productDropdown.size = 1;
-        dropdownOpen = false;
-    }
-
-    async function loadAllProducts() {
-        try {
-            const response = await fetch('/api/products/');
-            const data = await response.json();
-
-            if (data.success && data.products) {
-                allProducts = data.products.sort((a, b) => a.name.localeCompare(b.name));
-                filteredProducts = [...allProducts];
-                renderProductDropdown();
-            }
-        } catch (error) {
-            console.error('Error loading products:', error);
-        }
-    }
-
-    function renderProductDropdown() {
-        productDropdown.innerHTML = '<option value="" disabled selected>-- Click to select a product --</option>';
-
-        filteredProducts.forEach(product => {
-            const option = document.createElement('option');
-            option.value = product.name;
-            option.textContent = product.name;
-            productDropdown.appendChild(option);
-        });
-    }
-
-    if (productSearchInput) {
-        productSearchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
-
-            if (searchTerm === '') {
-                filteredProducts = [...allProducts];
-            } else {
-                filteredProducts = allProducts.filter(product =>
-                    product.name.toLowerCase().includes(searchTerm)
-                );
-            }
-
-            renderProductDropdown();
-        });
-    }
-
-    if (runForecastButton) {
-        loadAllProducts();
-
-        runForecastButton.addEventListener('click', async () => {
-            const productName = productDropdown.value.trim();
-            const days = parseInt(daysInput.value);
-
-            forecastError.textContent = '';
-
-            if (!productName) {
-                forecastError.textContent = 'Please select a product.';
-                return;
-            }
-
-            try {
-                const origin = window.location.origin;
-                const response = await fetch(`${origin}/forecasting/api/predict/?product_name=${encodeURIComponent(productName)}&days=${days}`);
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    forecastError.textContent = errorData.error || 'Failed to fetch forecast.';
-                    return;
-                }
-
-                const data = await response.json();
-                if (!data.forecast || data.forecast.length === 0) {
-                    forecastError.textContent = 'No forecast data returned for this product.';
-                    return;
-                }
-
-                specificForecastTable.innerHTML = data.forecast.map(item => `
-                    <tr><td>${item.date}</td><td>₱${item.predicted_sales.toFixed(0)}</td></tr>
-                `).join('');
-
-                const labels = data.forecast.map(item => {
-                    const dt = new Date(item.date + 'T00:00:00');
-                    return (dt.getMonth() + 1) + '/' + dt.getDate();
-                });
-                const values = data.forecast.map(item => item.predicted_sales);
-
-                if (specificProductChartInstance) specificProductChartInstance.destroy();
-
-                const ctx = specificProductChart.getContext('2d');
-                specificProductChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: `${productName} - Predicted Sales`,
-                            data: values,
-                            borderColor: '#8B4513',
-                            backgroundColor: 'rgba(139, 69, 19, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } }
-                });
-
-            } catch (error) {
-                console.error('Error fetching forecast:', error);
-                forecastError.textContent = 'An error occurred while fetching the forecast.';
-            }
-        });
-    }
 });
 </script>
+
+<!-- Load Forecast JS -->
+<script src="{% static 'forecasting/js/forecast.js' %}"></script>
 {% endblock %}
