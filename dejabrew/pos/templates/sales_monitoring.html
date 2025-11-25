@@ -5,104 +5,60 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'pos/css/inventory.css' %}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-/* Sales Monitoring Specific Styles */
-.monitoring-container {
-    padding: 20px;
-    max-width: 1600px;
-    margin: 0 auto;
+/* ============================================
+   RESPONSIVE SALES MONITORING STYLES
+   ============================================ */
+
+/* Root Variables */
+:root {
+    --primary-color: #8B4513;
+    --primary-hover: #6b3410;
+    --success-color: #28a745;
+    --success-hover: #218838;
+    --secondary-color: #6c757d;
+    --secondary-hover: #5a6268;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --border-radius: 12px;
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --box-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s ease;
 }
 
+/* Layout Container */
+.monitoring-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Page Header */
 .page-header {
     margin-bottom: 30px;
+    padding: 0 5px;
 }
 
 .page-header h1 {
-    color: #333;
-    margin-bottom: 10px;
+    margin: 0 0 8px 0;
+    color: var(--gray-900);
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .page-header p {
-    color: #666;
-}
-
-/* Filter Section */
-.filter-section {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
-}
-
-.filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.filter-group label {
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #555;
-    font-size: 0.9rem;
-}
-
-.filter-group input,
-.filter-group select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 0.95rem;
-}
-
-.filter-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.btn-primary {
-    background: #8B4513;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #6d3410;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background: #5a6268;
-}
-
-.btn-success {
-    background: #28a745;
-    color: white;
-}
-
-.btn-success:hover {
-    background: #218838;
+    margin: 0;
+    color: var(--gray-500);
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 /* Stats Cards */
@@ -114,19 +70,25 @@
 }
 
 .stat-card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border-left: 4px solid #8B4513;
+    background: #ffffff;
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    border-left: 4px solid var(--primary-color);
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    box-shadow: var(--box-shadow-lg);
+    transform: translateY(-2px);
 }
 
 .stat-card.total-sales {
-    border-left-color: #8B4513;
+    border-left-color: var(--primary-color);
 }
 
 .stat-card.cash {
-    border-left-color: #28a745;
+    border-left-color: var(--success-color);
 }
 
 .stat-card.gcash {
@@ -138,109 +100,270 @@
 }
 
 .stat-card h3 {
-    margin: 0 0 10px 0;
-    color: #666;
-    font-size: 0.9rem;
+    margin: 0 0 12px 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .stat-card .value {
     font-size: 2rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 8px;
+    line-height: 1;
 }
 
 .stat-card .sub-value {
-    color: #666;
-    font-size: 0.9rem;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
-/* Table Styles */
-.table-container {
-    background: #fff;
+/* Filter Section */
+.filter-section {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 30px;
+}
+
+.filter-section h3 {
+    margin: 0 0 20px 0;
+    font-size: 1rem;
+    color: var(--gray-700);
+    font-weight: 600;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 10px 14px;
+    border: 1px solid var(--gray-300);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Button Styles */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--box-shadow);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: white;
+    border: 1px solid var(--secondary-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--secondary-hover);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+    border: 1px solid var(--success-color);
+}
+
+.btn-success:hover:not(:disabled) {
+    background: var(--success-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--box-shadow);
+}
+
+/* Table Container */
+.table-container {
+    background: #ffffff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
     overflow: hidden;
 }
 
 .table-header {
-    padding: 20px;
-    border-bottom: 2px solid #dee2e6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 2px solid var(--gray-200);
+    background: var(--gray-50);
 }
 
 .table-header h2 {
     margin: 0;
-    color: #333;
+    color: var(--gray-900);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.table-filters-section {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.table-filters-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 15px;
+}
+
+.table-info {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+/* Table Wrapper */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 14px;
 }
 
 .data-table thead {
-    background: #f8f9fa;
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
 }
 
 .data-table th {
-    padding: 12px;
+    padding: 14px 12px;
     text-align: left;
     font-weight: 600;
-    color: #333;
-    border-bottom: 2px solid #dee2e6;
-    font-size: 0.9rem;
+    color: var(--gray-700);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
-.data-table td {
-    padding: 12px;
-    border-bottom: 1px solid #dee2e6;
-    font-size: 0.9rem;
+.data-table tbody tr {
+    border-bottom: 1px solid var(--gray-200);
+    transition: background-color 0.2s ease;
 }
 
 .data-table tbody tr:hover {
-    background: #f8f9fa;
+    background: var(--gray-50);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table td {
+    padding: 14px 12px;
+    color: var(--gray-700);
+    font-size: 14px;
+    vertical-align: middle;
 }
 
 /* Payment Method Badges */
 .payment-badge {
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
     font-size: 0.8rem;
     font-weight: 600;
 }
 
 .payment-badge.cash {
-    background: #d4edda;
-    color: #155724;
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .payment-badge.gcash {
-    background: #cce5ff;
-    color: #004085;
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 .payment-badge.card {
-    background: #fff3cd;
-    color: #856404;
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Reference Cell */
+.reference-cell {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--gray-600);
 }
 
 /* Loading and Empty States */
 .loading-state,
 .empty-state {
     text-align: center;
-    padding: 40px;
-    color: #666;
+    padding: 40px 20px;
+    color: var(--gray-500);
 }
 
 .loading-spinner {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #8B4513;
+    border: 3px solid var(--gray-200);
+    border-top: 3px solid var(--primary-color);
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -253,20 +376,280 @@
     100% { transform: rotate(360deg); }
 }
 
-.table-wrapper {
-    overflow-x: auto;
-}
-
-.reference-cell {
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-    color: #666;
-}
-
-.export-btn {
-    display: inline-flex;
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    flex-wrap: wrap;
+}
+
+.pagination-info {
+    padding: 0 15px;
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Large Desktop (1600px+) */
+@media (min-width: 1600px) {
+    .monitoring-container {
+        padding: 30px;
+    }
+}
+
+/* Desktop (1200px - 1599px) */
+@media (max-width: 1599px) {
+    .monitoring-container {
+        max-width: 1400px;
+    }
+}
+
+/* Laptop/Tablet Landscape (992px - 1199px) */
+@media (max-width: 1199px) {
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .stat-card .value {
+        font-size: 1.75rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+/* Tablet Portrait (768px - 991px) */
+@media (max-width: 991px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .filter-actions .btn {
+        width: 100%;
+    }
+
+    .table-filters-grid {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .table-filters-grid .btn {
+        width: 100%;
+    }
+}
+
+/* Mobile Landscape (576px - 767px) */
+@media (max-width: 767px) {
+    .monitoring-container {
+        padding: 15px;
+    }
+
+    .page-header {
+        margin-bottom: 20px;
+    }
+
+    .page-header h1 {
+        font-size: 22px;
+    }
+
+    .page-header p {
+        font-size: 13px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .stat-card .value {
+        font-size: 1.5rem;
+    }
+
+    .filter-section {
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+
+    .table-header {
+        padding: 16px 18px;
+    }
+
+    .table-header h2 {
+        font-size: 1.125rem;
+    }
+
+    .table-filters-section {
+        padding: 16px 18px;
+    }
+
+    .data-table {
+        font-size: 13px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+
+    .data-table th {
+        font-size: 11px;
+    }
+
+    .pagination-controls {
+        padding: 15px;
+        gap: 8px;
+    }
+
+    .pagination-controls .btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .pagination-info {
+        padding: 0 10px;
+        font-size: 13px;
+    }
+}
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+    .monitoring-container {
+        padding: 12px;
+    }
+
+    .page-header h1 {
+        font-size: 20px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-card h3 {
+        font-size: 0.75rem;
+    }
+
+    .stat-card .value {
+        font-size: 1.375rem;
+    }
+
+    .stat-card .sub-value {
+        font-size: 0.8rem;
+    }
+
+    .filter-section {
+        padding: 16px;
+    }
+
+    .filter-section h3 {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        font-size: 13px;
+    }
+
+    .table-header {
+        padding: 14px 16px;
+    }
+
+    .table-filters-section {
+        padding: 14px 16px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+
+    .payment-badge {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+
+    .pagination-controls .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Extra Small Mobile (360px and below) */
+@media (max-width: 360px) {
+    .monitoring-container {
+        padding: 10px;
+    }
+
+    .page-header h1 {
+        font-size: 18px;
+    }
+
+    .stat-card .value {
+        font-size: 1.25rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 6px 4px;
+        font-size: 10px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .filter-section,
+    .table-filters-section,
+    .pagination-controls {
+        display: none !important;
+    }
+
+    .table-container {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    .page-header {
+        margin-bottom: 20px;
+    }
+
+    .stats-grid {
+        margin-bottom: 20px;
+        page-break-after: avoid;
+    }
 }
 </style>
 {% endblock %}
@@ -275,78 +658,76 @@
 <div class="monitoring-container">
     <!-- Page Header -->
     <div class="page-header">
-        <h1><i class="fas fa-chart-line"></i> Sales Monitoring</h1>
+        <h1>Sales Monitoring</h1>
         <p>Track all café sales including cash, GCash, and card transactions</p>
     </div>
 
-    <!-- Filters at Top (FOR SUMMARY CARDS ONLY - does not affect table) -->
-    <div class="filter-section">
-        <h3 style="margin: 0 0 15px 0; font-size: 1rem; color: #555;">
-            <i class="fas fa-sliders-h"></i> Date Range for Summary Cards
-        </h3>
-        <div class="filter-grid">
-            <div class="filter-group">
-                <label for="startDate"><i class="fas fa-calendar"></i> Start Date</label>
-                <input type="date" id="startDate" class="filter-input">
-            </div>
-            <div class="filter-group">
-                <label for="endDate"><i class="fas fa-calendar"></i> End Date</label>
-                <input type="date" id="endDate" class="filter-input">
-            </div>
-        </div>
-        <div class="filter-actions">
-            <button id="applyFilters" class="btn btn-primary">
-                <i class="fas fa-sync-alt"></i> Update Summary Cards
-            </button>
-            <button id="clearFilters" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Reset
-            </button>
-            <button id="exportData" class="btn btn-success export-btn">
-                <i class="fas fa-file-export"></i> Export All to CSV
-            </button>
-        </div>
-    </div>
-
-    <!-- Stats Cards -->
+    <!-- Stats Cards - MOVED TO TOP -->
     <div class="stats-grid">
         <div class="stat-card total-sales">
-            <h3><i class="fas fa-peso-sign"></i> Total Sales</h3>
+            <h3>Total Sales</h3>
             <div class="value" id="totalSales">₱0.00</div>
             <div class="sub-value" id="totalOrders">0 orders</div>
         </div>
         <div class="stat-card cash">
-            <h3><i class="fas fa-money-bill"></i> Cash</h3>
+            <h3>Cash</h3>
             <div class="value" id="cashSales">₱0.00</div>
             <div class="sub-value" id="cashOrders">0 orders</div>
         </div>
         <div class="stat-card gcash">
-            <h3><i class="fas fa-mobile-alt"></i> GCash</h3>
+            <h3>GCash</h3>
             <div class="value" id="gcashSales">₱0.00</div>
             <div class="sub-value" id="gcashOrders">0 orders</div>
         </div>
         <div class="stat-card card">
-            <h3><i class="fas fa-credit-card"></i> Card</h3>
+            <h3>Card</h3>
             <div class="value" id="cardSales">₱0.00</div>
             <div class="sub-value" id="cardOrders">0 orders</div>
         </div>
     </div>
 
-    <!-- Sales Table with Independent Filters -->
+    <!-- Filters Section - REPOSITIONED BETWEEN STATS AND TABLE -->
+    <div class="filter-section">
+        <h3>Date Range for Summary Cards</h3>
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate" class="filter-input">
+            </div>
+            <div class="filter-group">
+                <label for="endDate">End Date</label>
+                <input type="date" id="endDate" class="filter-input">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button id="applyFilters" class="btn btn-primary">
+                Update Summary Cards
+            </button>
+            <button id="clearFilters" class="btn btn-secondary">
+                Reset
+            </button>
+            <button id="exportData" class="btn btn-success export-btn">
+                Export All to CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- Sales Table -->
     <div class="table-container">
         <div class="table-header">
             <h2>All Transactions</h2>
         </div>
 
         <!-- Table-Specific Filters -->
-        <div style="padding: 15px; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px;">
+        <div class="table-filters-section">
+            <div class="table-filters-grid">
                 <div class="filter-group" style="flex: 1; min-width: 200px;">
-                    <label for="refSearch" style="margin-bottom: 5px;"><i class="fas fa-search"></i> Search Reference Number</label>
-                    <input type="text" id="refSearch" placeholder="Enter reference number..." style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                    <label for="refSearch">Search Reference Number</label>
+                    <input type="text" id="refSearch" placeholder="Enter reference number..." style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: 8px;">
                 </div>
                 <div class="filter-group" style="flex: 1; min-width: 150px;">
-                    <label for="tablePaymentFilter" style="margin-bottom: 5px;"><i class="fas fa-credit-card"></i> Payment Method</label>
-                    <select id="tablePaymentFilter" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                    <label for="tablePaymentFilter">Payment Method</label>
+                    <select id="tablePaymentFilter" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: 8px;">
                         <option value="all">All Methods</option>
                         <option value="cash">Cash</option>
                         <option value="gcash">GCash</option>
@@ -354,14 +735,14 @@
                     </select>
                 </div>
                 <button id="applyTableFilters" class="btn btn-primary" style="height: 42px;">
-                    <i class="fas fa-filter"></i> Filter Table
+                    Filter Table
                 </button>
                 <button id="clearTableFilters" class="btn btn-secondary" style="height: 42px;">
-                    <i class="fas fa-times"></i> Clear Filters
+                    Clear Filters
                 </button>
             </div>
-            <div style="font-size: 0.9rem; color: #666;">
-                <i class="fas fa-info-circle"></i> Showing <span id="tableShownCount">0</span> of <span id="tableTotalCount">0</span> transactions
+            <div class="table-info">
+                Showing <span id="tableShownCount">0</span> of <span id="tableTotalCount">0</span> transactions
                 (Page <span id="tableCurrentPage">1</span> of <span id="tableTotalPages">1</span>)
             </div>
         </div>
@@ -372,7 +753,6 @@
                     <tr>
                         <th>Order #</th>
                         <th>Date & Time</th>
-                        <th>Customer</th>
                         <th>Cashier</th>
                         <th>Payment Method</th>
                         <th>Reference Number</th>
@@ -382,7 +762,7 @@
                 </thead>
                 <tbody id="salesTableBody">
                     <tr>
-                        <td colspan="8" class="loading-state">
+                        <td colspan="7" class="loading-state">
                             <div class="loading-spinner"></div>
                             <p>Loading sales data...</p>
                         </td>
@@ -392,12 +772,12 @@
         </div>
 
         <!-- Pagination Controls -->
-        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px; border-top: 1px solid #dee2e6; background: #f8f9fa;">
-            <button id="firstTablePage" class="btn btn-secondary" style="padding: 8px 12px;">First</button>
-            <button id="prevTablePage" class="btn btn-secondary" style="padding: 8px 12px;">Previous</button>
-            <span style="padding: 0 15px; color: #666;">Page <span id="tablePageDisplay">1</span> of <span id="tablePagesDisplay">1</span></span>
-            <button id="nextTablePage" class="btn btn-secondary" style="padding: 8px 12px;">Next</button>
-            <button id="lastTablePage" class="btn btn-secondary" style="padding: 8px 12px;">Last</button>
+        <div class="pagination-controls">
+            <button id="firstTablePage" class="btn btn-secondary">First</button>
+            <button id="prevTablePage" class="btn btn-secondary">Previous</button>
+            <span class="pagination-info">Page <span id="tablePageDisplay">1</span> of <span id="tablePagesDisplay">1</span></span>
+            <button id="nextTablePage" class="btn btn-secondary">Next</button>
+            <button id="lastTablePage" class="btn btn-secondary">Last</button>
         </div>
     </div>
 </div>
@@ -531,7 +911,7 @@ function applyTableFilters() {
     renderTable();
 }
 
-// Render table with current page
+// Render table with current page (Customer column removed)
 function renderTable() {
     const tbody = document.getElementById('salesTableBody');
     const paginatedOrders = getPaginatedOrders();
@@ -539,8 +919,7 @@ function renderTable() {
     if (paginatedOrders.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="empty-state">
-                    <i class="fas fa-inbox fa-3x" style="color: #ccc; margin-bottom: 10px;"></i>
+                <td colspan="7" class="empty-state">
                     <p>No sales data found for the selected filters</p>
                 </td>
             </tr>
@@ -553,7 +932,6 @@ function renderTable() {
         <tr>
             <td><strong>#${order.id}</strong></td>
             <td>${formatDate(order.created_at)}</td>
-            <td>${order.customer_name || 'Walk-in'}</td>
             <td>${order.cashier_username}</td>
             <td>${getPaymentBadge(order.payment_method)}</td>
             <td class="reference-cell">${order.reference_number || '-'}</td>
