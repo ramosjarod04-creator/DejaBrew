@@ -81,6 +81,9 @@ function escapeJs(str) {
     return String(str).replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 }
 
+// Placeholder image data URL (gray square with "No Image" text)
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+
 function showNotification(message, type = 'info', debounce = false) {
     // Debounce check - prevent duplicate notifications
     if (debounce) {
@@ -459,7 +462,7 @@ function renderProducts(products) {
         
         return `
         <div class="product-card ${isDisabled ? 'disabled' : ''}">
-            <div class="product-image" style="background-image: url('${product.image_url || '/static/pos/img/placeholder.jpg'}')"></div>
+            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}')"></div>
             <div class="product-info">
                 <div class="title" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
                 <div class="desc">${stockStatusText}</div>
@@ -897,7 +900,7 @@ function showAddOnsModal(productName) {
         
         addOnsGrid.innerHTML = addOnsProducts.map(product => `
             <div class="addon-card" data-id="${product.id}" onclick="toggleAddOn(${product.id}, '${escapeJs(product.name)}', ${product.price})">
-                <img src="${product.image_url || '/static/pos/img/placeholder.jpg'}" alt="${escapeHtml(product.name)}">
+                <img src="${product.image_url || PLACEHOLDER_IMAGE}" alt="${escapeHtml(product.name)}">
                 <div class="name">${escapeHtml(product.name)}</div>
                 <div class="price">₱${parseFloat(product.price).toFixed(2)}</div>
             </div>
@@ -1010,20 +1013,30 @@ function closeDiscountModal() {
     discountModal.classList.remove('is-visible');
 }
 
-function applyDiscount() {
+async function applyDiscount() {
     const discountType = discountTypeSelect.value;
     const discountId = discountIdInput.value.trim();
-    
+
     if ((discountType === 'senior' || discountType === 'pwd') && !discountId) {
         showNotification('Please enter ID number for senior/PWD discount', 'error');
         return;
     }
-    
+
+    // Require admin authentication BEFORE applying discount
+    closeDiscountModal(); // Close discount modal first
+    const isAuthenticated = await showAdminPasswordModal();
+
+    if (!isAuthenticated) {
+        showNotification('Admin authentication required to apply discounts', 'error');
+        return;
+    }
+
+    // Admin authenticated - now apply the discount IMMEDIATELY
     window.currentDiscount = {
         type: discountType,
         id: discountId
     };
-    
+
     const discountInput = document.getElementById('discountInput');
     if (discountType === 'senior' || discountType === 'pwd') {
         discountInput.value = '20';
@@ -1031,14 +1044,13 @@ function applyDiscount() {
     } else {
         discountInput.disabled = false;
     }
-    
+
     updateCartTotals();
-    closeDiscountModal();
-    
+
     let message = 'Regular discount applied';
     if (discountType === 'senior') message = 'Senior Citizen discount applied (20% + VAT Exempt)';
     if (discountType === 'pwd') message = 'PWD discount applied (20% + VAT Exempt)';
-    
+
     showNotification(message, 'success');
 }
 
@@ -1637,14 +1649,9 @@ async function verifyAdminCredentials(username, password) {
 }
 
 async function requireAdminForDiscount() {
-    const isAuthenticated = await showAdminPasswordModal();
-
-    if (isAuthenticated) {
-        // Show the discount modal
-        showDiscountModal();
-    } else {
-        showNotification('Admin authentication required to apply discounts', 'error');
-    }
+    // First, show the discount modal to let user select discount type
+    // This will be handled by the applyDiscount function which now requires auth
+    showDiscountModal();
 }
 
 // Void function with admin authentication and comprehensive error handling
@@ -1735,7 +1742,7 @@ function showAddOnsModalForModify(productName, existingAddOns = []) {
             const isSelected = existingAddOns.some(a => a.id === product.id);
             return `
                 <div class="addon-card ${isSelected ? 'selected' : ''}" data-id="${product.id}" onclick="toggleAddOn(${product.id}, '${escapeJs(product.name)}', ${product.price})">
-                    <img src="${product.image_url || '/static/pos/img/placeholder.jpg'}" alt="${escapeHtml(product.name)}">
+                    <img src="${product.image_url || PLACEHOLDER_IMAGE}" alt="${escapeHtml(product.name)}">
                     <div class="name">${escapeHtml(product.name)}</div>
                     <div class="price">₱${parseFloat(product.price).toFixed(2)}</div>
                 </div>

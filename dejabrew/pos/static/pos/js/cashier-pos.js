@@ -75,6 +75,9 @@ function escapeJs(str) {
     return String(str).replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 }
 
+// Placeholder image data URL (gray square with "No Image" text)
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+
 function showNotification(message, type = 'info', debounce = false) {
     // Debounce check - prevent duplicate notifications
     if (debounce) {
@@ -388,7 +391,7 @@ function renderProducts(products) {
         
         return `
         <div class="product-card ${isDisabled ? 'disabled' : ''}">
-            <div class="product-image" style="background-image: url('${product.image_url || '/static/pos/img/placeholder.jpg'}')"></div>
+            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}')"></div>
             <div class="product-info">
                 <div class="title" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
                 <div class="desc">${stockStatusText}</div>
@@ -551,7 +554,7 @@ window.updateQuantity = async function(productId, change) {
     const newQuantity = item.quantity + change;
 
     if (newQuantity <= 0) {
-        window.removeFromCart(productId);
+        window.voidItem(productId);
         return;
     }
 
@@ -672,7 +675,7 @@ function updateCartDisplay() {
                     <button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
                 </div>
                 <div class="item-total">₱${(item.price * item.quantity).toFixed(2)}</div>
-                <button class="remove-btn" onclick="removeFromCart(${item.id})">&times;</button>
+                <button class="remove-btn" onclick="voidItem(${item.id})" title="Void Item (Requires Admin)">&times;</button>
             </div>
         `;
         }).join('');
@@ -826,7 +829,7 @@ function showAddOnsModal(productName) {
         
         addOnsGrid.innerHTML = addOnsProducts.map(product => `
             <div class="addon-card" data-id="${product.id}" onclick="toggleAddOn(${product.id}, '${escapeJs(product.name)}', ${product.price})">
-                <img src="${product.image_url || '/static/pos/img/placeholder.jpg'}" alt="${escapeHtml(product.name)}">
+                <img src="${product.image_url || PLACEHOLDER_IMAGE}" alt="${escapeHtml(product.name)}">
                 <div class="name">${escapeHtml(product.name)}</div>
                 <div class="price">₱${parseFloat(product.price).toFixed(2)}</div>
             </div>
@@ -939,20 +942,30 @@ function closeDiscountModal() {
     discountModal.classList.remove('is-visible');
 }
 
-function applyDiscount() {
+async function applyDiscount() {
     const discountType = discountTypeSelect.value;
     const discountId = discountIdInput.value.trim();
-    
+
     if ((discountType === 'senior' || discountType === 'pwd') && !discountId) {
         showNotification('Please enter ID number for senior/PWD discount', 'error');
         return;
     }
-    
+
+    // Require admin authentication BEFORE applying discount
+    closeDiscountModal(); // Close discount modal first
+    const isAuthenticated = await showAdminPasswordModal();
+
+    if (!isAuthenticated) {
+        showNotification('Admin authentication required to apply discounts', 'error');
+        return;
+    }
+
+    // Admin authenticated - now apply the discount IMMEDIATELY
     window.currentDiscount = {
         type: discountType,
         id: discountId
     };
-    
+
     const discountInput = document.getElementById('discountInput');
     if (discountType === 'senior' || discountType === 'pwd') {
         discountInput.value = '20';
@@ -960,14 +973,13 @@ function applyDiscount() {
     } else {
         discountInput.disabled = false;
     }
-    
+
     updateCartTotals();
-    closeDiscountModal();
-    
+
     let message = 'Regular discount applied';
     if (discountType === 'senior') message = 'Senior Citizen discount applied (20% + VAT Exempt)';
     if (discountType === 'pwd') message = 'PWD discount applied (20% + VAT Exempt)';
-    
+
     showNotification(message, 'success');
 }
 
@@ -1266,7 +1278,7 @@ function showAddOnsModalForModify(productName, existingAddOns = []) {
             const isSelected = existingAddOns.some(a => a.id === product.id);
             return `
                 <div class="addon-card ${isSelected ? 'selected' : ''}" data-id="${product.id}" onclick="toggleAddOn(${product.id}, '${escapeJs(product.name)}', ${product.price})">
-                    <img src="${product.image_url || '/static/pos/img/placeholder.jpg'}" alt="${escapeHtml(product.name)}">
+                    <img src="${product.image_url || PLACEHOLDER_IMAGE}" alt="${escapeHtml(product.name)}">
                     <div class="name">${escapeHtml(product.name)}</div>
                     <div class="price">₱${parseFloat(product.price).toFixed(2)}</div>
                 </div>
@@ -1593,19 +1605,13 @@ async function verifyAdminCredentials(username, password) {
 }
 
 async function requireAdminForDiscount() {
-    const isAuthenticated = await showAdminPasswordModal();
-
-    if (isAuthenticated) {
-        // Show the discount modal
-        showDiscountModal();
-    } else {
-        showNotification('Admin authentication required to apply discounts', 'error');
-    }
+    // First, show the discount modal to let user select discount type
+    // This will be handled by the applyDiscount function which now requires auth
+    showDiscountModal();
 }
 
-// Update removeFromCart to require admin auth for void action with comprehensive error handling
-const originalRemoveFromCart = window.removeFromCart;
-window.removeFromCart = async function(productId) {
+// Void function with admin authentication and comprehensive error handling
+window.voidItem = async function(productId) {
     // Validate input parameters
     if (productId === null || productId === undefined) {
         showNotification('Invalid item ID', 'error');
@@ -1627,26 +1633,22 @@ window.removeFromCart = async function(productId) {
             return;
         }
 
-        // Call original remove function if it exists
-        if (originalRemoveFromCart) {
-            originalRemoveFromCart(productId);
-        } else {
-            // Fallback implementation
-            const index = cart.findIndex(i => i.id === productId);
+        // Find the item in cart
+        const index = cart.findIndex(i => i.id === productId);
 
-            if (index === -1) {
-                showNotification('Item not found in cart', 'error');
-                return;
-            }
-
-            const itemName = cart[index].name;
-            cart.splice(index, 1);
-            updateCartDisplay();
-            showNotification(`${itemName} removed from cart`, 'info');
+        if (index === -1) {
+            showNotification('Item not found in cart', 'error');
+            return;
         }
 
+        // Remove the item from cart
+        const itemName = cart[index].name;
+        cart.splice(index, 1);
+        updateCartDisplay();
+        showNotification(`${itemName} voided successfully`, 'success');
+
     } catch (error) {
-        console.error('Error removing item from cart:', error);
-        showNotification('Failed to remove item. Please try again.', 'error');
+        console.error('Error voiding item:', error);
+        showNotification('Failed to void item. Please try again.', 'error');
     }
 };
