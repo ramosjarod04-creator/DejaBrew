@@ -99,7 +99,17 @@ function setupEventListeners() {
     // --- NEW: Get file input ---
     const productImageFile = document.getElementById('productImageFile');
 
-    if (addBtn) addBtn.addEventListener('click', openAddModal);
+    console.log('🔧 Setting up event listeners...');
+    console.log('Add button found:', !!addBtn);
+    console.log('Close button found:', !!closeBtn);
+    console.log('Form found:', !!form);
+
+    if (addBtn) {
+        addBtn.addEventListener('click', openAddModal);
+        console.log('✅ Add button listener attached');
+    } else {
+        console.error('❌ Add button not found!');
+    }
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal); // Add listener
     if (form) form.addEventListener('submit', handleFormSubmit);
@@ -361,11 +371,12 @@ function clearFilters() {
 }
 
 function openAddModal() {
+    console.log('🚀 openAddModal called!');
     editingProductId = null;
     document.getElementById('modalTitle').textContent = 'Add New Product';
     document.getElementById('productForm').reset();
     document.getElementById('productCategory').value = '';
-    
+
     // --- NEW: Reset image preview ---
     document.getElementById('imagePreview').src = placeholderImageUrl;
     document.getElementById('productImageFile').value = null;
@@ -373,11 +384,18 @@ function openAddModal() {
     // --- END NEW ---
 
     ensureRecipeSectionExists();
-    
+
     document.getElementById('recipeIngredients').innerHTML = '';
     addIngredientRow();
-    
-    document.getElementById('productModal').style.display = 'flex';
+
+    const modal = document.getElementById('productModal');
+    console.log('Modal element found:', !!modal);
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('✅ Modal display set to flex');
+    } else {
+        console.error('❌ Modal element not found!');
+    }
     setTimeout(() => document.getElementById('productName')?.focus(), 100);
 }
 
@@ -457,11 +475,14 @@ function addIngredientRow() {
 }
 
 function openEditModal(productId) {
+    console.log('📝 openEditModal called for product ID:', productId);
     const product = allProducts.find(p => p.id === productId);
     if (!product) {
+        console.error('❌ Product not found:', productId);
         showNotification('Product not found', 'error');
         return;
     }
+    console.log('✅ Product found:', product.name);
     
     editingProductId = productId;
     document.getElementById('modalTitle').textContent = 'Edit Product';
@@ -590,6 +611,7 @@ async function handleFormSubmit(e) {
 }
 
 function confirmDeleteProduct(productId, productName) {
+    console.log('🗑️ confirmDeleteProduct called for:', productName, 'ID:', productId);
     if (confirm(`⚠️ Are you sure you want to delete "${productName}"?\n\nThis will set its stock to 0 and hide it from the POS.`)) {
         deleteProduct(productId);
     }
