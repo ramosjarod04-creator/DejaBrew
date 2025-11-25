@@ -21,8 +21,8 @@ let editingProductId = null;
 let allIngredients = [];
 let currentPage = 1;
 const itemsPerPage = 10; // Show at least 10 items per page
-// --- NEW: Define placeholder URL ---
-const placeholderImageUrl = '/static/pos/img/placeholder.jpg';
+// --- NEW: Define placeholder URL as inline SVG data URL ---
+const placeholderImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23e0e0e0' width='200' height='200'/%3E%3Ctext fill='%23999' font-family='Arial' font-size='20' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
 
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
@@ -483,25 +483,25 @@ function openEditModal(productId) {
         return;
     }
     console.log('✅ Product found:', product.name);
-    
+
     editingProductId = productId;
     document.getElementById('modalTitle').textContent = 'Edit Product';
     document.getElementById('productName').value = product.name;
     document.getElementById('productCategory').value = product.category;
     document.getElementById('productPrice').value = product.price;
     document.getElementById('productStock').value = product.stock;
-    
+
     // --- UPDATED: Set image preview and hidden URL input ---
     document.getElementById('imagePreview').src = product.image_url || placeholderImageUrl;
     document.getElementById('productImageUrl').value = product.image_url || '';
     document.getElementById('productImageFile').value = null; // Clear file input
     // --- END UPDATED ---
-    
+
     ensureRecipeSectionExists();
-    
+
     const recipeContainer = document.getElementById('recipeIngredients');
     recipeContainer.innerHTML = '';
-    
+
     if (product.recipe && product.recipe.length > 0) {
         product.recipe.forEach(item => {
             addIngredientRow();
@@ -509,7 +509,7 @@ function openEditModal(productId) {
             const lastRow = rows[rows.length - 1];
             const select = lastRow.querySelector('.recipe-ingredient');
             const input = lastRow.querySelector('.recipe-quantity');
-            
+
             if (select && input) {
                 select.value = item.ingredient;
                 input.value = item.quantity;
@@ -518,10 +518,13 @@ function openEditModal(productId) {
     } else {
         addIngredientRow();
     }
-    
+
     document.getElementById('productModal').style.display = 'flex';
     setTimeout(() => document.getElementById('productName')?.focus(), 100);
 }
+
+// Make function globally accessible for inline onclick handlers
+window.openEditModal = openEditModal;
 
 function closeModal() {
     const modal = document.getElementById('productModal');
@@ -616,6 +619,9 @@ function confirmDeleteProduct(productId, productName) {
         deleteProduct(productId);
     }
 }
+
+// Make function globally accessible for inline onclick handlers
+window.confirmDeleteProduct = confirmDeleteProduct;
 
 async function deleteProduct(productId) {
     try {
