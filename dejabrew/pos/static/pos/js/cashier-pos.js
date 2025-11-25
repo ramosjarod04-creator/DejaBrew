@@ -1504,23 +1504,35 @@ async function showBestSellingProducts() {
 
 let adminPasswordModal;
 let adminPasswordResolve = null;
+let adminPasswordModalInitialized = false;
+let isAuthenticating = false; // Prevent double-submission
 
 function setupAdminPasswordModal() {
+    // Prevent duplicate initialization
+    if (adminPasswordModalInitialized) {
+        console.log('Admin password modal already initialized');
+        return;
+    }
+
     adminPasswordModal = document.getElementById('adminPasswordModal');
     const adminPasswordCancel = document.getElementById('adminPasswordCancel');
     const adminPasswordConfirm = document.getElementById('adminPasswordConfirm');
     const adminUsername = document.getElementById('adminUsername');
     const adminPassword = document.getElementById('adminPassword');
 
-    if (adminPasswordCancel) {
-        adminPasswordCancel.addEventListener('click', () => {
-            closeAdminPasswordModal();
-            if (adminPasswordResolve) adminPasswordResolve(false);
-        });
+    if (!adminPasswordModal || !adminPasswordCancel || !adminPasswordConfirm || !adminUsername || !adminPassword) {
+        console.error('Admin password modal elements not found');
+        return;
     }
 
     // Handler function for authentication
     const handleAuthentication = async () => {
+        // Prevent double submission
+        if (isAuthenticating) {
+            console.log('Authentication already in progress, ignoring duplicate request');
+            return;
+        }
+
         const username = adminUsername.value.trim();
         const password = adminPassword.value.trim();
 
@@ -1529,73 +1541,113 @@ function setupAdminPasswordModal() {
             return;
         }
 
-        // Verify admin credentials via API
-        const isValid = await verifyAdminCredentials(username, password);
+        isAuthenticating = true;
+        console.log('Starting authentication process...');
 
-        if (isValid) {
-            showNotification('Admin authenticated successfully', 'success');
-            // CRITICAL: Call resolve BEFORE closing modal (which nulls the resolve function)
-            const resolveFunc = adminPasswordResolve;
-            closeAdminPasswordModal();
-            if (resolveFunc) resolveFunc(true);
-        } else {
-            // Error message is already shown in verifyAdminCredentials
-            adminPassword.value = '';
-            adminUsername.focus();
+        try {
+            // Verify admin credentials via API
+            const isValid = await verifyAdminCredentials(username, password);
+
+            if (isValid) {
+                showNotification('Admin authenticated successfully', 'success');
+                // CRITICAL: Call resolve BEFORE closing modal (which nulls the resolve function)
+                const resolveFunc = adminPasswordResolve;
+                closeAdminPasswordModal();
+                if (resolveFunc) {
+                    console.log('Resolving authentication promise with success');
+                    resolveFunc(true);
+                }
+            } else {
+                // Error message is already shown in verifyAdminCredentials
+                adminPassword.value = '';
+                adminUsername.focus();
+            }
+        } catch (error) {
+            console.error('Authentication handler error:', error);
+            showNotification('Authentication error occurred', 'error');
+        } finally {
+            isAuthenticating = false;
         }
     };
 
-    if (adminPasswordConfirm) {
-        adminPasswordConfirm.addEventListener('click', handleAuthentication);
-    }
+    // Cancel button handler
+    adminPasswordCancel.addEventListener('click', () => {
+        console.log('Authentication cancelled by user');
+        closeAdminPasswordModal();
+        if (adminPasswordResolve) adminPasswordResolve(false);
+    });
 
-    // Add Enter key support on both fields
-    if (adminPassword) {
-        adminPassword.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleAuthentication();
-            }
-        });
-    }
+    // Authenticate button handler
+    adminPasswordConfirm.addEventListener('click', handleAuthentication);
 
-    if (adminUsername) {
-        adminUsername.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleAuthentication();
-            }
-        });
-    }
+    // Add Enter key support on password field
+    adminPassword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAuthentication();
+        }
+    });
 
-    if (adminPasswordModal) {
-        adminPasswordModal.addEventListener('click', (e) => {
-            if (e.target === adminPasswordModal) {
-                closeAdminPasswordModal();
-                if (adminPasswordResolve) adminPasswordResolve(false);
+    // Add Enter key support on username field
+    adminUsername.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // Move focus to password field if username is filled
+            if (adminUsername.value.trim()) {
+                adminPassword.focus();
             }
-        });
-    }
+        }
+    });
+
+    // Backdrop click handler
+    adminPasswordModal.addEventListener('click', (e) => {
+        if (e.target === adminPasswordModal) {
+            console.log('Modal closed by backdrop click');
+            closeAdminPasswordModal();
+            if (adminPasswordResolve) adminPasswordResolve(false);
+        }
+    });
+
+    adminPasswordModalInitialized = true;
+    console.log('Admin password modal initialized successfully');
 }
 
 function showAdminPasswordModal() {
+    console.log('showAdminPasswordModal called');
     return new Promise((resolve) => {
         adminPasswordResolve = resolve;
-        document.getElementById('adminUsername').value = '';
-        document.getElementById('adminPassword').value = '';
+        isAuthenticating = false; // Reset authentication flag
+
+        const usernameField = document.getElementById('adminUsername');
+        const passwordField = document.getElementById('adminPassword');
+
+        if (usernameField) usernameField.value = '';
+        if (passwordField) passwordField.value = '';
+
         if (adminPasswordModal) {
             adminPasswordModal.classList.add('is-visible');
             document.body.classList.add('modal-open');  // Lock body scroll
             // Focus on username field for better UX
-            setTimeout(() => document.getElementById('adminUsername')?.focus(), 100);
+            setTimeout(() => {
+                if (usernameField) {
+                    usernameField.focus();
+                    console.log('Username field focused');
+                }
+            }, 150);
+        } else {
+            console.error('adminPasswordModal is null!');
         }
     });
 }
 
 function closeAdminPasswordModal() {
+    console.log('closeAdminPasswordModal called');
     if (adminPasswordModal) {
         adminPasswordModal.classList.remove('is-visible');
         document.body.classList.remove('modal-open');  // Unlock body scroll
     }
     adminPasswordResolve = null;
+    isAuthenticating = false; // Reset authentication flag
 }
 
 async function verifyAdminCredentials(username, password) {
@@ -1652,6 +1704,7 @@ window.voidItem = async function(productId) {
 
     try {
         // Authenticate admin
+        console.log('Requesting admin authentication for void action...');
         const isAuthenticated = await showAdminPasswordModal();
 
         if (!isAuthenticated) {
@@ -1667,8 +1720,43 @@ window.voidItem = async function(productId) {
             return;
         }
 
+        // Get item details before removing
+        const voidedItem = cart[index];
+        const itemName = voidedItem.name;
+        const itemPrice = voidedItem.price;
+        const itemQuantity = voidedItem.quantity || 1;
+
+        // Log void action to audit trail (server-side)
+        try {
+            const auditResponse = await fetch('/api/log-void-action/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    item_id: productId,
+                    item_name: itemName,
+                    item_price: itemPrice,
+                    quantity: itemQuantity,
+                    terminal: 'Cashier POS'
+                })
+            });
+
+            const auditData = await auditResponse.json();
+
+            if (!auditData.success) {
+                console.warn('Failed to log void action to audit trail:', auditData.error);
+                // Continue with void even if audit logging fails
+            } else {
+                console.log('Void action logged to audit trail successfully');
+            }
+        } catch (auditError) {
+            console.error('Error logging void action to audit trail:', auditError);
+            // Continue with void even if audit logging fails
+        }
+
         // Remove the item from cart
-        const itemName = cart[index].name;
         cart.splice(index, 1);
         updateCartDisplay();
         showNotification(`${itemName} voided successfully`, 'success');
