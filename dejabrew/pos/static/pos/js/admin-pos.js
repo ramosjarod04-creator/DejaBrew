@@ -615,8 +615,8 @@ window.updateQuantity = async function(productId, change) {
 
     // Require admin authentication for quantity decrease
     if (change < 0) {
-        const isAuthenticated = await showAdminPasswordModal();
-        if (!isAuthenticated) {
+        const authResult = await showAdminPasswordModal();
+        if (!authResult || !authResult.success) {
             showNotification('Admin authentication required to decrease quantity', 'error');
             return;
         }
@@ -625,7 +625,15 @@ window.updateQuantity = async function(productId, change) {
     const newQuantity = item.quantity + change;
 
     if (newQuantity <= 0) {
-        window.voidItem(productId);
+        // Don't call voidItem again - just remove from cart directly
+        // since we already authenticated above
+        const index = cart.findIndex(i => i.id === productId);
+        if (index > -1) {
+            const itemName = cart[index].name;
+            cart.splice(index, 1);
+            updateCartDisplay();
+            showNotification(`${itemName} removed from cart`, 'success');
+        }
         return;
     }
 
@@ -668,8 +676,8 @@ window.setQuantity = async function(productId, value) {
 
     // Require admin authentication for quantity decrease
     if (newQuantity < item.quantity) {
-        const isAuthenticated = await showAdminPasswordModal();
-        if (!isAuthenticated) {
+        const authResult = await showAdminPasswordModal();
+        if (!authResult || !authResult.success) {
             showNotification('Admin authentication required to decrease quantity', 'error');
             updateCartDisplay(); // Reset to original value
             return;
