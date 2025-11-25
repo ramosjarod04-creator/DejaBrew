@@ -328,7 +328,7 @@
 }
 
 .mobile-cart-toggle {
-    display: none;
+    display: none !important;
     position: fixed;
     bottom: 20px;
     left: 50%;
@@ -360,7 +360,7 @@
 }
 
 .mobile-cart-close {
-    display: none;
+    display: none !important;
     position: absolute;
     top: 10px;
     right: 15px;
@@ -401,7 +401,7 @@ body.cart-overlay-open::before {
     }
 
     .mobile-cart-toggle {
-        display: flex;
+        display: flex !important;
     }
 
     .cart-col {
@@ -437,7 +437,7 @@ body.cart-overlay-open::before {
     }
 
     .mobile-cart-close {
-        display: block;
+        display: block !important;
     }
 }
 
