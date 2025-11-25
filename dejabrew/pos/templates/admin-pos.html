@@ -108,6 +108,30 @@
         .filters-row {
             flex-wrap: wrap;
         }
+
+        /* Fix modals on small screens */
+        .payment-modal-card {
+            max-width: 95vw !important;
+            max-height: 90vh !important;
+            overflow-y: auto;
+            margin: 10px;
+        }
+
+        /* Fix discount modal on mobile */
+        #discountModal .payment-modal-card {
+            width: 95vw !important;
+        }
+
+        /* Fix admin password modal on mobile */
+        #adminPasswordModal .payment-modal-card {
+            width: 95vw !important;
+        }
+
+        /* Fix order complete modal on mobile */
+        #orderCompleteModal .payment-modal-card {
+            width: 95vw !important;
+            padding: 15px !important;
+        }
     }
 
     /* Overlay for mobile cart */
