@@ -951,11 +951,16 @@ async function applyDiscount() {
         return;
     }
 
-    // Require admin authentication BEFORE applying discount
-    closeDiscountModal(); // Close discount modal first
-    const isAuthenticated = await showAdminPasswordModal();
+    // Close discount modal first BEFORE authentication
+    closeDiscountModal();
 
-    if (!isAuthenticated) {
+    // Small delay to ensure discount modal is fully closed before showing admin modal
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Require admin authentication BEFORE applying discount
+    const authResult = await showAdminPasswordModal();
+
+    if (!authResult || !authResult.success) {
         showNotification('Admin authentication required to apply discounts', 'error');
         return;
     }
