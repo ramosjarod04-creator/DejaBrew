@@ -1087,7 +1087,7 @@ function showOrderCompleteModal(orderId, total, paymentMethod, receiptHTML) {
         orderTotal.textContent = `₱${parseFloat(total).toFixed(2)}`;
         orderPayment.textContent = paymentMethod;
 
-        modal.style.display = 'flex';
+        modal.classList.add('is-visible');
         showNotification('Order processed successfully!', 'success');
     }
 }
@@ -1095,7 +1095,7 @@ function showOrderCompleteModal(orderId, total, paymentMethod, receiptHTML) {
 function closeOrderCompleteModal() {
     const modal = document.getElementById('orderCompleteModal');
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('is-visible');
 
         // Clear cart and reload
         clearCart();
@@ -1118,7 +1118,7 @@ function setupOrderCompleteModal() {
     if (viewReceiptBtn) {
         viewReceiptBtn.addEventListener('click', () => {
             // Close the order complete modal
-            modal.style.display = 'none';
+            modal.classList.remove('is-visible');
 
             // Show the receipt preview if available
             if (storedReceiptHTML) {
@@ -1560,14 +1560,14 @@ function showAdminPasswordModal() {
         document.getElementById('adminUsername').value = '';
         document.getElementById('adminPassword').value = '';
         if (adminPasswordModal) {
-            adminPasswordModal.style.display = 'flex';
+            adminPasswordModal.classList.add('is-visible');
         }
     });
 }
 
 function closeAdminPasswordModal() {
     if (adminPasswordModal) {
-        adminPasswordModal.style.display = 'none';
+        adminPasswordModal.classList.remove('is-visible');
     }
     adminPasswordResolve = null;
 }
