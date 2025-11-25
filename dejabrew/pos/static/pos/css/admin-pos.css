@@ -603,27 +603,36 @@ body.modal-open {
         padding: 12px;
     }
 
-    /* Payment modal - Ensure full coverage on mobile */
+    /* ALL MODALS - Comprehensive mobile fixes to prevent overlay issues */
     .payment-modal {
         padding: 10px;
         z-index: 10001 !important;
         align-items: flex-start;
         padding-top: max(10px, env(safe-area-inset-top));
         padding-bottom: max(10px, env(safe-area-inset-bottom));
+        /* Prevent scrolling issues on mobile */
+        -webkit-overflow-scrolling: touch;
+        /* Ensure modal covers everything */
+        position: fixed !important;
+        inset: 0 !important;
     }
 
     .payment-modal-card {
         width: 100%;
         max-width: calc(100vw - 20px);
-        max-height: calc(100vh - 20px);
-        max-height: calc(100dvh - 20px); /* Dynamic viewport height for mobile browsers */
+        max-height: calc(100vh - 40px);
+        max-height: calc(100dvh - 40px); /* Dynamic viewport height for mobile browsers */
         overflow-y: auto;
         padding: 16px;
-        margin: 0;
+        margin: 10px auto;
         border-radius: 12px;
+        /* Ensure card doesn't get clipped */
+        position: relative;
+        z-index: 1;
     }
 
-    .payment-modal-card h3 {
+    .payment-modal-card h3,
+    .payment-modal-card h2 {
         font-size: 18px;
         margin-bottom: 15px;
     }
@@ -657,13 +666,46 @@ body.modal-open {
         font-size: 15px;
     }
 
-    /* Admin password modal - Higher z-index */
+    /* Specific modal z-index hierarchy to prevent overlay issues */
+    #orderCompleteModal {
+        z-index: 10001 !important;
+    }
+
+    #paymentModal {
+        z-index: 10001 !important;
+    }
+
     #adminPasswordModal {
+        z-index: 10003 !important; /* Highest priority */
+    }
+
+    #receiptPreviewModal {
         z-index: 10002 !important;
     }
 
-    #adminPasswordModal .payment-modal-card {
+    /* Ensure modal cards don't exceed viewport on small screens */
+    #adminPasswordModal .payment-modal-card,
+    #orderCompleteModal .payment-modal-card,
+    #paymentModal .payment-modal-card,
+    #receiptPreviewModal .payment-modal-card {
         max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 40px);
+        max-height: calc(100dvh - 40px);
+    }
+
+    /* Receipt modal close button positioning */
+    .receipt-modal-close {
+        position: sticky !important;
+        top: 0;
+        right: 0;
+        z-index: 10;
+        background: rgba(0,0,0,0.7) !important;
+        color: white !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 24px !important;
+        border-radius: 50% !important;
+        border: none !important;
     }
 }
 
