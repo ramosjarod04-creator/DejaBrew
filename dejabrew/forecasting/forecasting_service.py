@@ -220,6 +220,40 @@ def map_item_to_article(item_name):
 
     return None
 
+
+# --- Utility functions for training ---
+def pivot_daily(df):
+    """
+    Pivot sales data to daily format with articles as columns.
+
+    Args:
+        df: DataFrame with columns [date, article, quantity]
+
+    Returns:
+        DataFrame with dates as index and articles as columns
+    """
+    daily = df.pivot_table(index='date', columns='article', values='quantity', aggfunc='sum').fillna(0)
+    return daily
+
+
+def create_date_features(df_index):
+    """
+    Create time-based features from datetime index for model training.
+
+    Args:
+        df_index: DatetimeIndex
+
+    Returns:
+        DataFrame with features: day_of_week, month, day_of_year, year
+    """
+    df = pd.DataFrame(index=df_index)
+    df['day_of_week'] = df.index.dayofweek
+    df['month'] = df.index.month
+    df['day_of_year'] = df.index.dayofyear
+    df['year'] = df.index.year
+    return df
+
+
 def create_date_features_for_range(start_date, days):
     dates = [start_date + datetime.timedelta(days=i) for i in range(days)]
     df = pd.DataFrame({'date': pd.to_datetime(dates)})

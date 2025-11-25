@@ -12,7 +12,12 @@ from django.core.management.base import BaseCommand
 from django.db.models import Sum, F
 
 # --- UPDATED: Import from forecasting_service ---
-from forecasting.forecasting_service import load_live_db_data, load_kaggle_data 
+from forecasting.forecasting_service import (
+    load_live_db_data,
+    load_kaggle_data,
+    pivot_daily,
+    create_date_features
+) 
 
 # --- Get paths from your train_models.py ---
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -21,20 +26,6 @@ APP_DIR = os.path.join(BASE, '..', '..')
 DATA_DIR = os.path.join(APP_DIR, 'forecasting_data')
 MODEL_PREFIX = 'model_'
 MODEL_DIR = DATA_DIR
-
-
-# --- These functions are copied directly from train_models.py ---
-def pivot_daily(df):
-    daily = df.pivot_table(index='date', columns='article', values='quantity', aggfunc='sum').fillna(0)
-    return daily
-
-def create_date_features(df_index):
-    df = pd.DataFrame(index=df_index)
-    df['day_of_week'] = df.index.dayofweek
-    df['month'] = df.index.month
-    df['day_of_year'] = df.index.dayofyear
-    df['year'] = df.index.year
-    return df
 
 
 def save_metrics_json(metrics_dict):
