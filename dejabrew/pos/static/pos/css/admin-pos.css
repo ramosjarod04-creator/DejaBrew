@@ -459,7 +459,6 @@ body.cart-overlay-open::before {
     padding: 20px;
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
-    backdrop-filter: blur(2px);
 }
 
 .payment-modal.is-visible {
@@ -468,7 +467,12 @@ body.cart-overlay-open::before {
 
 /* Ensure admin password modal is always on top */
 #adminPasswordModal {
-    z-index: 10002 !important;
+    z-index: 10003 !important;
+}
+
+/* When admin modal is visible, other modals should hide their backdrop */
+#adminPasswordModal.is-visible ~ .payment-modal.is-visible {
+    background-color: transparent !important;
 }
 
 /* Lock body scroll when modal is visible */
@@ -480,9 +484,33 @@ body.modal-open {
     -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent multiple modal backdrops from stacking */
-.payment-modal + .payment-modal {
-    background-color: transparent;
+/* Ensure only the topmost modal shows backdrop */
+.payment-modal.is-visible:not(#adminPasswordModal) {
+    z-index: 10001;
+}
+
+.payment-modal.is-visible#adminPasswordModal {
+    z-index: 10003;
+}
+
+/* Mobile fixes for black background issue */
+@media (max-width: 768px) {
+    .payment-modal {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 60px;
+    }
+
+    .payment-modal-card {
+        width: 100% !important;
+        max-width: 95vw !important;
+        margin: 0 auto !important;
+    }
+
+    /* Ensure admin modal is always on top on mobile */
+    #adminPasswordModal {
+        z-index: 10003 !important;
+    }
 }
 
 .payment-modal-card {
