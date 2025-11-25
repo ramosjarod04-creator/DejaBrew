@@ -357,7 +357,7 @@ def login_view(request):
             if is_admin:
                 return redirect('dashboard')
             elif hasattr(request.user, 'profile') and request.user.profile.role == 'staff':
-                 return redirect('staff_dashboard')
+                 return redirect('cashier_pos')  # Staff redirects to cashier POS
             else:
                  return redirect('cashier_pos')
         except UserProfile.DoesNotExist:
@@ -375,7 +375,7 @@ def login_view(request):
                 if is_admin:
                     return redirect('dashboard')
                 elif hasattr(user, 'profile') and user.profile.role == 'staff':
-                    return redirect('staff_dashboard')
+                    return redirect('cashier_pos')  # Staff redirects to cashier POS
                 else:
                     return redirect('cashier_pos')
             except UserProfile.DoesNotExist:
