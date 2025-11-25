@@ -437,7 +437,7 @@ def dashboard(request):
     ).values('item__name').annotate(
         total_qty=Sum('qty'),
         total_value=Sum(F('qty') * F('price_at_order'))
-    ).order_by('total_value')[:5])  # Changed to ascending order (lowest to highest)
+    ).order_by('-total_qty')[:5])  # Sort by quantity descending (highest to lowest)
 
     top_product = top_products[0] if top_products else None
 
