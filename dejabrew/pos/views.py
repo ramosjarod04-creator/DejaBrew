@@ -1376,8 +1376,8 @@ def verify_admin_api(request):
             user = None
             # Get all admin users (superusers and users with admin profile)
             admin_users = User.objects.filter(is_active=True).filter(
-                models.Q(is_superuser=True) |
-                models.Q(profile__role='admin')
+                Q(is_superuser=True) |
+                Q(profile__role='admin')
             )
 
             for admin_user in admin_users:
