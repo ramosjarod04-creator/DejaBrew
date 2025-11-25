@@ -270,13 +270,16 @@ img {
 
 .nav-menu a:hover {
     background: var(--sidebar-hover);
-    color: white;
+    color: #f0af19;
+    transform: translateX(5px);
 }
 
 .nav-menu li.active a {
-    background: var(--primary-color);
-    color: white;
-    font-weight: 600;
+    background: linear-gradient(135deg, #f0af19 0%, #d4940f 100%);
+    color: #1c2e4a;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(240, 175, 25, 0.3);
+    border-left: 4px solid #ffffff;
 }
 
 /* Logout Section */
@@ -576,8 +579,13 @@ textarea:disabled {
 
 .btn-primary:hover:not(:disabled) {
     background-color: var(--primary-hover);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
 }
 
 .btn-secondary {
@@ -587,6 +595,13 @@ textarea:disabled {
 
 .btn-secondary:hover:not(:disabled) {
     background-color: var(--secondary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+}
+
+.btn-secondary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(100, 116, 139, 0.2);
 }
 
 .btn-success {
@@ -596,6 +611,13 @@ textarea:disabled {
 
 .btn-success:hover:not(:disabled) {
     background-color: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
 }
 
 .btn-danger {
@@ -605,6 +627,13 @@ textarea:disabled {
 
 .btn-danger:hover:not(:disabled) {
     background-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
 }
 
 .btn-ghost {
@@ -615,6 +644,13 @@ textarea:disabled {
 
 .btn-ghost:hover:not(:disabled) {
     background-color: var(--gray-50);
+    border-color: var(--gray-400);
+    transform: translateY(-1px);
+}
+
+.btn-ghost:active:not(:disabled) {
+    transform: translateY(0);
+    background-color: var(--gray-100);
 }
 
 .btn-sm {

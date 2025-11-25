@@ -455,19 +455,29 @@ window.addToCart = function(productId) {
     showNotification(`${product.name} added to cart`, 'success');
 }
 
-window.updateQuantity = function(productId, change) {
+window.updateQuantity = async function(productId, change) {
     const item = cart.find(i => i.id === productId);
     if (!item) return;
+
+    // Require admin authentication for quantity decrease
+    if (change < 0) {
+        const isAuthenticated = await showAdminPasswordModal();
+        if (!isAuthenticated) {
+            showNotification('Admin authentication required to decrease quantity', 'error');
+            return;
+        }
+    }
+
     const newQuantity = item.quantity + change;
 
     if (newQuantity <= 0) {
         window.removeFromCart(productId);
         return;
     }
-    
+
     const hasStock = (item.stock || 0) > 0;
     const hasRecipe = item.recipe && item.recipe.length > 0;
-    
+
     if (hasStock) {
         if (newQuantity > item.stock) {
             showNotification('Cannot exceed available product stock', 'error');
@@ -489,7 +499,7 @@ window.updateQuantity = function(productId, change) {
     updateCartDisplay();
 }
 
-window.setQuantity = function(productId, value) {
+window.setQuantity = async function(productId, value) {
     const item = cart.find(i => i.id === productId);
     if (!item) return;
 
@@ -500,6 +510,16 @@ window.setQuantity = function(productId, value) {
         newQuantity = 1;
     } else if (newQuantity > 999) {
         newQuantity = 999;
+    }
+
+    // Require admin authentication for quantity decrease
+    if (newQuantity < item.quantity) {
+        const isAuthenticated = await showAdminPasswordModal();
+        if (!isAuthenticated) {
+            showNotification('Admin authentication required to decrease quantity', 'error');
+            updateCartDisplay(); // Reset to original value
+            return;
+        }
     }
 
     const hasStock = (item.stock || 0) > 0;
