@@ -329,14 +329,14 @@
     <div class="stat-card">
         <h3>Top Products (Lowest to Highest Sales)</h3>
         {% if top_products %}
-            <div style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
-                <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+            <div style="max-height: 120px; overflow-y: auto; padding-right: 8px;">
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.6;">
                     {% for product in top_products %}
-                        <li style="padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem;">
+                        <li style="padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem;">
                             <strong style="color: #333;">{{ forloop.counter }}. {{ product.item__name }}</strong>
                             <br>
                             <span style="color: #28a745; font-weight: 600;">₱{{ product.total_value|floatformat:2 }}</span>
-                            <span style="color: #999; font-size: 0.85rem; margin-left: 8px;">({{ product.total_qty }} sold)</span>
+                            <span style="color: #999; font-size: 0.8rem; margin-left: 8px;">({{ product.total_qty }} sold)</span>
                         </li>
                     {% endfor %}
                 </ul>
@@ -407,12 +407,9 @@
             <label style="display: block; margin-bottom: 8px; font-weight: 600;">Search & Select Product:</label>
             <input type="text" id="product_search" placeholder="Type to search products..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px;">
             <div id="product_dropdown_container" style="position: relative;">
-              <select id="product_dropdown" size="5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer; max-height: 150px; overflow-y: auto;">
+              <select id="product_dropdown" size="5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer; font-size: 14px;">
                 <option value="" disabled selected>-- Select a product from the list --</option>
               </select>
-              <div id="load_more_products" style="text-align: center; padding: 8px; background: #f0f0f0; border-top: 1px solid #ddd; cursor: pointer; font-size: 13px; display: none;">
-                Load More Products...
-              </div>
             </div>
           </div>
           <div style="display: flex; gap: 15px; align-items: flex-end;">
@@ -1030,22 +1027,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // --- END NEW RECEIPT JAVASCRIPT ---
 
-    // --- FORECAST FUNCTIONALITY WITH SEARCH AND PAGINATION ---
+    // --- FORECAST FUNCTIONALITY WITH SEARCH ---
     const runForecastButton = document.getElementById('runForecastButton');
     const productDropdown = document.getElementById('product_dropdown');
     const productSearchInput = document.getElementById('product_search');
-    const loadMoreButton = document.getElementById('load_more_products');
     const daysInput = document.getElementById('days_input');
     const forecastError = document.getElementById('forecastError');
     const specificProductChart = document.getElementById('specificProductChart');
     const specificForecastTable = document.getElementById('specificForecastTable').querySelector('tbody');
     let specificProductChartInstance = null;
 
-    // Pagination and search state
+    // Search state
     let allProducts = [];
     let filteredProducts = [];
-    let currentPage = 0;
-    const pageSize = 5;
 
     // Load all products from API
     async function loadAllProducts() {
@@ -1063,32 +1057,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Render products in dropdown with pagination
-    function renderProductDropdown(append = false) {
-        if (!append) {
-            productDropdown.innerHTML = '<option value="" disabled>-- Select a product from the list --</option>';
-            currentPage = 0;
-        }
+    // Render ALL products in dropdown (no pagination, scrollable)
+    function renderProductDropdown() {
+        productDropdown.innerHTML = '<option value="" disabled selected>-- Select a product from the list --</option>';
 
-        const start = currentPage * pageSize;
-        const end = start + pageSize;
-        const productsToShow = filteredProducts.slice(start, end);
-
-        productsToShow.forEach(product => {
+        filteredProducts.forEach(product => {
             const option = document.createElement('option');
             option.value = product.name;
             option.textContent = product.name;
             productDropdown.appendChild(option);
         });
-
-        // Show/hide "Load More" button
-        if (end < filteredProducts.length) {
-            loadMoreButton.style.display = 'block';
-        } else {
-            loadMoreButton.style.display = 'none';
-        }
-
-        currentPage++;
     }
 
     // Search functionality
@@ -1104,14 +1082,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
             }
 
-            renderProductDropdown(false);
-        });
-    }
-
-    // Load more products on button click
-    if (loadMoreButton) {
-        loadMoreButton.addEventListener('click', function() {
-            renderProductDropdown(true);
+            renderProductDropdown();
         });
     }
 
