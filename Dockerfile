@@ -1,31 +1,50 @@
-# Use official Python slim image
-FROM python:3.12-slim
+FROM python:3.12-slim AS builder
 
-# Environment settings
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Set working directory
 WORKDIR /app
 
-# Copy requirements first for caching
-COPY requirements.txt /app/
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    gfortran \
+    libpq-dev \
+    libjpeg62-turbo-dev \
+    zlib1g-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libblas-dev \
+    liblapack-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire project
-COPY . /app/
+FROM python:3.12-slim AS runtime
 
-# Create staticfiles directory (writable)
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libpq5 \
+    libjpeg62-turbo \
+    libpng16-16 \
+    libfreetype6 \
+    libblas3 \
+    liblapack3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local /usr/local
+
+COPY . .
+
 RUN mkdir -p /app/staticfiles
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Create non-root user
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
 
-# Expose port (Railway injects $PORT at runtime)
 EXPOSE 8000
 
-# Run Gunicorn
-CMD gunicorn dejabrew.wsgi:application --bind 0.0.0.0:$PORT
+CMD ["sh", "-c", "gunicorn dejabrew.wsgi:application --bind 0.0.0.0:8000 --workers 4"]
