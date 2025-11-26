@@ -2,7 +2,7 @@
 
 // Wait for the DOM to be fully loaded before attaching listeners
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     // Get all the new elements we added to dashboard.html
     const runButton = document.getElementById('runForecastButton');
     const productInput = document.getElementById('product_name_input');
@@ -11,9 +11,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const inventoryTableBody = document.getElementById('inventoryForecastTable').querySelector('tbody');
     const errorDiv = document.getElementById('forecastError');
     const chartCanvas = document.getElementById('specificProductChart');
+    const inventoryBarCanvas = document.getElementById('inventoryBarChart');
 
-    // This variable will hold our chart instance
+    // Chart instances
     let specificProductChart = null;
+    let inventoryBarChart = null;
+
+    // ✅ TASK 1: Load and display ML metrics on page load
+    loadMLMetrics();
 
     // Attach the main event listener to the "Run" button
     if (runButton) {
@@ -83,6 +88,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // --- 6. Populate Inventory Depletion Table ---
             if (data.inventory_forecast) {
                 populateInventoryTable(data.inventory_forecast);
+
+                // ✅ TASK 3: Render Inventory Bar Chart
+                renderInventoryBarChart(data.inventory_forecast);
+
+                // ✅ TASK 4: Save to localStorage for inventory page
+                saveForecastToLocalStorage({
+                    product: productName,
+                    days: days,
+                    inventory_forecast: data.inventory_forecast,
+                    timestamp: new Date().toISOString()
+                });
             }
 
         } catch (error) {
@@ -222,6 +238,132 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             inventoryTableBody.appendChild(tr);
         });
+    }
+
+    // ✅ TASK 1: Load ML Metrics from API
+    async function loadMLMetrics() {
+        try {
+            const response = await fetch('/metrics_dashboard/');
+            if (!response.ok) {
+                console.warn('ML metrics not available yet. Run model training first.');
+                return;
+            }
+
+            const data = await response.json();
+            if (data.success && data.metrics) {
+                const metrics = data.metrics;
+
+                // Update metrics display
+                document.getElementById('avgAccuracy').textContent =
+                    (metrics.average_metrics?.test_accuracy || 0) + '%';
+
+                document.getElementById('avgR2').textContent =
+                    (metrics.average_metrics?.test_r2 || 0).toFixed(4);
+
+                document.getElementById('totalModels').textContent =
+                    metrics.total_models_trained || 0;
+
+                // Format date
+                if (metrics.trained_date) {
+                    const date = new Date(metrics.trained_date);
+                    document.getElementById('lastTraining').textContent =
+                        date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                }
+            }
+        } catch (error) {
+            console.error('Error loading ML metrics:', error);
+        }
+    }
+
+    // ✅ TASK 3: Render Inventory Bar Chart
+    function renderInventoryBarChart(inventoryData) {
+        if (!inventoryBarCanvas) {
+            console.warn('Inventory bar chart canvas not found');
+            return;
+        }
+
+        // Prepare data for chart
+        const labels = inventoryData.map(ing => ing.ingredient);
+        const stockData = inventoryData.map(ing => ing.current_stock);
+        const usageData = inventoryData.map(ing => ing.total_usage);
+
+        // Destroy existing chart if exists
+        if (inventoryBarChart) {
+            inventoryBarChart.destroy();
+        }
+
+        const ctx = inventoryBarCanvas.getContext('2d');
+        inventoryBarChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Current Stock',
+                        data: stockData,
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)', // Green
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Predicted Usage',
+                        data: usageData,
+                        backgroundColor: 'rgba(220, 38, 38, 0.7)', // Red
+                        borderColor: 'rgba(220, 38, 38, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                const unit = inventoryData[context.dataIndex].unit || '';
+                                return `${label}: ${value.toFixed(2)} ${unit}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Quantity'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ✅ TASK 4: Save forecast data to localStorage
+    function saveForecastToLocalStorage(forecastData) {
+        try {
+            localStorage.setItem('dejabrew_latest_forecast', JSON.stringify(forecastData));
+            console.log('Forecast data saved to localStorage');
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+        }
     }
 });
 

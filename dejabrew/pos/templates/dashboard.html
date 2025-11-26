@@ -714,22 +714,40 @@
     </div>
 </div>
 
-<div class="charts-section">
-    <div class="chart-container">
-        <h2>Sales Trend</h2>
-        <p>Historical sales data</p>
-        <canvas id="salesChart"></canvas>
+<!-- ✅ TASK 1: ML TRAINING METRICS DISPLAY -->
+<div class="long-card-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h2 style="color: white; margin-bottom: 15px;">🤖 Machine Learning Model Performance</h2>
+    <div id="mlMetricsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Average Test Accuracy</div>
+            <div id="avgAccuracy" style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;">--</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Average R² Score</div>
+            <div id="avgR2" style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;">--</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Models Trained</div>
+            <div id="totalModels" style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;">--</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Last Training Date</div>
+            <div id="lastTraining" style="font-size: 1.2rem; font-weight: bold; margin-top: 10px;">--</div>
+        </div>
     </div>
+</div>
 
+<div class="charts-section">
+    <!-- ✅ TASK 2: MERGED CHART - Historical + Forecast -->
     <div class="chart-container">
-        <h2>Sales Forecast (Aggregated)</h2>
-        <p>Predicted sales for ALL products</p>
+        <h2>Sales Trend: Historical & Forecast</h2>
+        <p>Historical sales data with ML predictions</p>
         <div class="chart-filters" id="salesForecastFilter">
             <button class="active" data-period="daily">Daily</button>
             <button data-period="weekly">Weekly</button>
             <button data-period="monthly">Monthly</button>
         </div>
-        <canvas id="forecastChart"></canvas>
+        <canvas id="combinedSalesChart"></canvas>
     </div>
 </div>
 
@@ -799,6 +817,14 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- ✅ TASK 3: INVENTORY BAR CHART (Stock vs Usage) -->
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Inventory Overview: Current Stock vs Predicted Usage</h3>
+            <div style="position: relative; height: 400px;">
+                <canvas id="inventoryBarChart"></canvas>
+            </div>
         </div>
     </div>
 </div>
@@ -906,36 +932,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let salesTrendChart;
     let salesForecastChart;
 
-    // --- RENDER SALES TREND CHART ---
-    function renderSalesTrendChart(salesData) {
-        const labels = salesData.map(d => d.label);
-        const values = salesData.map(d => d.sales);
-        const ctx = document.getElementById('salesChart').getContext('2d');
-
-        if (salesTrendChart) salesTrendChart.destroy();
-
-        salesTrendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Daily Sales (₱)',
-                    data: values,
-                    borderColor: '#8B4513',
-                    backgroundColor: 'rgba(139, 69, 19, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: chartOptions('₱')
-        });
-    }
-
-    // --- RENDER SALES FORECAST CHART ---
+    // --- ✅ TASK 2: RENDER COMBINED SALES CHART (Historical + Forecast) ---
     function renderSalesForecastChart(historicalSales, realForecast, period) {
         const labels = historicalSales.map(d => d.label);
         const values = historicalSales.map(d => d.sales);
-        const ctx = document.getElementById('forecastChart').getContext('2d');
+        const ctx = document.getElementById('combinedSalesChart').getContext('2d');
 
         let forecastLabels;
         let forecastDataSeries;
@@ -1002,11 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(forecastApiUrl)
             ]);
 
-            if (salesTrendResponse.ok) {
-                const salesTrendData = await salesTrendResponse.json();
-                renderSalesTrendChart(salesTrendData.sales_data);
-            }
-
+            // ✅ TASK 2: Only render combined chart (historical + forecast merged)
             if (forecastResponse.ok) {
                 const forecastData = await forecastResponse.json();
                 renderSalesForecastChart(
