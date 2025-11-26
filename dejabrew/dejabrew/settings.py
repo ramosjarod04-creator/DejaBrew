@@ -12,7 +12,8 @@ DEBUG = True
 
 # Allow all hosts in development for network access via ipconfig
 # When running with 'python manage.py runserver 0.0.0.0:8000', this allows access from any IP
-ALLOWED_HOSTS = ['*']  # In production, replace with specific domains/IPs
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
