@@ -1,7 +1,11 @@
+# -----------------------------
+# Builder stage
+# -----------------------------
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
+# Install build dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
@@ -17,15 +21,20 @@ RUN apt-get update && \
         liblapack-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements from root
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+# -----------------------------
+# Runtime stage
+# -----------------------------
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 
+# Install runtime libraries
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libpq5 \
@@ -36,14 +45,23 @@ RUN apt-get update && \
         liblapack3 \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy Python packages from builder
 COPY --from=builder /usr/local /usr/local
 
+# Copy all project files from root
 COPY . .
 
-RUN mkdir -p /app/staticfiles
-
+# Collect static files (assuming manage.py is in dejabrew/)
+WORKDIR /app/dejabrew
+RUN mkdir -p /app/dejabrew/staticfiles
 RUN python manage.py collectstatic --noinput
 
+# Optional: create non-root user
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
+# Expose port (Railway injects $PORT)
 EXPOSE 8000
 
+# Start Gunicorn
 CMD ["sh", "-c", "gunicorn dejabrew.wsgi:application --bind 0.0.0.0:$PORT --workers 4"]
