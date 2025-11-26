@@ -44,9 +44,6 @@ RUN mkdir -p /app/staticfiles
 
 RUN python manage.py collectstatic --noinput
 
-RUN useradd -m appuser && chown -R appuser /app
-USER appuser
-
 EXPOSE 8000
 
 CMD ["sh", "-c", "gunicorn dejabrew.wsgi:application --bind 0.0.0.0:$PORT --workers 4"]
