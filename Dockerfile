@@ -1,50 +1,26 @@
-FROM python:3.12-slim AS builder
+# Use official Python image
+FROM python:3.12-slim
 
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Create app directory
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    g++ \
-    gfortran \
-    libpq-dev \
-    libjpeg62-turbo-dev \
-    zlib1g-dev \
-    libpng-dev \
-    libfreetype6-dev \
-    libblas-dev \
-    liblapack-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+COPY requirements.txt /app/
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Copy project files
+COPY . /app/
 
-FROM python:3.12-slim AS runtime
+# Collect static files
+RUN python manage.py collectstatic --noinput
 
-WORKDIR /app
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libpq5 \
-    libjpeg62-turbo \
-    libpng16-16 \
-    libfreetype6 \
-    libblas3 \
-    liblapack3 \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /usr/local /usr/local
-
-COPY . .
-
-RUN mkdir -p /app/staticfiles
-
-# Create non-root user
-RUN useradd -m appuser && chown -R appuser /app
-USER appuser
-
+# Expose port (Railway injects $PORT at runtime)
 EXPOSE 8000
 
-CMD ["sh", "-c", "gunicorn dejabrew.wsgi:application --bind 0.0.0.0:8000 --workers 4"]
+# Run the application
+CMD gunicorn dejabrew.wsgi:application --bind 0.0.0.0:$PORT
