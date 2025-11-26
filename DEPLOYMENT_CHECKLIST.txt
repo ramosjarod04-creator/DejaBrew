@@ -1,0 +1,192 @@
+╔═══════════════════════════════════════════════════════════════╗
+║     DEJABREW - PYTHONANYWHERE DEPLOYMENT CHECKLIST           ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📋 PRE-DEPLOYMENT (Do in your local environment)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  CRITICAL SECURITY CHANGES:
+
+1. [ ] Generate new SECRET_KEY
+   Command: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+   
+2. [ ] Update settings.py or use settings_production.py:
+   - [ ] DEBUG = False
+   - [ ] SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'new-key-here')
+   - [ ] ALLOWED_HOSTS = ['yourusername.pythonanywhere.com']
+   - [ ] SESSION_COOKIE_SECURE = True
+   - [ ] CSRF_COOKIE_SECURE = True
+   - [ ] SECURE_SSL_REDIRECT = True
+
+3. [ ] Commit and push changes to GitHub
+   - [ ] git add .
+   - [ ] git commit -m "Prepare for production deployment"
+   - [ ] git push origin main
+
+
+📦 PYTHONANYWHERE SETUP (Do on PythonAnywhere)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1: Clone Repository
+━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] Open Bash console on PythonAnywhere
+[ ] cd ~
+[ ] git clone https://github.com/ramosjarod04-creator/DejaBrew.git
+[ ] cd DejaBrew/dejabrew
+
+STEP 2: Create Virtual Environment
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] cd ~/DejaBrew
+[ ] python3.10 -m venv venv
+[ ] source venv/bin/activate
+[ ] pip install --upgrade pip
+[ ] pip install -r requirements.txt
+
+STEP 3: Environment Variables
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] nano ~/DejaBrew/.env
+[ ] Add:
+    DJANGO_SECRET_KEY=your-generated-secret-key
+    DEBUG=False
+    ALLOWED_HOSTS=yourusername.pythonanywhere.com
+
+STEP 4: Database Setup
+━━━━━━━━━━━━━━━━━━━━━━
+[ ] cd ~/DejaBrew/dejabrew
+[ ] source ~/DejaBrew/venv/bin/activate
+[ ] python manage.py migrate
+[ ] python manage.py createsuperuser
+[ ] python manage.py collectstatic --noinput
+
+STEP 5: Configure Web App
+━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] Go to Web tab
+[ ] Click "Add a new web app"
+[ ] Choose "Manual configuration"
+[ ] Choose Python 3.10
+[ ] Set virtualenv path: /home/yourusername/DejaBrew/venv
+
+STEP 6: WSGI Configuration
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] Click on WSGI configuration file link
+[ ] Replace content with:
+
+import os
+import sys
+
+path = '/home/yourusername/DejaBrew/dejabrew'
+if path not in sys.path:
+    sys.path.insert(0, path)
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'dejabrew.settings'
+
+activate_this = '/home/yourusername/DejaBrew/venv/bin/activate_this.py'
+with open(activate_this) as file_:
+    exec(file_.read(), dict(__file__=activate_this))
+
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+
+[ ] Save file
+
+STEP 7: Static Files Mapping
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] In Web tab, under "Static files" section:
+    URL: /static/
+    Directory: /home/yourusername/DejaBrew/dejabrew/staticfiles
+    
+    URL: /media/
+    Directory: /home/yourusername/DejaBrew/dejabrew/media
+
+STEP 8: Launch!
+━━━━━━━━━━━━━━
+[ ] Click the big green "Reload" button
+[ ] Visit: https://yourusername.pythonanywhere.com
+
+
+✅ POST-DEPLOYMENT TESTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ ] Site loads successfully
+[ ] Static files (CSS, JS) are loading
+[ ] Images are displaying
+[ ] Admin panel accessible at /admin/
+[ ] Can log in to admin
+[ ] Can log in as regular user
+[ ] POS system works
+[ ] Inventory page loads
+[ ] Can create/update/delete items
+[ ] Forecasting API responds
+[ ] Sales can be recorded
+[ ] Reports generate correctly
+[ ] All forms submit properly
+[ ] HTTPS is working (green lock icon)
+[ ] No console errors in browser
+
+
+🔒 SECURITY VERIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ ] DEBUG is False (no detailed errors shown to users)
+[ ] SECRET_KEY is not the default one
+[ ] ALLOWED_HOSTS contains only your domain
+[ ] HTTPS is enforced
+[ ] Cookies are secure
+[ ] No warnings in Django check:
+    python manage.py check --deploy
+
+
+📊 MONITORING SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ ] Check error logs in Web tab
+[ ] Set up regular database backups
+[ ] Test backup/restore procedure
+[ ] Document any custom configurations
+[ ] Set up monitoring/alerts if needed
+
+
+🎯 TROUBLESHOOTING GUIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: "DisallowedHost" error
+Solution: Add domain to ALLOWED_HOSTS in settings
+
+Problem: Static files not loading  
+Solution: Run collectstatic and check static file mappings
+
+Problem: 500 Internal Server Error
+Solution: Check error logs in Web tab, verify WSGI config
+
+Problem: ImportError
+Solution: Verify virtual environment path in WSGI file
+
+Problem: Database errors
+Solution: Check migrations, verify db.sqlite3 permissions
+
+
+📚 DOCUMENTATION REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Full guide: PYTHONANYWHERE_DEPLOYMENT.md
+Audit report: SYSTEM_AUDIT_REPORT.md
+Production settings: dejabrew/dejabrew/settings_production.py
+Environment template: .env.example
+
+
+🎉 SUCCESS!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your DejaBrew POS System is now live! 
+
+URL: https://yourusername.pythonanywhere.com
+
+Remember to:
+- Keep backups of your database
+- Monitor error logs regularly
+- Keep dependencies updated
+- Test thoroughly after any changes
+
+╔═══════════════════════════════════════════════════════════════╗
+║  Need help? Check PYTHONANYWHERE_DEPLOYMENT.md for details   ║
+╚═══════════════════════════════════════════════════════════════╝
