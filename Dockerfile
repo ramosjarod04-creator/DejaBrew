@@ -1,20 +1,25 @@
-# Use official Python image
+# Use official Python slim image
 FROM python:3.12-slim
 
-# Set environment variables
+# Environment settings
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Create app directory
+# Set working directory
 WORKDIR /app
 
-# Install dependencies
+# Copy requirements first for caching
 COPY requirements.txt /app/
+
+# Install dependencies
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Copy project files
+# Copy the entire project
 COPY . /app/
+
+# Create staticfiles directory (writable)
+RUN mkdir -p /app/staticfiles
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
@@ -22,5 +27,5 @@ RUN python manage.py collectstatic --noinput
 # Expose port (Railway injects $PORT at runtime)
 EXPOSE 8000
 
-# Run the application
+# Run Gunicorn
 CMD gunicorn dejabrew.wsgi:application --bind 0.0.0.0:$PORT
