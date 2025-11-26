@@ -1,0 +1,209 @@
+{
+  "trained_date": "2025-11-26T22:14:14.887909",
+  "total_models_trained": 22,
+  "models": [
+    {
+      "article": "Cappuccino",
+      "test_mae": 8.38,
+      "test_r2": -0.3686,
+      "test_mape": 254.32,
+      "test_accuracy": 0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Latte",
+      "test_mae": 8.31,
+      "test_r2": -0.7915,
+      "test_mape": 512.47,
+      "test_accuracy": 0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Espresso",
+      "test_mae": 6.75,
+      "test_r2": -0.7102,
+      "test_mape": 338.1,
+      "test_accuracy": 0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Americano with Milk",
+      "test_mae": 4.49,
+      "test_r2": -0.4058,
+      "test_mape": 227.78,
+      "test_accuracy": 0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Strawberry Milk",
+      "test_mae": 4.57,
+      "test_r2": -0.664,
+      "test_mape": 315.48,
+      "test_accuracy": 0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Hot Chocolate",
+      "test_mae": 2.99,
+      "test_r2": -0.164,
+      "test_mape": 132.01,
+      "test_accuracy": 0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Cocoa",
+      "test_mae": 1.63,
+      "test_r2": -0.245,
+      "test_mape": 78.37,
+      "test_accuracy": 21.63,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Mocha Hazelnut Cheese Macchiato",
+      "test_mae": 5.87,
+      "test_r2": -147.2563,
+      "test_mape": 570.81,
+      "test_accuracy": 0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Biscoff Cheesecake Dessert",
+      "test_mae": 0.38,
+      "test_r2": -0.2308,
+      "test_mape": 14.06,
+      "test_accuracy": 85.94,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Almond Coffee Cheesecake Streusel Frappe",
+      "test_mae": 0.31,
+      "test_r2": -0.1366,
+      "test_mape": 8.85,
+      "test_accuracy": 91.15,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Ube Latte",
+      "test_mae": 0.25,
+      "test_r2": -0.0667,
+      "test_mape": 5.0,
+      "test_accuracy": 95.0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Strawberry Float",
+      "test_mae": 0.0,
+      "test_r2": 0.0,
+      "test_mape": 0.0,
+      "test_accuracy": 100.0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Milk Strawberry",
+      "test_mae": 0.0,
+      "test_r2": 0.0,
+      "test_mape": 0.0,
+      "test_accuracy": 100.0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Chicken Popcorn",
+      "test_mae": 0.25,
+      "test_r2": -0.1111,
+      "test_mape": 7.81,
+      "test_accuracy": 92.19,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Solo Buffalo Skinny Fries",
+      "test_mae": 0.19,
+      "test_r2": -0.0667,
+      "test_mape": 4.69,
+      "test_accuracy": 95.31,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Blueberry Cheesecake",
+      "test_mae": 0.19,
+      "test_r2": -0.2308,
+      "test_mape": 9.38,
+      "test_accuracy": 90.62,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Espresso Shot",
+      "test_mae": 0.19,
+      "test_r2": -0.1268,
+      "test_mape": 7.29,
+      "test_accuracy": 92.71,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Gravy",
+      "test_mae": 0.19,
+      "test_r2": -0.0667,
+      "test_mape": 4.69,
+      "test_accuracy": 95.31,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Americano",
+      "test_mae": 0.0,
+      "test_r2": 0.0,
+      "test_mape": 0.0,
+      "test_accuracy": 100.0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Combo Buffalo Skinny & Chicken Popcorn",
+      "test_mae": 0.12,
+      "test_r2": -0.1429,
+      "test_mape": 6.25,
+      "test_accuracy": 93.75,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Fries",
+      "test_mae": 0.0,
+      "test_r2": 0.0,
+      "test_mape": 0.0,
+      "test_accuracy": 100.0,
+      "train_size": 60,
+      "test_size": 16
+    },
+    {
+      "article": "Iced Caramel Macchiato",
+      "test_mae": 0.0,
+      "test_r2": 0.0,
+      "test_mape": 0.0,
+      "test_accuracy": 100.0,
+      "train_size": 60,
+      "test_size": 16
+    }
+  ],
+  "average_metrics": {
+    "test_accuracy": 61.53,
+    "test_r2": -6.8993,
+    "test_mae": 2.05
+  }
+}
