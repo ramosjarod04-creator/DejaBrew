@@ -37,6 +37,7 @@ async function init() {
     applyFilters(); // Use applyFilters instead of renderTable
     updateStatsUI();
     await renderInventoryForecast(currentForecastPeriod);
+    loadForecastChartFromLocalStorage(); // Load forecast chart from localStorage
     setupEventListeners();
     applyRolePermissions();
 }
@@ -509,6 +510,215 @@ function showChartMessage(ctx, message) {
     context.fillStyle = '#666';
     context.textAlign = 'center';
     context.fillText(message, ctx.width / 2, ctx.height / 2);
+}
+
+// ========================================
+// INVENTORY FORECAST CHART FROM LOCALSTORAGE
+// ========================================
+
+/**
+ * Load forecast data from localStorage and render the chart
+ */
+function loadForecastChartFromLocalStorage() {
+    try {
+        // Get data from localStorage
+        const storedData = localStorage.getItem('dejabrew_latest_forecast');
+
+        if (!storedData) {
+            console.log('No forecast data found in localStorage');
+            updateForecastChartUI(null);
+            return;
+        }
+
+        const forecastData = JSON.parse(storedData);
+
+        // Validate the data structure
+        if (!forecastData.inventory_forecast || forecastData.inventory_forecast.length === 0) {
+            console.log('No inventory forecast data available');
+            updateForecastChartUI(null);
+            return;
+        }
+
+        // Update UI elements
+        updateForecastChartUI(forecastData);
+
+        // Render the chart
+        renderInventoryForecastChart(forecastData.inventory_forecast);
+
+    } catch (error) {
+        console.error('Error loading forecast from localStorage:', error);
+        updateForecastChartUI(null);
+    }
+}
+
+/**
+ * Update the chart container UI with product name and date
+ */
+function updateForecastChartUI(forecastData) {
+    const chartTitle = document.querySelector('.chart-container h2');
+    const chartSubtitle = document.querySelector('.chart-container .muted');
+
+    if (!chartTitle || !chartSubtitle) return;
+
+    if (forecastData && forecastData.product && forecastData.timestamp) {
+        // Format the timestamp
+        const date = new Date(forecastData.timestamp);
+        const formattedDate = date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        chartTitle.textContent = `Inventory Forecast for ${forecastData.product}`;
+        chartSubtitle.textContent = `Forecast generated on ${formattedDate} (${forecastData.days} days projection)`;
+    } else {
+        chartTitle.textContent = 'Inventory Forecast';
+        chartSubtitle.textContent = 'No forecast data available. Please run a product forecast from the Dashboard.';
+    }
+}
+
+/**
+ * Render the inventory forecast bar chart
+ */
+function renderInventoryForecastChart(inventoryForecastData) {
+    const ctx = document.getElementById('inventoryForecastChart');
+
+    if (!ctx) {
+        console.error('Forecast chart canvas not found');
+        return;
+    }
+
+    // Destroy existing chart if it exists
+    if (inventoryForecastChart) {
+        inventoryForecastChart.destroy();
+    }
+
+    // Prepare data for the chart
+    const labels = inventoryForecastData.map(item => item.ingredient);
+    const currentStockData = inventoryForecastData.map(item => item.current_stock || 0);
+    const predictedUsageData = inventoryForecastData.map(item => item.total_usage || 0);
+
+    // Create the bar chart
+    inventoryForecastChart = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Current Stock',
+                    data: currentStockData,
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)', // Green
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
+                },
+                {
+                    label: 'Predicted Usage',
+                    data: predictedUsageData,
+                    backgroundColor: 'rgba(139, 69, 19, 0.7)', // Primary color (brown)
+                    borderColor: 'rgba(139, 69, 19, 1)',
+                    borderWidth: 1,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y.toFixed(2);
+                            const ingredient = inventoryForecastData[context.dataIndex];
+                            const unit = ingredient.unit || 'units';
+                            return `${label}: ${value} ${unit}`;
+                        },
+                        afterLabel: function(context) {
+                            const ingredient = inventoryForecastData[context.dataIndex];
+
+                            // Add warning if ingredient will run out soon
+                            if (ingredient.days_until_depleted !== null && ingredient.days_until_depleted !== undefined && ingredient.days_until_depleted !== 'N/A') {
+                                if (ingredient.days_until_depleted <= 0) {
+                                    return '⚠️ OUT OF STOCK';
+                                } else if (ingredient.days_until_depleted <= 3) {
+                                    return `⚠️ CRITICAL: ${ingredient.days_until_depleted} days remaining`;
+                                } else if (ingredient.days_until_depleted <= 7) {
+                                    return `⚠️ LOW: ${ingredient.days_until_depleted} days remaining`;
+                                } else {
+                                    return `${ingredient.days_until_depleted} days remaining`;
+                                }
+                            }
+                            return '';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1);
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Ingredients',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: {
+                            size: 10
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            }
+        }
+    });
+
+    console.log(`✅ Inventory forecast chart rendered from localStorage - showing ${inventoryForecastData.length} ingredients`);
 }
 
 function chartOptions(prefix = '') { return { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true }, tooltip: { callbacks: { label: function(context) { return (context.dataset.label || '') + `: ` + (context.parsed.y || 0).toFixed(2) + ' units'; } } } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Projected Stock' } } } }; }
