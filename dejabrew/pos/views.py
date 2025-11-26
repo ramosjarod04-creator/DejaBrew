@@ -2292,3 +2292,14 @@ def sales_monitoring_api(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+from django.http import HttpResponse
+from django.core.management import call_command
+
+def run_retrain(request):
+    call_command('retrain_live')
+    return HttpResponse("Retrain triggered!")
+
+def populate_inventory(request):
+    call_command('populate_inventory_transactions')
+    return HttpResponse("Inventory population triggered!")
