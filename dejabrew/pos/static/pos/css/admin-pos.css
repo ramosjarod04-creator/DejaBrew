@@ -78,11 +78,13 @@
   transition: all 0.2s ease;
 }
 .product-image {
+  position: relative;
   height: 170px;
   border-radius: 10px;
   background-size: cover;
   background-position: center;
   border: 1px solid #f1f2f4;
+  overflow: hidden;
 }
 .product-info .title {
   font-weight: 700;
@@ -137,36 +139,40 @@
 
 /* Out of Stock Watermark - Modern Design */
 .out-of-stock-watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, rgba(220, 38, 38, 0.95) 0%, rgba(185, 28, 28, 0.95) 100%);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 800;
-    font-size: 13px;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    z-index: 10;
-    pointer-events: none;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.95) 0%, rgba(185, 28, 28, 0.95) 100%) !important;
+    color: white !important;
+    padding: 12px 24px !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    z-index: 100 !important;
+    pointer-events: none !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     box-shadow:
         0 8px 32px rgba(220, 38, 38, 0.4),
         0 2px 8px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    animation: pulse-glow 2s ease-in-out infinite;
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    animation: pulse-glow 2s ease-in-out infinite !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .out-of-stock-watermark::before {
-    content: '✕';
-    display: block;
-    font-size: 24px;
-    margin-bottom: 4px;
-    opacity: 0.9;
+    content: '✕' !important;
+    display: block !important;
+    font-size: 24px !important;
+    margin-bottom: 4px !important;
+    opacity: 0.9 !important;
 }
 
 @keyframes pulse-glow {
