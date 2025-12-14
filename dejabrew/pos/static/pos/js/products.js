@@ -328,6 +328,9 @@ function renderProducts(products) {
         const recipeInfo = product.recipe && product.recipe.length > 0 ?
             `<br><small style="color: #666;">🧪 ${product.recipe.length} ingredient(s)</small>` : '';
 
+        const promoBadge = product.is_buy1take1 ?
+            `<br><span style="display: inline-block; margin-top: 4px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">🎁 BUY 1 TAKE 1</span>` : '';
+
         return `
             <tr data-product-id="${product.id}">
                 <td>
@@ -341,6 +344,7 @@ function renderProducts(products) {
                             <strong>${escapeHtml(product.name)}</strong>
                             ${product.description ? `<br><small style="color: #666;">${escapeHtml(product.description)}</small>` : ''}
                             ${recipeInfo}
+                            ${promoBadge}
                         </div>
                     </div>
                 </td>
@@ -535,6 +539,7 @@ function openEditModal(productId) {
     document.getElementById('productCategory').value = product.category;
     document.getElementById('productPrice').value = product.price;
     document.getElementById('productStock').value = product.stock;
+    document.getElementById('productBuy1Take1').checked = product.is_buy1take1 || false;
 
     // --- UPDATED: Set image preview and hidden URL input ---
     document.getElementById('imagePreview').src = product.image_url || placeholderImageUrl;
@@ -606,7 +611,8 @@ async function handleFormSubmit(e) {
     formData.append('category', document.getElementById('productCategory').value.trim() || 'General');
     formData.append('price', parseFloat(document.getElementById('productPrice').value) || 0);
     formData.append('stock', parseInt(document.getElementById('productStock').value) || 0);
-    
+    formData.append('is_buy1take1', document.getElementById('productBuy1Take1').checked ? 'true' : 'false');
+
     // 2. Append recipe data (as a JSON string)
     const ingredientRows = document.querySelectorAll('.ingredient-row');
     const recipe = [];

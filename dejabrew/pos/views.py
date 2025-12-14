@@ -841,6 +841,9 @@ def create_product(request):
             if image_url is None:
                 return JsonResponse({'success': False, 'error': 'Failed to save uploaded image'}, status=500)
 
+        # Get Buy 1 Take 1 promo status
+        is_buy1take1 = data.get('is_buy1take1', 'false').lower() == 'true'
+
         product = Item.objects.create(
             name=name,
             description=data.get('description', '').strip(),
@@ -848,7 +851,8 @@ def create_product(request):
             price=price,
             stock=stock,
             image_url=image_url,
-            recipe=recipe_data
+            recipe=recipe_data,
+            is_buy1take1=is_buy1take1
         )
         
         log_audit(request, request.user, "Create Product", f"Admin '{request.user.username}' created product '{name}'", category="inventory", severity="medium")
@@ -876,6 +880,7 @@ def update_product(request, product_id):
         product.price = float(data.get('price', product.price))
         product.stock = int(data.get('stock', product.stock))
         product.is_active = data.get('is_active', product.is_active)
+        product.is_buy1take1 = data.get('is_buy1take1', 'false').lower() == 'true'
 
         recipe_json = data.get('recipe', '[]')
         try:
