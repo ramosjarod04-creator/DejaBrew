@@ -6,7 +6,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        fields = ['id','name','description','price','stock','image_url', 'category', 'recipe', 'status']
+        fields = ['id','name','description','price','stock','image_url', 'category', 'recipe', 'status', 'is_buy1take1']
 
     def get_status(self, obj):
         return obj.get_status()

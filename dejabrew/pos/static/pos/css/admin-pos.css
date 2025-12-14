@@ -135,6 +135,53 @@
     background: #f9f9f9;
 }
 
+/* Out of Stock Watermark */
+.out-of-stock-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    background: rgba(229, 83, 83, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(229, 83, 83, 0.4);
+    letter-spacing: 1px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Buy 1 Take 1 Promo Badge */
+.promo-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 11px;
+    text-align: center;
+    box-shadow: 0 3px 10px rgba(238, 90, 36, 0.5);
+    letter-spacing: 0.5px;
+    z-index: 10;
+    pointer-events: none;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
 .cart-col {
   min-width: 0;
   position: sticky;
