@@ -135,23 +135,53 @@
     background: #f9f9f9;
 }
 
-/* Out of Stock Watermark */
+/* Out of Stock Watermark - Modern Design */
 .out-of-stock-watermark {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) rotate(-25deg);
-    background: rgba(229, 83, 83, 0.9);
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.95) 0%, rgba(185, 28, 28, 0.95) 100%);
     color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 13px;
     text-align: center;
-    box-shadow: 0 4px 12px rgba(229, 83, 83, 0.4);
-    letter-spacing: 1px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
     z-index: 10;
     pointer-events: none;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+    box-shadow:
+        0 8px 32px rgba(220, 38, 38, 0.4),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.out-of-stock-watermark::before {
+    content: '✕';
+    display: block;
+    font-size: 24px;
+    margin-bottom: 4px;
+    opacity: 0.9;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow:
+            0 8px 32px rgba(220, 38, 38, 0.4),
+            0 2px 8px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    50% {
+        box-shadow:
+            0 8px 32px rgba(220, 38, 38, 0.6),
+            0 4px 16px rgba(220, 38, 38, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
 }
 
 /* Buy 1 Take 1 Promo Badge */
