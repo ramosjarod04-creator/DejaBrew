@@ -66,6 +66,9 @@ class Item(models.Model):
     recipe = models.JSONField(default=list, blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
+    # Promotion Fields
+    is_buy1take1 = models.BooleanField(default=False, verbose_name="Buy 1 Take 1 Promo")
+
     # Soft Delete Fields
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
