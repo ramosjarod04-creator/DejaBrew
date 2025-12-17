@@ -120,4 +120,11 @@ REST_FRAMEWORK = {
 # ==================== CORS ====================
 CORS_ALLOW_ALL_ORIGINS = True
 
+# CSRF Trusted Origins - required for Django 4.0+
+# Add your development server URLs here with the scheme (http:// or https://)
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
