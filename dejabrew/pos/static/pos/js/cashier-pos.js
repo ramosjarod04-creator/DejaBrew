@@ -166,6 +166,7 @@ function setupEventListeners() {
     const clearCartBtn = document.getElementById('clearCartBtn');
     const discountInput = document.getElementById('discountInput');
     const applyDiscountBtn = document.getElementById('applyDiscountBtn');
+    const manualDiscountInput = document.getElementById('manualDiscountInput');
 
     if (searchInput) searchInput.addEventListener('input', handleSearch);
     if (processOrderBtn) processOrderBtn.addEventListener('click', processOrder);
@@ -173,6 +174,8 @@ function setupEventListeners() {
     if (discountInput) discountInput.addEventListener('input', updateCartTotals);
     // Admin auth required for discount
     if (applyDiscountBtn) applyDiscountBtn.addEventListener('click', requireAdminForDiscount);
+    // Manual discount input - updates totals dynamically
+    if (manualDiscountInput) manualDiscountInput.addEventListener('input', updateCartTotals);
 
     window.addEventListener('storage', (event) => {
         if (event.key === 'productUpdate') {
@@ -389,15 +392,39 @@ function renderProducts(products) {
             outOfStockReason = 'Out of Stock';
         }
         
+        // Determine effective price and promo badge
+        let effectivePrice = parseFloat(product.price);
+        let promoBadge = '';
+
+        if (product.is_promo_active && !isDisabled) {
+            if (product.promo_type === 'b1t1') {
+                promoBadge = '<span class="promo-badge" style="background: #ff4757; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; position: absolute; top: 8px; right: 8px; z-index: 10;">BUY 1 TAKE 1</span>';
+            } else if (product.promo_type === 'special_price' && product.promo_price) {
+                effectivePrice = parseFloat(product.promo_price);
+                promoBadge = '<span class="promo-badge" style="background: #ffa502; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; position: absolute; top: 8px; right: 8px; z-index: 10;">SALE</span>';
+            } else if (product.promo_type === 'percentage_off' && product.promo_discount_percent) {
+                effectivePrice = parseFloat(product.price) * (1 - parseFloat(product.promo_discount_percent) / 100);
+                promoBadge = `<span class="promo-badge" style="background: #ffa502; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; position: absolute; top: 8px; right: 8px; z-index: 10;">${product.promo_discount_percent}% OFF</span>`;
+            }
+        }
+
         return `
-        <div class="product-card ${isDisabled ? 'disabled' : ''}">
-            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}')"></div>
+        <div class="product-card ${isDisabled ? 'disabled' : ''}" style="position: relative;">
+            ${promoBadge}
+            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}'); position: relative;">
+                ${isDisabled ? '<div class="not-available-watermark" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 18px; text-align: center; padding: 10px; line-height: 1.2;">NOT<br>AVAILABLE</div>' : ''}
+            </div>
             <div class="product-info">
                 <div class="title" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
                 <div class="desc">${stockStatusText}</div>
             </div>
             <div class="product-footer">
-                <div class="price">₱${parseFloat(product.price).toFixed(2)}</div>
+                <div class="price">
+                    ${product.is_promo_active && (product.promo_type === 'special_price' || product.promo_type === 'percentage_off') && !isDisabled
+                        ? `<span style="text-decoration: line-through; color: #999; font-size: 12px;">₱${parseFloat(product.price).toFixed(2)}</span> <span style="color: #ff4757; font-weight: 700;">₱${effectivePrice.toFixed(2)}</span>`
+                        : `₱${effectivePrice.toFixed(2)}`
+                    }
+                </div>
                 ${isDisabled
                     ? `<span class="stock-badge" style="background-color: #e55353;">${outOfStockReason}</span>`
                     : `<button class="add-btn" onclick="addToCart(${product.id})" style="padding: 14px 20px; font-size: 16px; font-weight: 700; min-height: 48px;">Add</button>`
@@ -502,8 +529,12 @@ window.addToCart = function(productId) {
     if (!product) return showNotification('Product not found', 'error');
 
     const existingItem = cart.find(item => item.id === productId);
+
+    // Determine quantity to add (2 for B1T1, 1 for others)
+    const isBuyOneTakeOne = product.is_promo_active && product.promo_type === 'b1t1';
+    const quantityToAdd = isBuyOneTakeOne ? 2 : 1;
     const quantityInCart = existingItem ? existingItem.quantity : 0;
-    const newQuantity = quantityInCart + 1;
+    const newQuantity = quantityInCart + quantityToAdd;
 
     const hasStock = (product.stock || 0) > 0;
     const hasRecipe = product.recipe && product.recipe.length > 0;
@@ -521,21 +552,39 @@ window.addToCart = function(productId) {
         return showNotification('Product is out of stock', 'error');
     }
 
+    // Calculate effective price (considering promos)
+    let effectivePrice = parseFloat(product.price);
+    if (product.is_promo_active) {
+        if (product.promo_type === 'special_price' && product.promo_price) {
+            effectivePrice = parseFloat(product.promo_price);
+        } else if (product.promo_type === 'percentage_off' && product.promo_discount_percent) {
+            effectivePrice = parseFloat(product.price) * (1 - parseFloat(product.promo_discount_percent) / 100);
+        }
+        // For B1T1, price remains the same but quantity is 2
+    }
+
     if (existingItem) {
-        existingItem.quantity++;
+        existingItem.quantity += quantityToAdd;
     } else {
         cart.push({
             id: product.id,
             name: product.name,
-            price: parseFloat(product.price),
-            quantity: 1,
+            price: effectivePrice,
+            quantity: quantityToAdd,
             stock: product.stock,
             recipe: product.recipe || [],
-            addOns: []
+            addOns: [],
+            is_promo: product.is_promo_active || false,
+            promo_type: product.promo_type || 'none'
         });
     }
     updateCartDisplay();
-    showNotification(`${product.name} added to cart`, 'success');
+
+    if (isBuyOneTakeOne) {
+        showNotification(`${product.name} added to cart (Buy 1 Take 1 - 2 items added!)`, 'success');
+    } else {
+        showNotification(`${product.name} added to cart`, 'success');
+    }
 }
 
 window.updateQuantity = async function(productId, change) {
@@ -700,37 +749,44 @@ function updateCartDisplay() {
 
 function updateCartTotals() {
     let subtotal = 0;
-    
+
     cart.forEach(item => {
         const itemPrice = (item.price || 0) * item.quantity;
         const addOnsPrice = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0) * item.quantity;
         subtotal += itemPrice + addOnsPrice;
     });
-    
+
     const discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
+    const manualDiscountPercent = parseFloat(document.getElementById('manualDiscountInput')?.value) || 0;
     const discountType = window.currentDiscount?.type || 'regular';
-    
+
     let total = subtotal;
     let vatAmount = 0;
     let discountAmount = 0;
-    
+
     if (discountType === 'senior' || discountType === 'pwd') {
         // VAT-inclusive calculation
         const vatRate = 0.12;
         const vatableAmount = subtotal / (1 + vatRate);
         vatAmount = subtotal - vatableAmount;
-        
+
         // 20% discount on vatable amount
         discountAmount = vatableAmount * 0.20;
-        
+
         // Total = Subtotal - Discount - VAT
         total = subtotal - discountAmount - vatAmount;
     } else {
-        // Regular discount
+        // Regular discount (from PWD/Senior button if any)
         discountAmount = subtotal * (discountPercent / 100);
         total = subtotal - discountAmount;
     }
-    
+
+    // Apply manual discount on top (if any)
+    if (manualDiscountPercent > 0) {
+        const manualDiscountAmount = total * (manualDiscountPercent / 100);
+        total = total - manualDiscountAmount;
+    }
+
     document.getElementById('subtotalDisplay').textContent = `₱${subtotal.toFixed(2)}`;
     document.getElementById('totalDisplay').textContent = `₱${total.toFixed(2)}`;
 }
@@ -739,6 +795,9 @@ function clearCart() {
     cart = [];
     document.getElementById('discountInput').value = 0;
     document.getElementById('discountInput').disabled = false;
+    if (document.getElementById('manualDiscountInput')) {
+        document.getElementById('manualDiscountInput').value = 0;
+    }
     window.currentDiscount = null;
     updateCartDisplay();
 }
@@ -1189,6 +1248,9 @@ function closeReceiptPreview() {
     clearCart();
     window.currentDiscount = null;
     document.getElementById('discountInput').disabled = false;
+    if (document.getElementById('manualDiscountInput')) {
+        document.getElementById('manualDiscountInput').value = 0;
+    }
 
     // Only reload products - ingredients will be updated via storage event from server
     loadProducts();
@@ -1346,11 +1408,13 @@ async function processOrder() {
 
     const discountInfo = window.currentDiscount || { type: 'regular', id: '' };
     const diningOption = getSelectedDiningOption(); // Use button-based selection
+    const manualDiscountPercent = parseFloat(document.getElementById('manualDiscountInput')?.value) || 0;
 
     const orderData = {
         items: orderItems,
         total: parseFloat(document.getElementById('totalDisplay').textContent.replace('₱', '')),
         discount: parseFloat(document.getElementById('discountInput').value || 0),
+        manual_discount: manualDiscountPercent,
         discount_type: discountInfo.type,
         discount_id: discountInfo.id,
         payment_method: paymentMethod,

@@ -182,11 +182,15 @@
             <div class="cart-controls">
                 <!-- Discount Button (Requires Admin) -->
                 <button id="applyDiscountBtn" class="btn secondary" style="margin-bottom: 10px; width: 100%;">
-                    <i class="fa-solid fa-percent"></i> Apply Discount (Admin)
+                    <i class="fa-solid fa-percent"></i> PWD/Senior Discount (Admin)
                 </button>
 
-                <label>Discount (%)</label>
+                <label>PWD/Senior Discount (%)</label>
                 <input id="discountInput" type="number" value="0" min="0" max="100" readonly style="background: #f5f5f5;" />
+
+                <!-- NEW: Manual Discount Field -->
+                <label style="margin-top: 15px;">Manual Discount (%)</label>
+                <input id="manualDiscountInput" type="number" value="0" min="0" max="100" step="0.01" placeholder="Enter discount %" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;" />
 
                 <!-- Dining Option Buttons (Converted from Dropdown) -->
                 <label style="margin-top: 15px; margin-bottom: 8px;">Dining Option</label>

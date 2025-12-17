@@ -57,6 +57,13 @@ class Ingredient(models.Model):
 
 
 class Item(models.Model):
+    PROMO_TYPE_CHOICES = [
+        ('none', 'No Promo'),
+        ('b1t1', 'Buy 1 Take 1'),
+        ('percentage_off', 'Percentage Off'),
+        ('special_price', 'Special Price'),
+    ]
+
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     category = models.CharField(max_length=100, default='General', blank=True)
@@ -65,6 +72,12 @@ class Item(models.Model):
     image_url = models.CharField(max_length=500, blank=True)
     recipe = models.JSONField(default=list, blank=True, null=True)
     is_active = models.BooleanField(default=True)
+
+    # Promotional Fields
+    is_promo_active = models.BooleanField(default=False, verbose_name="Promo Active")
+    promo_type = models.CharField(max_length=20, choices=PROMO_TYPE_CHOICES, default='none', verbose_name="Promo Type")
+    promo_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Promo Price")
+    promo_discount_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Promo Discount %")
 
     # Soft Delete Fields
     is_archived = models.BooleanField(default=False)

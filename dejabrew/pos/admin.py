@@ -7,10 +7,40 @@ from .models import Item, Order, OrderItem, UserProfile, AuditTrail, Ingredient,
 # =======================
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'price', 'stock')
+    list_display = ('id', 'name', 'price', 'stock', 'is_promo_active', 'promo_type', 'get_effective_price')
     search_fields = ('name', 'description')
-    list_filter = ('stock',)
+    list_filter = ('stock', 'is_promo_active', 'promo_type', 'category')
     ordering = ('id',)
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'description', 'category', 'image_url', 'is_active')
+        }),
+        ('Pricing & Stock', {
+            'fields': ('price', 'stock')
+        }),
+        ('Recipe (For items made from ingredients)', {
+            'fields': ('recipe',),
+            'classes': ('collapse',)
+        }),
+        ('Promotional Settings', {
+            'fields': ('is_promo_active', 'promo_type', 'promo_price', 'promo_discount_percent'),
+            'description': 'Configure promotional pricing. For Buy 1 Take 1, just activate the promo. For Special Price, set promo_price. For Percentage Off, set promo_discount_percent.'
+        }),
+    )
+
+    def get_effective_price(self, obj):
+        if obj.is_promo_active:
+            if obj.promo_type == 'special_price' and obj.promo_price:
+                return f"₱{obj.promo_price:.2f} (PROMO)"
+            elif obj.promo_type == 'percentage_off' and obj.promo_discount_percent:
+                discounted = obj.price * (1 - obj.promo_discount_percent / 100)
+                return f"₱{discounted:.2f} (PROMO)"
+            elif obj.promo_type == 'b1t1':
+                return f"₱{obj.price:.2f} (B1T1)"
+        return f"₱{obj.price:.2f}"
+    get_effective_price.short_description = 'Effective Price'
+
     # Optional: Low-stock warning in list_display
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related(None)  # No relations needed
