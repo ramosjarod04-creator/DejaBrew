@@ -1,5 +1,7 @@
 // Admin POS JavaScript - With Ingredient Stock Validation & Deduction
 
+// Admin POS JavaScript - Fixed Rendering for Watermark & Promo Badge
+
 let cart = [];
 let allProducts = [];
 let productsByCategory = {};
@@ -9,53 +11,17 @@ let mobileCartToggleBtn;
 let mobileCartCloseBtn;
 let cartCol;
 
-// Debouncing variables for notifications
 let lastNotificationTime = {};
-const NOTIFICATION_DEBOUNCE_MS = 5000; // Only show same notification once every 5 seconds
+const NOTIFICATION_DEBOUNCE_MS = 5000;
 
-// --- PAYMENT MODAL VARIABLES ---
-let paymentModal;
-let paymentModalTitle;
-let paymentCustomerName;
-let paymentRefNum;
-let paymentModalCancel;
-let paymentModalConfirm;
-let paymentModalResolve = null;
-
-// --- ADD-ONS MODAL VARIABLES ---
-let addOnsModal;
-let addOnsProductName;
-let addOnsGrid;
-let addOnsSkipBtn;
-let addOnsContinueBtn;
-let selectedAddOns = [];
-let addOnsModalResolve = null;
-
-// --- DISCOUNT MODAL VARIABLES ---
-let discountModal;
-let discountTypeSelect;
-let discountIdInput;
-let discountIdGroup;
-let discountModalCancel;
-let discountModalApply;
-let discountModalResolve = null;
-
-// --- RECEIPT PREVIEW MODAL VARIABLES ---
-let receiptPreviewModal;
-let receiptPreviewClose;
-let receiptPreviewPrint;
-let receiptPreviewContent;
-// Store the current receipt HTML for printing
-let currentReceiptHTML = ""; 
-
-
-// --- UTILITY FUNCTIONS ---
+let paymentModal, paymentModalTitle, paymentCustomerName, paymentRefNum, paymentModalCancel, paymentModalConfirm, paymentModalResolve = null;
+let addOnsModal, addOnsProductName, addOnsGrid, addOnsSkipBtn, addOnsContinueBtn, selectedAddOns = [], addOnsModalResolve = null;
+let discountModal, discountTypeSelect, discountIdInput, discountIdGroup, discountModalCancel, discountModalApply, discountModalResolve = null;
+let receiptPreviewModal, receiptPreviewClose, receiptPreviewPrint, receiptPreviewContent, currentReceiptHTML = "";
 
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-           document.cookie.split('; ')
-               .find(row => row.startsWith('csrftoken='))
-               ?.split('=')[1] || '';
+           document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
 }
 
 function getParentCategory(specificCategory) {
@@ -81,17 +47,14 @@ function escapeJs(str) {
     return String(str).replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 }
 
-// Placeholder image data URL (gray square with "No Image" text)
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
 
 function showNotification(message, type = 'info', debounce = false) {
-    // Debounce check - prevent duplicate notifications
     if (debounce) {
         const now = Date.now();
         const key = `${message}-${type}`;
         if (lastNotificationTime[key] && (now - lastNotificationTime[key]) < NOTIFICATION_DEBOUNCE_MS) {
-            console.log(`Debounced notification: ${message}`);
-            return; // Skip this notification
+            return;
         }
         lastNotificationTime[key] = now;
     }
@@ -100,21 +63,10 @@ function showNotification(message, type = 'info', debounce = false) {
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
     Object.assign(notification.style, {
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        padding: '20px 32px',
-        borderRadius: '12px',
-        zIndex: '10000',
-        fontWeight: '600',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-        animation: 'fadeInScale 0.3s ease',
-        minWidth: '300px',
-        maxWidth: '500px',
-        fontSize: '16px',
-        background: '#fff',
-        textAlign: 'center'
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        padding: '20px 32px', borderRadius: '12px', zIndex: '10000', fontWeight: '600',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.25)', animation: 'fadeInScale 0.3s ease',
+        minWidth: '300px', maxWidth: '500px', fontSize: '16px', background: '#fff', textAlign: 'center'
     });
     const colors = {
         success: { bg: '#d4edda', color: '#155724', border: '#c3e6cb' },
@@ -126,23 +78,6 @@ function showNotification(message, type = 'info', debounce = false) {
     notification.style.color = color.color;
     notification.style.border = `2px solid ${color.border}`;
 
-    const styleId = 'notification-keyframes-admin';
-    if (!document.getElementById(styleId)) {
-        const styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        styleElement.textContent = `
-            @keyframes fadeInScale {
-                from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
-                to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            }
-            @keyframes fadeOutScale {
-                from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                to { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(styleElement);
-    }
-
     document.body.appendChild(notification);
     setTimeout(() => {
         notification.style.animation = 'fadeOutScale 0.3s ease forwards';
@@ -150,23 +85,18 @@ function showNotification(message, type = 'info', debounce = false) {
     }, 3000);
 }
 
-
-// --- INITIALIZATION & EVENT LISTENERS ---
-
 document.addEventListener('DOMContentLoaded', async function() {
     await loadIngredients();
     await loadProducts();
-    await loadAndRenderCategories(); // NEW: Load and render dynamic category buttons
-
-    // loadRecentOrders(); // REMOVED: Recent Orders panel no longer needed
+    await loadAndRenderCategories();
     setupEventListeners();
     updateCartDisplay();
     createAddOnsModal();
     setupDiscountModal();
     setupReceiptPreviewModal();
-    setupOrderCompleteModal(); // Initialize Order Complete Modal
-    setupButtonControls(); // NEW: Setup button-based controls
-    setupAdminPasswordModal(); // NEW: Setup admin authentication
+    setupOrderCompleteModal();
+    setupButtonControls();
+    setupAdminPasswordModal();
 });
 
 function setupEventListeners() {
@@ -180,30 +110,21 @@ function setupEventListeners() {
     if (processOrderBtn) processOrderBtn.addEventListener('click', processOrder);
     if (clearCartBtn) clearCartBtn.addEventListener('click', clearCart);
     if (discountInput) discountInput.addEventListener('input', updateCartTotals);
-    // Admin auth required for discount
     if (applyDiscountBtn) applyDiscountBtn.addEventListener('click', requireAdminForDiscount);
 
-    // Storage event listener - ONLY fires when OTHER tabs/windows update localStorage
-    // This allows cross-tab synchronization without creating infinite loops
     window.addEventListener('storage', (event) => {
         if (event.key === 'productUpdate') {
-            console.log('Storage event: productUpdate detected from another tab');
-            showNotification('Product list has been updated.', 'info', true); // Debounced
+            showNotification('Product list has been updated.', 'info', true);
             loadProducts();
         }
-        // When another tab updates ingredients, sync without triggering another save
         if (event.key === 'dejabrew_ingredients_v1') {
-            console.log('Storage event: ingredients updated from another tab');
-            // Load directly from localStorage to avoid API call and prevent save loop
             try {
                 const stored = localStorage.getItem('dejabrew_ingredients_v1');
                 if (stored) {
                     const parsedIngredients = JSON.parse(stored);
-                    // Only update if data actually changed
                     if (JSON.stringify(parsedIngredients) !== JSON.stringify(allIngredients)) {
                         allIngredients = parsedIngredients;
-                        console.log(`📦 Synced ${allIngredients.length} ingredients from another tab`);
-                        showNotification('Inventory has been updated.', 'info', true); // Debounced
+                        showNotification('Inventory has been updated.', 'info', true);
                         const currentCategory = document.getElementById('productsGrid')?.dataset.currentCategory || 'all';
                         showProductView(currentCategory);
                     }
@@ -218,12 +139,8 @@ function setupEventListeners() {
     mobileCartCloseBtn = document.getElementById('mobileCartClose');
     cartCol = document.querySelector('.cart-col');
 
-    if (mobileCartToggleBtn) {
-        mobileCartToggleBtn.addEventListener('click', toggleMobileCart);
-    }
-    if (mobileCartCloseBtn) {
-        mobileCartCloseBtn.addEventListener('click', toggleMobileCart);
-    }
+    if (mobileCartToggleBtn) mobileCartToggleBtn.addEventListener('click', toggleMobileCart);
+    if (mobileCartCloseBtn) mobileCartCloseBtn.addEventListener('click', toggleMobileCart);
 
     paymentModal = document.getElementById('paymentModal');
     paymentModalTitle = document.getElementById('paymentModalTitle');
@@ -241,55 +158,33 @@ function setupEventListeners() {
     }
 }
 
-
-// --- DATA LOADING & SAVING ---
-
 async function loadIngredients(skipSave = false) {
     try {
         const response = await fetch('/api/ingredients/');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-
         const newIngredients = data.results || data;
-
         if (!Array.isArray(newIngredients)) {
-             console.error("Fetched ingredients data is not an array:", data);
              allIngredients = [];
              return;
         }
-
-        console.log(`📦 Loaded ${newIngredients.length} ingredients from server.`);
-
-        // Only save if data changed and skipSave is false (prevents unnecessary storage events)
         if (!skipSave) {
             const dataChanged = JSON.stringify(newIngredients) !== JSON.stringify(allIngredients);
             if (dataChanged) {
                 allIngredients = newIngredients;
-                saveIngredients();
-                console.log('✓ Ingredients data changed, saved to localStorage');
+                localStorage.setItem('dejabrew_ingredients_v1', JSON.stringify(allIngredients));
             } else {
                 allIngredients = newIngredients;
-                console.log('✓ Ingredients data unchanged, skipping save');
             }
         } else {
             allIngredients = newIngredients;
         }
     } catch (error) {
         console.error("Error loading ingredients:", error);
-        showNotification("Could not load ingredients. Trying local cache.", "error");
         const stored = localStorage.getItem('dejabrew_ingredients_v1');
-        if (stored) {
-            allIngredients = JSON.parse(stored);
-            console.log(`📦 Loaded ${allIngredients.length} ingredients from local cache as fallback.`);
-        } else {
-            allIngredients = [];
-        }
+        if (stored) allIngredients = JSON.parse(stored);
+        else allIngredients = [];
     }
-}
-
-function saveIngredients() {
-    localStorage.setItem('dejabrew_ingredients_v1', JSON.stringify(allIngredients));
-    localStorage.setItem('inventoryUpdate', Date.now().toString());
 }
 
 async function loadProducts() {
@@ -313,17 +208,12 @@ async function loadAndRenderCategories() {
     try {
         const response = await fetch('/api/product-categories/');
         const data = await response.json();
-
         if (data.success && data.categories) {
             renderCategoryButtons(data.categories);
         } else {
-            console.error('Failed to load categories');
-            // Fallback to basic categories
             renderCategoryButtons(['Food', 'Drinks', 'Frappuccino']);
         }
     } catch (error) {
-        console.error('Error loading categories:', error);
-        // Fallback to basic categories
         renderCategoryButtons(['Food', 'Drinks', 'Frappuccino']);
     }
 }
@@ -331,25 +221,15 @@ async function loadAndRenderCategories() {
 function renderCategoryButtons(categories) {
     const container = document.getElementById('categoryButtonsContainer');
     if (!container) return;
-
-    // Clear existing buttons
     container.innerHTML = '';
-
-    // Add "All Products" button first
     const allBtn = createCategoryButton('All Products', 'all', true);
     container.appendChild(allBtn);
-
-    // Add category buttons from database
     categories.forEach(category => {
         const btn = createCategoryButton(category, category.toLowerCase(), false);
         container.appendChild(btn);
     });
-
-    // Add "Best Selling" button last with special styling
     const bestSellingBtn = createCategoryButton('🔥 Best Selling', 'bestselling', false, true);
     container.appendChild(bestSellingBtn);
-
-    // Re-setup button controls after rendering
     setupButtonControls();
 }
 
@@ -357,48 +237,10 @@ function createCategoryButton(label, categoryValue, isActive, isBestSelling = fa
     const btn = document.createElement('button');
     btn.className = 'category-btn' + (isActive ? ' active' : '');
     btn.dataset.category = categoryValue;
-
-    // Base styling
-    btn.style.cssText = `
-        flex: 1;
-        min-width: 120px;
-        padding: 12px;
-        border: 2px solid ${isActive ? '#8B4513' : (isBestSelling ? '#ffc107' : '#ddd')};
-        background: ${isActive ? '#8B4513' : (isBestSelling ? '#ffc107' : 'white')};
-        color: ${isActive ? 'white' : (isBestSelling ? '#333' : '#333')};
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    `;
-
+    btn.style.cssText = `flex: 1; min-width: 120px; padding: 12px; border: 2px solid ${isActive ? '#8B4513' : (isBestSelling ? '#ffc107' : '#ddd')}; background: ${isActive ? '#8B4513' : (isBestSelling ? '#ffc107' : 'white')}; color: ${isActive ? 'white' : (isBestSelling ? '#333' : '#333')}; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;`;
     btn.textContent = label;
-
     return btn;
 }
-
-async function loadRecentOrders() {
-    try {
-        const response = await fetch('/api/recent-orders/');
-        const data = await response.json();
-        const recentOrdersContainer = document.getElementById('recentOrders');
-        if (data.orders && data.orders.length > 0) {
-            recentOrdersContainer.innerHTML = data.orders.map(order => `
-                <div class="recent-order-item">
-                    <span>Order #${order.id} (${order.created_at}) - <em>${order.dining_option || 'Dine-In'}</em></span>
-                    <strong>₱${parseFloat(order.total).toFixed(2)}</strong>
-                </div>
-            `).join('');
-        } else {
-            recentOrdersContainer.innerHTML = '<p class="muted">No recent orders to display.</p>';
-        }
-    } catch (error) {
-        console.error('Error loading recent orders:', error);
-    }
-}
-
-
-// --- RENDERING & UI ---
 
 function groupProductsByCategory() {
     productsByCategory = { 'all': allProducts };
@@ -411,21 +253,6 @@ function groupProductsByCategory() {
     });
 }
 
-function populateCategorySelect() {
-    const categorySelect = document.getElementById('categorySelect');
-    if (!categorySelect) return;
-    
-    const parentCategories = [...new Set(allProducts.map(p => getParentCategory(p.category || 'General')))].sort();
-
-    categorySelect.innerHTML = '<option value="all">All Products</option>';
-    parentCategories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        categorySelect.appendChild(option);
-    });
-}
-
 function renderProducts(products) {
     const grid = document.getElementById('productsGrid');
     if (!grid) return;
@@ -433,7 +260,7 @@ function renderProducts(products) {
         grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">No products found.</p>';
         return;
     }
-
+    
     grid.innerHTML = products.map(product => {
         const hasStock = (product.stock || 0) > 0;
         const hasRecipe = product.recipe && product.recipe.length > 0;
@@ -460,9 +287,14 @@ function renderProducts(products) {
             outOfStockReason = 'Out of Stock';
         }
         
+        const isBuy1Take1 = product.is_buy1take1 === true;
+
         return `
         <div class="product-card ${isDisabled ? 'disabled' : ''}">
-            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}')"></div>
+            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}'); position: relative;">
+                ${isDisabled ? '<div class="out-of-stock-watermark">NOT AVAILABLE</div>' : ''}
+                ${isBuy1Take1 && !isDisabled ? '<div class="promo-badge">BUY 1 TAKE 1</div>' : ''}
+            </div>
             <div class="product-info">
                 <div class="title" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
                 <div class="desc">${stockStatusText}</div>
@@ -479,9 +311,6 @@ function renderProducts(products) {
     }).join('');
 }
 
-
-// --- INVENTORY & RECIPE LOGIC ---
-
 function calculateMaxRecipeStock(product) {
     if (!product.recipe || product.recipe.length === 0) {
         return { maxCanMake: 0, missingIngredient: null };
@@ -493,7 +322,6 @@ function calculateMaxRecipeStock(product) {
     for (const recipeItem of product.recipe) {
         const ingredient = allIngredients.find(ing => ing.name === recipeItem.ingredient);
         if (!ingredient) {
-            console.warn(`Ingredient "${recipeItem.ingredient}" for product "${product.name}" not found in inventory.`);
             return { maxCanMake: 0, missingIngredient: recipeItem.ingredient };
         }
         
@@ -533,21 +361,15 @@ function checkIfCanMakeProduct(product, quantity = 1) {
     return { canMake: true, missingIngredient: null };
 }
 
-
-// --- VIEW MANAGEMENT ---
-
 function handleSearch() {
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput.value.toLowerCase();
-
     const filteredProducts = allProducts.filter(p => p.name.toLowerCase().includes(searchTerm));
     renderProducts(filteredProducts);
 }
 
 window.showProductView = (category) => {
-    // Filter products by category (case-insensitive match)
     let products;
-
     if (category === 'all') {
         products = allProducts;
     } else {
@@ -555,7 +377,6 @@ window.showProductView = (category) => {
             p.category && p.category.toLowerCase() === category.toLowerCase()
         );
     }
-
     renderProducts(products);
     const grid = document.getElementById('productsGrid');
     if(grid) grid.dataset.currentCategory = category;
@@ -564,7 +385,6 @@ window.showProductView = (category) => {
 function showCategoryView() {
     renderProducts(productsByCategory['all'] || []);
 }
-
 
 // --- CART MANAGEMENT ---
 
@@ -811,6 +631,7 @@ function clearCart() {
     document.getElementById('discountInput').value = 0;
     document.getElementById('discountInput').disabled = false;
     window.currentDiscount = null;
+    window.discountVerified = false; // Reset verification status
     updateCartDisplay();
 }
 
@@ -956,10 +777,18 @@ function setupDiscountModal() {
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">Discount Type:</label>
                     <select id="discountTypeSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                        <option value="regular">Regular Discount</option>
+                        <option value="regular">Regular Discount (Custom %)</option>
                         <option value="senior">Senior Citizen (20% + VAT Exempt)</option>
                         <option value="pwd">PWD (20% + VAT Exempt)</option>
                     </select>
+                </div>
+                
+                <div id="customDiscountGroup" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Discount Percentage (%):</label>
+                    <input type="number" id="customDiscountInput" placeholder="Enter discount % (e.g., 15)" 
+                           min="0" max="100" value="0"
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    <small style="color: #666; display: block; margin-top: 5px;">Enter custom discount percentage (0-100%)</small>
                 </div>
                 
                 <div id="discountIdGroup" style="margin-bottom: 20px; display: none;">
@@ -983,6 +812,8 @@ function setupDiscountModal() {
     discountTypeSelect = document.getElementById('discountTypeSelect');
     discountIdInput = document.getElementById('discountIdInput');
     discountIdGroup = document.getElementById('discountIdGroup');
+    const customDiscountInput = document.getElementById('customDiscountInput');
+    const customDiscountGroup = document.getElementById('customDiscountGroup');
     discountModalCancel = document.getElementById('discountModalCancel');
     discountModalApply = document.getElementById('discountModalApply');
     
@@ -990,9 +821,11 @@ function setupDiscountModal() {
         const type = discountTypeSelect.value;
         if (type === 'senior' || type === 'pwd') {
             discountIdGroup.style.display = 'block';
+            customDiscountGroup.style.display = 'none';
             discountIdInput.required = true;
         } else {
             discountIdGroup.style.display = 'none';
+            customDiscountGroup.style.display = 'block';
             discountIdInput.required = false;
             discountIdInput.value = '';
         }
@@ -1014,6 +847,13 @@ function showDiscountModal() {
     discountTypeSelect.value = 'regular';
     discountIdInput.value = '';
     discountIdGroup.style.display = 'none';
+    
+    // Reset and show custom discount input
+    const customDiscountInput = document.getElementById('customDiscountInput');
+    const customDiscountGroup = document.getElementById('customDiscountGroup');
+    if (customDiscountInput) customDiscountInput.value = '0';
+    if (customDiscountGroup) customDiscountGroup.style.display = 'block';
+    
     discountModal.classList.add('is-visible');
 }
 
@@ -1024,9 +864,23 @@ function closeDiscountModal() {
 async function applyDiscount() {
     const discountType = discountTypeSelect.value;
     const discountId = discountIdInput.value.trim();
+    const customDiscountInput = document.getElementById('customDiscountInput');
+    const customDiscountValue = parseFloat(customDiscountInput.value) || 0;
 
+    // Validation for Senior/PWD
     if ((discountType === 'senior' || discountType === 'pwd') && !discountId) {
         showNotification('Please enter ID number for senior/PWD discount', 'error');
+        return;
+    }
+
+    // Validation for Regular discount
+    if (discountType === 'regular' && (customDiscountValue < 0 || customDiscountValue > 100)) {
+        showNotification('Please enter a valid discount percentage (0-100%)', 'error');
+        return;
+    }
+
+    if (discountType === 'regular' && customDiscountValue === 0) {
+        showNotification('Please enter a discount percentage greater than 0', 'error');
         return;
     }
 
@@ -1050,17 +904,22 @@ async function applyDiscount() {
         id: discountId
     };
 
+    window.discountVerified = true; // ✅ FIX: allow order processing
+
+
     const discountInput = document.getElementById('discountInput');
     if (discountType === 'senior' || discountType === 'pwd') {
         discountInput.value = '20';
         discountInput.disabled = true;
     } else {
-        discountInput.disabled = false;
+        // Regular discount - use custom value
+        discountInput.value = customDiscountValue.toString();
+        discountInput.disabled = true; // Lock it after applying
     }
 
     updateCartTotals();
 
-    let message = 'Regular discount applied';
+    let message = `Custom discount applied (${customDiscountValue}%)`;
     if (discountType === 'senior') message = 'Senior Citizen discount applied (20% + VAT Exempt)';
     if (discountType === 'pwd') message = 'PWD discount applied (20% + VAT Exempt)';
 
@@ -1327,6 +1186,13 @@ async function processOrder() {
         return showNotification('Cart is empty', 'error');
     }
 
+    // Check if discount is applied and requires admin verification
+    const discountValue = parseFloat(document.getElementById('discountInput').value || 0);
+    if (discountValue > 0 && !window.discountVerified) {
+        showNotification('Please verify admin credentials to apply discount', 'error');
+        return;
+    }
+
     // NOTE: Automatic add-ons prompt removed - users now use the "Modify" button on cart items
     // to add or change add-ons at any time before processing the order
 
@@ -1361,13 +1227,13 @@ async function processOrder() {
         }
     });
 
-    const discountInfo = window.currentDiscount || { type: 'regular', id: '' };
+    const discountInfo = window.currentDiscount || { type: 'custom', id: '' };
     const diningOption = getSelectedDiningOption(); // Use button-based selection
 
     const orderData = {
         items: orderItems,
         total: parseFloat(document.getElementById('totalDisplay').textContent.replace('₱', '')),
-        discount: parseFloat(document.getElementById('discountInput').value || 0),
+        discount: discountValue,
         discount_type: discountInfo.type,
         discount_id: discountInfo.id,
         payment_method: paymentMethod,
@@ -1739,8 +1605,7 @@ async function verifyAdminCredentials(username, password) {
 }
 
 async function requireAdminForDiscount() {
-    // First, show the discount modal to let user select discount type
-    // This will be handled by the applyDiscount function which now requires auth
+    // Show discount modal (which will handle admin auth after selection)
     showDiscountModal();
 }
 
