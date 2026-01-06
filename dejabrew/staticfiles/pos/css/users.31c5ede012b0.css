@@ -1,0 +1,47 @@
+/* ============================
+   USER MANAGEMENT PAGE - Specific Styles Only
+   Base layout (sidebar, nav, main-content) handled by base.css
+   ============================ */
+
+/* User management specific header */
+.user-management-header {
+    margin-bottom: 30px;
+}
+
+/* User management table specific styles */
+.users-table-container {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+/* User role badges - specific styling if different from base */
+.user-role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* User form specific styles */
+.user-form .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* User actions specific styles */
+.user-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Responsive adjustments for user management */
+@media (max-width: 768px) {
+    .user-form .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

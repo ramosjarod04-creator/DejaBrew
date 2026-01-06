@@ -1,139 +1,147 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Dashboard - Deja Brew{% endblock %}
-
-{% block extra_css %}
+{% extends 'base.html' %} {% load static %} {% block title %}Dashboard - Deja
+Brew{% endblock %} {% block extra_css %}
 <style>
-/* ==============================================
+  /* ==============================================
    RESPONSIVE DASHBOARD STYLES
    ============================================== */
 
-/* --- GLOBAL & RESET --- */
-* {
+  /* --- GLOBAL & RESET --- */
+  * {
     box-sizing: border-box;
-}
+  }
 
-/* --- ALERT MESSAGES --- */
-.alert {
+  /* --- ALERT MESSAGES --- */
+  .alert {
     padding: 12px 20px;
     margin-bottom: 20px;
     border-radius: 8px;
     font-weight: 500;
-}
-.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-.alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+  }
+  .alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  .alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+  .alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+  }
 
-/* --- DASHBOARD HEADER --- */
-.dashboard-header {
+  /* --- DASHBOARD HEADER --- */
+  .dashboard-header {
     margin: 20px 0;
     padding: 0 15px;
-}
+  }
 
-.dashboard-header h1 {
+  .dashboard-header h1 {
     font-size: 2rem;
     font-weight: 700;
     color: #333;
     margin-bottom: 8px;
-}
+  }
 
-.dashboard-header p {
+  .dashboard-header p {
     font-size: 1rem;
     color: #666;
     margin-bottom: 15px;
-}
+  }
 
-/* --- STATS GRID (CARDS) --- */
-.stats-grid {
+  /* --- STATS GRID (CARDS) --- */
+  .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
     padding: 0 15px;
-}
+  }
 
-.stat-card {
+  .stat-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
+  }
 
-.stat-card:hover {
+  .stat-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
-}
+  }
 
-.stat-card h3 {
+  .stat-card h3 {
     font-size: 1rem;
     font-weight: 600;
     color: #6b7280;
     margin-bottom: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
+  }
 
-.stat-card .stat-value {
+  .stat-card .stat-value {
     font-size: 2rem;
     font-weight: 700;
     color: #1f2937;
     margin: 10px 0;
-}
+  }
 
-.stat-card .stat-change {
+  .stat-card .stat-change {
     font-size: 0.875rem;
     color: #9ca3af;
     display: block;
     margin-top: 8px;
-}
+  }
 
-/* --- CHARTS SECTION --- */
-.charts-section {
+  /* --- CHARTS SECTION --- */
+  .charts-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
     padding: 0 15px;
-}
+  }
 
-.chart-container {
+  .chart-container {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.chart-container h2 {
+  .chart-container h2 {
     font-size: 1.25rem;
     font-weight: 700;
     color: #1f2937;
     margin-bottom: 8px;
-}
+  }
 
-.chart-container p {
+  .chart-container p {
     font-size: 0.875rem;
     color: #6b7280;
     margin-bottom: 20px;
-}
+  }
 
-.chart-container canvas {
+  .chart-container canvas {
     width: 100% !important;
     height: 300px !important;
-}
+  }
 
-/* --- CHART FILTERS --- */
-.chart-filters {
+  /* --- CHART FILTERS --- */
+  .chart-filters {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
     flex-wrap: wrap;
-}
+  }
 
-.chart-filters button {
+  .chart-filters button {
     background: #f3f4f6;
     border: 1px solid #d1d5db;
     padding: 8px 16px;
@@ -142,48 +150,48 @@
     font-weight: 500;
     color: #374151;
     transition: all 0.2s ease;
-}
+  }
 
-.chart-filters button:hover {
+  .chart-filters button:hover {
     background: #e5e7eb;
-}
+  }
 
-.chart-filters button.active {
-    background: #8B4513;
+  .chart-filters button.active {
+    background: #8b4513;
     color: white;
-    border-color: #8B4513;
-}
+    border-color: #8b4513;
+  }
 
-/* --- LONG CARD SECTION (Full Width) --- */
-.long-card-section {
+  /* --- LONG CARD SECTION (Full Width) --- */
+  .long-card-section {
     margin: 30px 15px;
-}
+  }
 
-/* --- FORECAST CONTROLS --- */
-.forecast-controls {
+  /* --- FORECAST CONTROLS --- */
+  .forecast-controls {
     margin-bottom: 20px;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
-}
+  }
 
-.forecast-controls label {
+  .forecast-controls label {
     font-weight: 500;
     color: #374151;
-}
+  }
 
-.forecast-controls input[type="text"],
-.forecast-controls input[type="number"] {
+  .forecast-controls input[type="text"],
+  .forecast-controls input[type="number"] {
     padding: 10px;
     border: 1px solid #d1d5db;
     border-radius: 6px;
     font-size: 0.875rem;
     width: 100%;
     max-width: 200px;
-}
+  }
 
-.forecast-controls button {
+  .forecast-controls button {
     background: #28a745;
     color: white;
     border: none;
@@ -192,25 +200,25 @@
     cursor: pointer;
     font-weight: 500;
     transition: background 0.2s ease;
-}
+  }
 
-.forecast-controls button:hover {
+  .forecast-controls button:hover {
     background: #218838;
-}
+  }
 
-#forecastError {
+  #forecastError {
     color: #dc2626;
     font-weight: 500;
     margin-top: 10px;
     font-size: 0.875rem;
-}
+  }
 
-/* --- CUSTOM DROPDOWN CONTAINER --- */
-#product_dropdown_container {
+  /* --- CUSTOM DROPDOWN CONTAINER --- */
+  #product_dropdown_container {
     position: relative;
-}
+  }
 
-#product_dropdown {
+  #product_dropdown {
     width: 100%;
     padding: 10px;
     border: 1px solid #d1d5db;
@@ -221,37 +229,37 @@
     transition: border-color 0.2s ease;
     max-height: 200px;
     overflow-y: auto;
-}
+  }
 
-#product_dropdown:focus {
+  #product_dropdown:focus {
     outline: none;
-    border-color: #8B4513;
-}
+    border-color: #8b4513;
+  }
 
-#product_dropdown.closed {
+  #product_dropdown.closed {
     size: 1 !important;
-}
+  }
 
-#product_dropdown.open {
+  #product_dropdown.open {
     size: 5 !important;
-}
+  }
 
-/* --- TABLE WRAPPERS --- */
-.table-wrapper-scrollable {
+  /* --- TABLE WRAPPERS --- */
+  .table-wrapper-scrollable {
     max-height: 400px;
     overflow-y: auto;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     margin-top: 15px;
-}
+  }
 
-.table-wrapper-scrollable table {
+  .table-wrapper-scrollable table {
     width: 100%;
     border-collapse: collapse;
     margin: 0;
-}
+  }
 
-.table-wrapper-scrollable table thead th {
+  .table-wrapper-scrollable table thead th {
     position: sticky;
     top: 0;
     background-color: #f9fafb;
@@ -261,20 +269,20 @@
     font-weight: 600;
     color: #374151;
     border-bottom: 2px solid #e5e7eb;
-}
+  }
 
-.table-wrapper-scrollable table tbody td {
+  .table-wrapper-scrollable table tbody td {
     padding: 12px 15px;
     border-bottom: 1px solid #f3f4f6;
     color: #1f2937;
-}
+  }
 
-.table-wrapper-scrollable table tbody tr:hover {
+  .table-wrapper-scrollable table tbody tr:hover {
     background-color: #f9fafb;
-}
+  }
 
-/* --- DATE FILTER FORM --- */
-.date-filter-form {
+  /* --- DATE FILTER FORM --- */
+  .date-filter-form {
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     padding: 20px;
@@ -285,23 +293,23 @@
     align-items: center;
     gap: 15px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.date-filter-form label {
+  .date-filter-form label {
     font-weight: 500;
     margin-right: 5px;
     color: #374151;
-}
+  }
 
-.date-filter-form input[type="date"] {
+  .date-filter-form input[type="date"] {
     padding: 10px;
     border: 1px solid #d1d5db;
     border-radius: 6px;
     font-size: 0.875rem;
-}
+  }
 
-.date-filter-form .btn,
-.date-filter-form .quick-filter-btn {
+  .date-filter-form .btn,
+  .date-filter-form .quick-filter-btn {
     padding: 10px 18px;
     border: none;
     border-radius: 6px;
@@ -310,60 +318,60 @@
     background-color: #28a745;
     color: white;
     transition: background 0.2s ease;
-}
+  }
 
-.date-filter-form .btn:hover {
+  .date-filter-form .btn:hover {
     background-color: #218838;
-}
+  }
 
-.date-filter-form .quick-filter-btn {
+  .date-filter-form .quick-filter-btn {
     background-color: #e5e7eb;
     color: #374151;
     border: 1px solid #d1d5db;
-}
+  }
 
-.date-filter-form .quick-filter-btn:hover {
+  .date-filter-form .quick-filter-btn:hover {
     background-color: #d1d5db;
-}
+  }
 
-.date-filter-form .quick-filter-btn.active {
-    background: #8B4513;
+  .date-filter-form .quick-filter-btn.active {
+    background: #8b4513;
     color: white;
-    border-color: #8B4513;
-}
+    border-color: #8b4513;
+  }
 
-/* --- TABLES SECTION --- */
-.tables-section {
+  /* --- TABLES SECTION --- */
+  .tables-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 20px;
     margin: 30px 15px;
-}
+  }
 
-.table-container {
+  .table-container {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.table-container h2 {
+  .table-container h2 {
     font-size: 1.25rem;
     font-weight: 700;
     color: #1f2937;
     margin-bottom: 8px;
-}
+  }
 
-.table-container p {
+  .table-container p {
     font-size: 0.875rem;
     color: #6b7280;
     margin-bottom: 20px;
-}
+  }
 
-/* --- ACTION BUTTON --- */
-.action-btn {
-    background: #8B4513;
+  /* --- ACTION BUTTON --- */
+  .action-btn {
+    background: #8b4513;
     color: white;
     border: none;
     padding: 6px 12px;
@@ -372,14 +380,14 @@
     font-size: 13px;
     font-weight: 500;
     transition: background-color 0.2s ease;
-}
+  }
 
-.action-btn:hover {
+  .action-btn:hover {
     background: #6d3410;
-}
+  }
 
-/* --- RECEIPT MODAL --- */
-.modal {
+  /* --- RECEIPT MODAL --- */
+  .modal {
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.6);
@@ -390,14 +398,14 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
-}
+  }
 
-.modal.visible {
+  .modal.visible {
     opacity: 1;
     visibility: visible;
-}
+  }
 
-.modal-card {
+  .modal-card {
     background-color: #fff;
     padding: 0;
     border-radius: 12px;
@@ -409,13 +417,13 @@
     transition: transform 0.3s ease;
     max-height: 90vh;
     overflow-y: auto;
-}
+  }
 
-.modal.visible .modal-card {
+  .modal.visible .modal-card {
     transform: scale(1);
-}
+  }
 
-.modal-close {
+  .modal-close {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -433,105 +441,105 @@
     align-items: center;
     justify-content: center;
     transition: background 0.2s ease;
-}
+  }
 
-.modal-close:hover {
+  .modal-close:hover {
     background: #f3f4f6;
     color: #1f2937;
-}
+  }
 
-/* --- RECEIPT CONTAINER --- */
-.receipt-container {
+  /* --- RECEIPT CONTAINER --- */
+  .receipt-container {
     width: 100%;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Courier New", Courier, monospace;
     font-size: 13px;
     color: #000;
     padding: 20px;
-}
+  }
 
-.receipt-header {
+  .receipt-header {
     text-align: center;
     margin-bottom: 10px;
-}
+  }
 
-.receipt-header h3 {
+  .receipt-header h3 {
     margin: 0;
     font-size: 18px;
     font-weight: bold;
-}
+  }
 
-.receipt-header p {
+  .receipt-header p {
     margin: 2px 0;
     font-size: 12px;
-}
+  }
 
-.receipt-divider {
+  .receipt-divider {
     border-top: 1px dashed #000;
     margin: 10px 0;
-}
+  }
 
-.receipt-info {
+  .receipt-info {
     font-size: 13px;
     margin-bottom: 5px;
     margin-top: 2px;
-}
+  }
 
-.receipt-item {
+  .receipt-item {
     display: flex;
     justify-content: space-between;
     margin-bottom: 3px;
-}
+  }
 
-.receipt-item .item-name {
+  .receipt-item .item-name {
     width: 180px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
+  }
 
-.receipt-item .item-qty {
+  .receipt-item .item-qty {
     width: 40px;
     text-align: right;
     padding-right: 5px;
-}
+  }
 
-.receipt-item .item-price {
+  .receipt-item .item-price {
     width: 70px;
     text-align: right;
-}
+  }
 
-.receipt-totals {
+  .receipt-totals {
     margin-top: 10px;
-}
+  }
 
-.receipt-totals .totals-row {
+  .receipt-totals .totals-row {
     display: flex;
     justify-content: space-between;
     font-size: 14px;
     margin-bottom: 3px;
-}
+  }
 
-.receipt-totals .totals-row.total {
+  .receipt-totals .totals-row.total {
     font-weight: bold;
     font-size: 16px;
     border-top: 1px dashed #000;
     padding-top: 5px;
     margin-top: 5px;
-}
+  }
 
-.receipt-footer {
+  .receipt-footer {
     text-align: center;
     margin-top: 15px;
     font-size: 12px;
-}
+  }
 
-.totals-row.highlight {
+  .totals-row.highlight {
     background-color: #f0f0f0;
     padding: 3px 5px;
     margin: 5px -5px;
-}
+  }
 
-.discount-badge {
+  .discount-badge {
     display: inline-block;
     background: #ff9800;
     color: white;
@@ -540,730 +548,917 @@
     font-size: 10px;
     font-weight: bold;
     margin-left: 5px;
-}
+  }
 
-/* ==============================================
+  /* ==============================================
    RESPONSIVE BREAKPOINTS
    ============================================== */
 
-/* --- TABLET (768px and below) --- */
-@media (max-width: 768px) {
+  /* --- TABLET (768px and below) --- */
+  @media (max-width: 768px) {
     .dashboard-header h1 {
-        font-size: 1.75rem;
+      font-size: 1.75rem;
     }
 
     .stats-grid {
-        grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
 
     .charts-section {
-        grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
 
     .tables-section {
-        grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
 
     .chart-container canvas {
-        height: 250px !important;
+      height: 250px !important;
     }
 
     .date-filter-form {
-        flex-direction: column;
-        align-items: stretch;
+      flex-direction: column;
+      align-items: stretch;
     }
 
     .date-filter-form input[type="date"],
     .date-filter-form .btn,
     .date-filter-form .quick-filter-btn {
-        width: 100%;
+      width: 100%;
     }
-}
+  }
 
-/* --- MOBILE (480px and below) --- */
-@media (max-width: 480px) {
+  /* --- MOBILE (480px and below) --- */
+  @media (max-width: 480px) {
     .dashboard-header {
-        padding: 0 10px;
+      padding: 0 10px;
     }
 
     .dashboard-header h1 {
-        font-size: 1.5rem;
+      font-size: 1.5rem;
     }
 
     .dashboard-header p {
-        font-size: 0.875rem;
+      font-size: 0.875rem;
     }
 
     .stats-grid,
     .charts-section,
     .long-card-section,
     .tables-section {
-        padding: 0 10px;
+      padding: 0 10px;
     }
 
     .stat-card,
     .chart-container,
     .table-container {
-        padding: 16px;
+      padding: 16px;
     }
 
     .stat-card .stat-value {
-        font-size: 1.75rem;
+      font-size: 1.75rem;
     }
 
     .chart-container h2,
     .table-container h2 {
-        font-size: 1.125rem;
+      font-size: 1.125rem;
     }
 
     .table-wrapper-scrollable table thead th,
     .table-wrapper-scrollable table tbody td {
-        padding: 8px 10px;
-        font-size: 0.875rem;
+      padding: 8px 10px;
+      font-size: 0.875rem;
     }
 
     .modal-card {
-        width: 95%;
+      width: 95%;
     }
-}
+  }
 
-/* --- LARGE DESKTOP (1200px and above) --- */
-@media (min-width: 1200px) {
+  /* --- LARGE DESKTOP (1200px and above) --- */
+  @media (min-width: 1200px) {
     .dashboard-header,
     .stats-grid,
     .charts-section,
     .long-card-section,
     .date-filter-form,
     .tables-section {
-        max-width: 1400px;
-        margin-left: auto;
-        margin-right: auto;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
     }
-}
+  }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="dashboard-header">
-    <h1>Dashboard</h1>
-    <p>Welcome back, Admin! Here's what's happening at Deja Brew.</p>
+  <h1>Dashboard</h1>
+  <p>Welcome back, Admin! Here's what's happening at Deja Brew.</p>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+  {% if messages %} {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %} {% endif %}
 </div>
 
 <div class="stats-grid">
-    <div class="stat-card">
-        <h3 id="totalSalesLabel">Total Sales</h3>
-        <p class="stat-value" style="color: #28a745;">₱{{ total_revenue|floatformat:2 }}</p>
-        <span class="stat-change">{{ total_sales_count }} transactions</span>
-    </div>
+  <div class="stat-card">
+    <h3 id="totalSalesLabel">Total Sales</h3>
+    <p class="stat-value" style="color: #28a745">
+      ₱{{ total_revenue|floatformat:2 }}
+    </p>
+    <span class="stat-change">{{ total_sales_count }} transactions</span>
+  </div>
 
-    <div class="stat-card">
-        <h3>Top Products (Highest to Lowest Sales)</h3>
-        {% if top_products %}
-            <div style="max-height: 120px; overflow-y: auto; padding-right: 8px;">
-                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.6;">
-                    {% for product in top_products %}
-                        <li style="padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem;">
-                            <strong style="color: #333;">{{ forloop.counter }}. {{ product.item__name }} ({{ product.total_qty }})</strong>
-                            <br>
-                            <span style="color: #28a745; font-weight: 600;">₱{{ product.total_value|floatformat:2 }}</span>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% else %}
-            <p class="stat-value" style="margin: 0;">No sales</p>
-            <span class="stat-change">No sales in this period</span>
-        {% endif %}
+  <div class="stat-card">
+    <h3>Top Products (Highest to Lowest Sales)</h3>
+    {% if top_products %}
+    <div style="max-height: 120px; overflow-y: auto; padding-right: 8px">
+      <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.6">
+        {% for product in top_products %}
+        <li
+          style="
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+          "
+        >
+          <strong style="color: #333"
+            >{{ forloop.counter }}. {{ product.item__name }} {{
+            product.total_qty }}</strong
+          >
+          <br />
+          <span style="color: #28a745; font-weight: 600"
+            >₱{{ product.total_value|floatformat:2 }}</span
+          >
+        </li>
+        {% endfor %}
+      </ul>
     </div>
+    {% else %}
+    <p class="stat-value" style="margin: 0">No sales</p>
+    <span class="stat-change">No sales in this period</span>
+    {% endif %}
+  </div>
 
-    <div class="stat-card">
-        <h3>Low Stock Ingredients</h3>
-        {% if low_stock_ingredients_list %}
-            <div style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
-                <div style="margin-bottom: 15px;">
-                    <div style="font-size: 0.85rem; font-weight: 600; color: #dc2626; margin-bottom: 8px;">⚠️ Lowest Stock:</div>
-                    {% for ing in low_stock_ingredients_list|slice:":3" %}
-                        <div style="padding: 8px 10px; background: #fee2e2; border-radius: 5px; margin-bottom: 6px; border-left: 3px solid #dc2626;">
-                            <div style="font-weight: 600; color: #991b1b; font-size: 0.9rem;">{{ ing.name }}</div>
-                            <div style="font-size: 0.8rem; color: #7f1d1d; margin-top: 2px;">Stock: {{ ing.stock }}{{ ing.unit }}</div>
-                        </div>
-                    {% endfor %}
-                </div>
-                {% if low_stock_ingredients_list|length > 3 %}
-                    <div style="margin-top: 15px;">
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #059669; margin-bottom: 8px;">✓ Highest Stock (Low Stock Items):</div>
-                        {% for ing in low_stock_ingredients_list|slice:"-3:" reversed %}
-                            <div style="padding: 8px 10px; background: #d1fae5; border-radius: 5px; margin-bottom: 6px; border-left: 3px solid #059669;">
-                                <div style="font-weight: 600; color: #065f46; font-size: 0.9rem;">{{ ing.name }}</div>
-                                <div style="font-size: 0.8rem; color: #064e3b; margin-top: 2px;">Stock: {{ ing.stock }}{{ ing.unit }}</div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-        {% else %}
-            <p class="stat-value" style="margin: 0;">0</p>
-            <span class="stat-change">All ingredients stocked</span>
-        {% endif %}
+  <div class="stat-card">
+    <h3>Low Stock Ingredients</h3>
+    {% if low_stock_ingredients_list %}
+    <div style="max-height: 280px; overflow-y: auto; padding-right: 8px">
+      <div style="margin-bottom: 15px">
+        <div
+          style="
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #dc2626;
+            margin-bottom: 8px;
+          "
+        >
+          ⚠️ Lowest Stock:
+        </div>
+        {% for ing in low_stock_ingredients_list|slice:":3" %}
+        <div
+          style="
+            padding: 8px 10px;
+            background: #fee2e2;
+            border-radius: 5px;
+            margin-bottom: 6px;
+            border-left: 3px solid #dc2626;
+          "
+        >
+          <div style="font-weight: 600; color: #991b1b; font-size: 0.9rem">
+            {{ ing.name }}
+          </div>
+          <div style="font-size: 0.8rem; color: #7f1d1d; margin-top: 2px">
+            Stock: {{ ing.stock }}{{ ing.unit }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if low_stock_ingredients_list|length > 3 %}
+      <div style="margin-top: 15px">
+        <div
+          style="
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #059669;
+            margin-bottom: 8px;
+          "
+        >
+          ✓ Highest Stock (Low Stock Items):
+        </div>
+        {% for ing in low_stock_ingredients_list|slice:"-3:" reversed %}
+        <div
+          style="
+            padding: 8px 10px;
+            background: #d1fae5;
+            border-radius: 5px;
+            margin-bottom: 6px;
+            border-left: 3px solid #059669;
+          "
+        >
+          <div style="font-weight: 600; color: #065f46; font-size: 0.9rem">
+            {{ ing.name }}
+          </div>
+          <div style="font-size: 0.8rem; color: #064e3b; margin-top: 2px">
+            Stock: {{ ing.stock }}{{ ing.unit }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
+    {% else %}
+    <p class="stat-value" style="margin: 0">0</p>
+    <span class="stat-change">All ingredients stocked</span>
+    {% endif %}
+  </div>
 </div>
 
 <!-- ✅ TASK 1: ML TRAINING METRICS DISPLAY -->
-<div class="long-card-section" style="background: linear-gradient(135deg, #1f2937 0%, #1f2937 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h2 style="color: white; margin-bottom: 15px;"> Machine Learning Model Performance</h2>
-    <div id="mlMetricsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-            <div style="font-size: 0.9rem; opacity: 0.9;">Average Test Accuracy</div>
-            <div id="avgAccuracy" style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;">--</div>
-        </div>
-        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-            <div style="font-size: 0.9rem; opacity: 0.9;">Average R² Score</div>
-            <div id="avgR2" style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;">--</div>
-        </div>
-        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-            <div style="font-size: 0.9rem; opacity: 0.9;">Total Models Trained</div>
-            <div id="totalModels" style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;">--</div>
-        </div>
-        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-            <div style="font-size: 0.9rem; opacity: 0.9;">Last Training Date</div>
-            <div id="lastTraining" style="font-size: 1.2rem; font-weight: bold; margin-top: 10px;">--</div>
-        </div>
+<div
+  class="long-card-section"
+  style="
+    background: linear-gradient(135deg, #1c2e4a 0%, #1c2e4a 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  "
+>
+  <h2 style="color: white; margin-bottom: 15px">
+    Machine Learning Model Performance
+  </h2>
+  <div
+    id="mlMetricsContainer"
+    style="
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    "
+  >
+    <div
+      style="
+        text-align: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      "
+    >
+      <div style="font-size: 0.9rem; opacity: 0.9">Average Test Accuracy</div>
+      <div
+        id="avgAccuracy"
+        style="font-size: 2.5rem; font-weight: bold; margin-top: 5px"
+      >
+        --
+      </div>
     </div>
+    <div
+      style="
+        text-align: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      "
+    >
+      <div style="font-size: 0.9rem; opacity: 0.9">Average R² Score</div>
+      <div
+        id="avgR2"
+        style="font-size: 2.5rem; font-weight: bold; margin-top: 5px"
+      >
+        --
+      </div>
+    </div>
+    <div
+      style="
+        text-align: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      "
+    >
+      <div style="font-size: 0.9rem; opacity: 0.9">Total Models Trained</div>
+      <div
+        id="totalModels"
+        style="font-size: 2.5rem; font-weight: bold; margin-top: 5px"
+      >
+        --
+      </div>
+    </div>
+    <div
+      style="
+        text-align: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      "
+    >
+      <div style="font-size: 0.9rem; opacity: 0.9">Last Training Date</div>
+      <div
+        id="lastTraining"
+        style="font-size: 1.2rem; font-weight: bold; margin-top: 10px"
+      >
+        --
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="charts-section">
-    <!-- ✅ TASK 2: MERGED CHART - Historical + Forecast -->
-    <div class="chart-container">
-        <h2>Sales Trend: Historical & Forecast</h2>
-        <p>Historical sales data with ML predictions</p>
-        <div class="chart-filters" id="salesForecastFilter">
-            <button class="active" data-period="daily">Daily</button>
-            <button data-period="weekly">Weekly</button>
-            <button data-period="monthly">Monthly</button>
-        </div>
-        <canvas id="combinedSalesChart"></canvas>
+  <!-- ✅ TASK 2: MERGED CHART - Historical + Forecast -->
+  <div class="chart-container">
+    <h2>Sales Trend: Historical & Forecast</h2>
+    <p>Historical sales data with ML predictions</p>
+    <div class="chart-filters" id="salesForecastFilter">
+      <button class="active" data-period="daily">Daily</button>
+      <button data-period="weekly">Weekly</button>
+      <button data-period="monthly">Monthly</button>
     </div>
+    <canvas id="combinedSalesChart"></canvas>
+  </div>
 </div>
 
 <div class="long-card-section">
-    <div class="chart-container">
-        <h2>Sales & Inventory Forecast</h2>
-        <p>Predict sales and ingredient depletion for any product</p>
+  <div class="chart-container">
+    <h2>Sales & Inventory Forecast</h2>
+    <p>Predict sales and ingredient depletion for any product</p>
 
-        <!-- FORECAST CONTROLS -->
-        <div class="forecast-controls">
-            <label>
-                Product Name:
-                <input type="text" id="product_name_input" placeholder="e.g., Latte, Cappuccino" style="width: 100%; max-width: 250px;" />
-            </label>
-            <label>
-                Days to Forecast:
-                <input type="number" id="days_input" value="7" min="1" max="90" style="width: 100px;" />
-            </label>
-            <button id="runForecastButton">Run Forecast</button>
-        </div>
-
-        <!-- ERROR MESSAGE -->
-        <div id="forecastError"></div>
-
-        <!-- SALES FORECAST CHART -->
-        <div style="margin: 20px 0;">
-            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Sales Forecast Chart</h3>
-            <div style="position: relative; height: 250px;">
-                <canvas id="specificProductChart"></canvas>
-            </div>
-        </div>
-
-        <!-- SALES FORECAST TABLE -->
-        <div class="table-wrapper-scrollable" style="margin-bottom: 20px;">
-            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Predicted Sales</h3>
-            <table id="specificForecastTable">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Predicted Sales</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="2" style="text-align: center;">Run a forecast to see results.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- INVENTORY DEPLETION TABLE -->
-        <div class="table-wrapper-scrollable">
-            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Inventory Depletion Forecast</h3>
-            <table id="inventoryForecastTable">
-                <thead>
-                    <tr>
-                        <th>Ingredient</th>
-                        <th>Current Stock</th>
-                        <th>Total Usage</th>
-                        <th>Days Until Depleted</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="5" style="text-align: center;">Run a forecast to see inventory depletion.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- ✅ TASK 3: INVENTORY BAR CHART (Stock vs Usage) -->
-        <div style="margin-top: 30px;">
-            <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Inventory Overview: Current Stock vs Predicted Usage</h3>
-            <div style="position: relative; height: 400px;">
-                <canvas id="inventoryBarChart"></canvas>
-            </div>
-        </div>
+    <!-- FORECAST CONTROLS -->
+    <div class="forecast-controls">
+      <label>
+        Product Name:
+        <input
+          type="text"
+          id="product_name_input"
+          placeholder="e.g., Latte, Cappuccino"
+          style="width: 100%; max-width: 250px"
+        />
+      </label>
+      <label>
+        Days to Forecast:
+        <input
+          type="number"
+          id="days_input"
+          value="7"
+          min="1"
+          max="90"
+          style="width: 100px"
+        />
+      </label>
+      <button id="runForecastButton">Run Forecast</button>
     </div>
+
+    <!-- ERROR MESSAGE -->
+    <div id="forecastError"></div>
+
+    <!-- SALES FORECAST CHART -->
+    <div style="margin: 20px 0">
+      <h3 style="font-size: 1.1rem; margin-bottom: 10px">
+        Sales Forecast Chart
+      </h3>
+      <div style="position: relative; height: 250px">
+        <canvas id="specificProductChart"></canvas>
+      </div>
+    </div>
+
+    <!-- SALES FORECAST TABLE -->
+    <div class="table-wrapper-scrollable" style="margin-bottom: 20px">
+      <h3 style="font-size: 1.1rem; margin-bottom: 10px">Predicted Sales</h3>
+      <table id="specificForecastTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Predicted Sales</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="2" style="text-align: center">
+              Run a forecast to see results.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- INVENTORY DEPLETION TABLE -->
+    <div class="table-wrapper-scrollable">
+      <h3 style="font-size: 1.1rem; margin-bottom: 10px">
+        Inventory Depletion Forecast
+      </h3>
+      <table id="inventoryForecastTable">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th>Current Stock</th>
+            <th>Total Usage</th>
+            <th>Days Until Depleted</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5" style="text-align: center">
+              Run a forecast to see inventory depletion.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ✅ TASK 3: INVENTORY BAR CHART (Stock vs Usage) -->
+    <div style="margin-top: 30px">
+      <h3 style="font-size: 1.1rem; margin-bottom: 10px">
+        Inventory Overview: Current Stock vs Predicted Usage
+      </h3>
+      <div style="position: relative; height: 400px">
+        <canvas id="inventoryBarChart"></canvas>
+      </div>
+    </div>
+  </div>
 </div>
 
-<form method="GET" action="{% url 'dashboard' %}" class="date-filter-form" id="dateFilterForm">
-    <label for="start_date">From:</label>
-    <input type="date" id="start_date" name="start_date" value="{{ start_date_str }}">
+<form
+  method="GET"
+  action="{% url 'dashboard' %}"
+  class="date-filter-form"
+  id="dateFilterForm"
+>
+  <label for="start_date">From:</label>
+  <input
+    type="date"
+    id="start_date"
+    name="start_date"
+    value="{{ start_date_str }}"
+  />
 
-    <label for="end_date">To:</label>
-    <input type="date" id="end_date" name="end_date" value="{{ end_date_str }}">
+  <label for="end_date">To:</label>
+  <input type="date" id="end_date" name="end_date" value="{{ end_date_str }}" />
 
-    <button type="submit" class="btn">Filter</button>
+  <button type="submit" class="btn">Filter</button>
 
-    <button type="button" class="quick-filter-btn" id="filterToday">Today</button>
-    <button type="button" class="quick-filter-btn" id="filterWeek">This Week</button>
-    <button type="button" class="quick-filter-btn" id="filterMonth">This Month</button>
+  <button type="button" class="quick-filter-btn" id="filterToday">Today</button>
+  <button type="button" class="quick-filter-btn" id="filterWeek">
+    This Week
+  </button>
+  <button type="button" class="quick-filter-btn" id="filterMonth">
+    This Month
+  </button>
 </form>
 
 <div class="tables-section">
-    <div class="table-container">
-        <h2>Recent Transactions</h2>
-        <p>Latest 50 sales activities (not date-filtered)</p>
-        <div class="table-wrapper-scrollable">
-            <table id="recentTransactionsTable">
-                <thead>
-                    <tr>
-                        <th>Order #</th>
-                        <th>Time</th>
-                        <th>Cashier</th>
-                        <th>Customer</th>
-                        <th>Service Type</th>
-                        <th>Amount</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="recentTransactionsBody">
-                    {% if recent_transactions %}
-                        {% for order in recent_transactions %}
-                        <tr>
-                            <td>#{{ order.id }}</td>
-                            <td>{{ order.created_at|date:"h:i A" }}</td>
-                            <td>{{ order.cashier.username|default:"Unknown" }}</td>
-                            <td>{{ order.customer_name|default:"Walk-in" }}</td>
-                            <td>{{ order.dining_option|default:"Dine-In"|title }}</td>
-                            <td>₱{{ order.total|floatformat:2 }}</td>
-                            <td>
-                                <button class="action-btn view-receipt-btn" data-order-id="{{ order.id }}">View</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="7" style="text-align: center;">No transactions yet</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
+  <div class="table-container">
+    <h2>Recent Transactions</h2>
+    <p>Latest 50 sales activities (not date-filtered)</p>
+    <div class="table-wrapper-scrollable">
+      <table id="recentTransactionsTable">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Time</th>
+            <th>Cashier</th>
+            <th>Customer</th>
+            <th>Service Type</th>
+            <th>Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="recentTransactionsBody">
+          {% if recent_transactions %} {% for order in recent_transactions %}
+          <tr>
+            <td>#{{ order.id }}</td>
+            <td>{{ order.created_at|date:"h:i A" }}</td>
+            <td>{{ order.cashier.username|default:"Unknown" }}</td>
+            <td>{{ order.customer_name|default:"Walk-in" }}</td>
+            <td>{{ order.dining_option|default:"Dine-In"|title }}</td>
+            <td>₱{{ order.total|floatformat:2 }}</td>
+            <td>
+              <button
+                class="action-btn view-receipt-btn"
+                data-order-id="{{ order.id }}"
+              >
+                View
+              </button>
+            </td>
+          </tr>
+          {% endfor %} {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center">No transactions yet</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
-    <div class="table-container">
-        <h2>Staff Sales Report</h2>
-        <p>Sales performance by staff for the selected period</p>
-        <div class="table-wrapper-scrollable">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Staff Username</th>
-                        <th>Orders Processed</th>
-                        <th>Total Revenue</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for staff in all_staff_sales %}
-                    <tr>
-                        <td><strong>{{ staff.cashier__username }}</strong></td>
-                        <td>{{ staff.total_orders }}</td>
-                        <td>₱{{ staff.total_sales|floatformat:2 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" style="text-align: center;">No staff sales found for this period.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  </div>
+  <div class="table-container">
+    <h2>Staff Sales Report</h2>
+    <p>Sales performance by staff for the selected period</p>
+    <div class="table-wrapper-scrollable">
+      <table>
+        <thead>
+          <tr>
+            <th>Staff Username</th>
+            <th>Orders Processed</th>
+            <th>Total Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for staff in all_staff_sales %}
+          <tr>
+            <td><strong>{{ staff.cashier__username }}</strong></td>
+            <td>{{ staff.total_orders }}</td>
+            <td>₱{{ staff.total_sales|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" style="text-align: center">
+              No staff sales found for this period.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>
 
 <!-- Receipt Modal -->
 <div id="receiptModal" class="modal">
-    <div class="modal-card">
-        <button class="modal-close" id="receiptModalClose">&times;</button>
-        <div class="receipt-container" id="receiptContent"></div>
-    </div>
+  <div class="modal-card">
+    <button class="modal-close" id="receiptModalClose">&times;</button>
+    <div class="receipt-container" id="receiptContent"></div>
+  </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener("DOMContentLoaded", function () {
     // --- CHART INSTANCES ---
     let salesTrendChart;
     let salesForecastChart;
 
     // --- ✅ TASK 2: RENDER COMBINED SALES CHART (Historical + Forecast) ---
     function renderSalesForecastChart(historicalSales, realForecast, period) {
-        const labels = historicalSales.map(d => d.label);
-        const values = historicalSales.map(d => d.sales);
-        const ctx = document.getElementById('combinedSalesChart').getContext('2d');
+      const labels = historicalSales.map((d) => d.label);
+      const values = historicalSales.map((d) => d.sales);
+      const ctx = document
+        .getElementById("combinedSalesChart")
+        .getContext("2d");
 
-        let forecastLabels;
-        let forecastDataSeries;
+      let forecastLabels;
+      let forecastDataSeries;
 
-        if (realForecast && realForecast.length > 0) {
-            const forecastValueSeries = realForecast.map(p => p.predicted_revenue);
+      if (realForecast && realForecast.length > 0) {
+        const forecastValueSeries = realForecast.map(
+          (p) => p.predicted_revenue
+        );
 
-            const forecastLabelSeries = realForecast.map(p => {
-                const dt = new Date(p.date + 'T00:00:00');
-                return (dt.getMonth() + 1) + '/' + dt.getDate();
-            });
-            forecastLabels = [...labels, ...forecastLabelSeries];
-
-            forecastDataSeries = [
-                ...Array(values.length - 1).fill(null),
-                values[values.length - 1],
-                ...forecastValueSeries
-            ];
-        } else {
-            forecastLabels = [...labels, '...'];
-            forecastDataSeries = [
-                ...Array(values.length - 1).fill(null),
-                values[values.length - 1],
-                null
-            ];
-        }
-
-        if (salesForecastChart) salesForecastChart.destroy();
-
-        salesForecastChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: forecastLabels,
-                datasets: [{
-                    label: 'Historical Sales',
-                    data: values.concat(Array(forecastDataSeries.length - values.length).fill(null)),
-                    borderColor: '#8B4B13',
-                    tension: 0.4
-                }, {
-                    label: 'Predicted Sales',
-                    data: forecastDataSeries,
-                    borderColor: '#28a745',
-                    borderDash: [5, 5],
-                    tension: 0.4
-                }]
-            },
-            options: chartOptions('₱')
+        const forecastLabelSeries = realForecast.map((p) => {
+          const dt = new Date(p.date + "T00:00:00");
+          return dt.getMonth() + 1 + "/" + dt.getDate();
         });
+        forecastLabels = [...labels, ...forecastLabelSeries];
+
+        forecastDataSeries = [
+          ...Array(values.length - 1).fill(null),
+          values[values.length - 1],
+          ...forecastValueSeries,
+        ];
+      } else {
+        forecastLabels = [...labels, "..."];
+        forecastDataSeries = [
+          ...Array(values.length - 1).fill(null),
+          values[values.length - 1],
+          null,
+        ];
+      }
+
+      if (salesForecastChart) salesForecastChart.destroy();
+
+      salesForecastChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: forecastLabels,
+          datasets: [
+            {
+              label: "Historical Sales",
+              data: values.concat(
+                Array(forecastDataSeries.length - values.length).fill(null)
+              ),
+              borderColor: "#8B4B13",
+              tension: 0.4,
+            },
+            {
+              label: "Predicted Sales",
+              data: forecastDataSeries,
+              borderColor: "#28a745",
+              borderDash: [5, 5],
+              tension: 0.4,
+            },
+          ],
+        },
+        options: chartOptions("₱"),
+      });
     }
 
     // --- DATA FETCHING ---
-    async function updateCharts(period = 'daily') {
-        const endDate = document.getElementById('end_date').value;
-        const forecastSteps = { daily: 7, weekly: 14, monthly: 30 };
-        const daysToForecast = forecastSteps[period] || 7;
-        const origin = window.location.origin;
+    async function updateCharts(period = "daily") {
+      const endDate = document.getElementById("end_date").value;
+      const forecastSteps = { daily: 7, weekly: 14, monthly: 30 };
+      const daysToForecast = forecastSteps[period] || 7;
+      const origin = window.location.origin;
 
-        const salesTrendApiUrl = `${origin}/api/dashboard-sales/?period=${period}&end_date=${endDate}`;
-        const forecastApiUrl = `${origin}/forecasting/api/predict/?days=${daysToForecast}&period=${period}&end_date=${endDate}`;
+      const salesTrendApiUrl = `${origin}/api/dashboard-sales/?period=${period}&end_date=${endDate}`;
+      const forecastApiUrl = `${origin}/forecasting/api/predict/?days=${daysToForecast}&period=${period}&end_date=${endDate}`;
 
-        try {
-            const [salesTrendResponse, forecastResponse] = await Promise.all([
-                fetch(salesTrendApiUrl),
-                fetch(forecastApiUrl)
-            ]);
+      try {
+        const [salesTrendResponse, forecastResponse] = await Promise.all([
+          fetch(salesTrendApiUrl),
+          fetch(forecastApiUrl),
+        ]);
 
-            // ✅ TASK 2: Only render combined chart (historical + forecast merged)
-            if (forecastResponse.ok) {
-                const forecastData = await forecastResponse.json();
-                renderSalesForecastChart(
-                    forecastData.combined_historical,
-                    forecastData.aggregated_forecast,
-                    period
-                );
-            }
-        } catch (err) {
-            console.error(`Error loading chart data:`, err);
+        // ✅ TASK 2: Only render combined chart (historical + forecast merged)
+        if (forecastResponse.ok) {
+          const forecastData = await forecastResponse.json();
+          renderSalesForecastChart(
+            forecastData.combined_historical,
+            forecastData.aggregated_forecast,
+            period
+          );
         }
+      } catch (err) {
+        console.error(`Error loading chart data:`, err);
+      }
     }
 
     // --- Event Listeners (Chart) ---
-    const filterButtons = document.querySelectorAll('#salesForecastFilter button');
-    filterButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const period = button.dataset.period;
-            updateCharts(period);
-        });
+    const filterButtons = document.querySelectorAll(
+      "#salesForecastFilter button"
+    );
+    filterButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        filterButtons.forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+        const period = button.dataset.period;
+        updateCharts(period);
+      });
     });
 
-    function chartOptions(prefix = '') {
-        return {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: true },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const decimals = prefix === '₱' ? 2 : 0;
-                            return (context.dataset.label || '') + `: ${prefix}` + (context.parsed.y || 0).toFixed(decimals);
-                        }
-                    }
-                }
+    function chartOptions(prefix = "") {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const decimals = prefix === "₱" ? 2 : 0;
+                return (
+                  (context.dataset.label || "") +
+                  `: ${prefix}` +
+                  (context.parsed.y || 0).toFixed(decimals)
+                );
+              },
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            if (prefix === '₱') return prefix + value.toFixed(2);
-                            if (value % 1 !== 0) return null;
-                            return prefix + value;
-                        }
-                    }
-                }
-            }
-        };
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function (value) {
+                if (prefix === "₱") return prefix + value.toFixed(2);
+                if (value % 1 !== 0) return null;
+                return prefix + value;
+              },
+            },
+          },
+        },
+      };
     }
 
-    updateCharts('daily');
+    updateCharts("daily");
 
     // --- DATE FILTERS ---
-    const dateFilterForm = document.getElementById('dateFilterForm');
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
+    const dateFilterForm = document.getElementById("dateFilterForm");
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
 
     function getISODate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
     function updateActiveFilterButton() {
-        document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
-        const start_val = startDateInput.value;
-        const end_val = endDateInput.value;
-        if (!start_val || !end_val) return;
-        const today_dt = new Date();
-        const today_iso = getISODate(today_dt);
-        if (start_val === today_iso && end_val === today_iso) {
-            document.getElementById('filterToday').classList.add('active');
-            return;
-        }
+      document
+        .querySelectorAll(".quick-filter-btn")
+        .forEach((btn) => btn.classList.remove("active"));
+      const start_val = startDateInput.value;
+      const end_val = endDateInput.value;
+      if (!start_val || !end_val) return;
+      const today_dt = new Date();
+      const today_iso = getISODate(today_dt);
+      if (start_val === today_iso && end_val === today_iso) {
+        document.getElementById("filterToday").classList.add("active");
+        return;
+      }
     }
     updateActiveFilterButton();
     updateTotalSalesLabel();
 
     function updateTotalSalesLabel() {
-        const start_val = startDateInput.value;
-        const end_val = endDateInput.value;
-        const totalSalesLabel = document.getElementById('totalSalesLabel');
+      const start_val = startDateInput.value;
+      const end_val = endDateInput.value;
+      const totalSalesLabel = document.getElementById("totalSalesLabel");
 
-        if (!start_val || !end_val || !totalSalesLabel) return;
+      if (!start_val || !end_val || !totalSalesLabel) return;
 
-        const start_date = new Date(start_val);
-        const end_date = new Date(end_val);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+      const start_date = new Date(start_val);
+      const end_date = new Date(end_val);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-        const diffTime = Math.abs(end_date - start_date);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffTime = Math.abs(end_date - start_date);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        const today_iso = getISODate(today);
-        if (start_val === today_iso && end_val === today_iso) {
-            totalSalesLabel.textContent = 'Total Sales Today';
-            return;
-        }
+      const today_iso = getISODate(today);
+      if (start_val === today_iso && end_val === today_iso) {
+        totalSalesLabel.textContent = "Total Sales Today";
+        return;
+      }
 
-        if (diffDays === 6) {
-            totalSalesLabel.textContent = 'Total Sales This Week';
-            return;
-        }
+      if (diffDays === 6) {
+        totalSalesLabel.textContent = "Total Sales This Week";
+        return;
+      }
 
-        if (diffDays >= 28 && diffDays <= 31) {
-            totalSalesLabel.textContent = 'Total Sales This Month';
-            return;
-        }
+      if (diffDays >= 28 && diffDays <= 31) {
+        totalSalesLabel.textContent = "Total Sales This Month";
+        return;
+      }
 
-        if (diffDays >= 365 && diffDays <= 366) {
-            totalSalesLabel.textContent = 'Total Sales This Year';
-            return;
-        }
+      if (diffDays >= 365 && diffDays <= 366) {
+        totalSalesLabel.textContent = "Total Sales This Year";
+        return;
+      }
 
-        if (diffDays <= 7) {
-            totalSalesLabel.textContent = 'Total Sales (Week Range)';
-        } else if (diffDays <= 31) {
-            totalSalesLabel.textContent = 'Total Sales (Month Range)';
-        } else if (diffDays <= 366) {
-            totalSalesLabel.textContent = 'Total Sales (Year Range)';
-        } else {
-            totalSalesLabel.textContent = 'Total Sales (Custom Range)';
-        }
+      if (diffDays <= 7) {
+        totalSalesLabel.textContent = "Total Sales (Week Range)";
+      } else if (diffDays <= 31) {
+        totalSalesLabel.textContent = "Total Sales (Month Range)";
+      } else if (diffDays <= 366) {
+        totalSalesLabel.textContent = "Total Sales (Year Range)";
+      } else {
+        totalSalesLabel.textContent = "Total Sales (Custom Range)";
+      }
     }
 
-    document.getElementById('filterToday').addEventListener('click', () => {
-        const today_iso = getISODate(new Date());
-        startDateInput.value = today_iso;
-        endDateInput.value = today_iso;
-        updateTotalSalesLabel();
-        dateFilterForm.submit();
+    document.getElementById("filterToday").addEventListener("click", () => {
+      const today_iso = getISODate(new Date());
+      startDateInput.value = today_iso;
+      endDateInput.value = today_iso;
+      updateTotalSalesLabel();
+      dateFilterForm.submit();
     });
-    document.getElementById('filterWeek').addEventListener('click', () => {
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOfWeek);
-        const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
-        startDateInput.value = getISODate(startOfWeek);
-        endDateInput.value = getISODate(endOfWeek);
-        updateTotalSalesLabel();
-        dateFilterForm.submit();
+    document.getElementById("filterWeek").addEventListener("click", () => {
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const startOfWeek = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - dayOfWeek
+      );
+      const endOfWeek = new Date(
+        startOfWeek.getFullYear(),
+        startOfWeek.getMonth(),
+        startOfWeek.getDate() + 6
+      );
+      startDateInput.value = getISODate(startOfWeek);
+      endDateInput.value = getISODate(endOfWeek);
+      updateTotalSalesLabel();
+      dateFilterForm.submit();
     });
-    document.getElementById('filterMonth').addEventListener('click', () => {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth();
-        const startOfMonth = new Date(year, month, 1);
-        const endOfMonth = new Date(year, month + 1, 0);
-        startDateInput.value = getISODate(startOfMonth);
-        endDateInput.value = getISODate(endOfMonth);
-        updateTotalSalesLabel();
-        dateFilterForm.submit();
+    document.getElementById("filterMonth").addEventListener("click", () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const startOfMonth = new Date(year, month, 1);
+      const endOfMonth = new Date(year, month + 1, 0);
+      startDateInput.value = getISODate(startOfMonth);
+      endDateInput.value = getISODate(endOfMonth);
+      updateTotalSalesLabel();
+      dateFilterForm.submit();
     });
-
 
     // --- RECEIPT MODAL ---
-    const receiptModal = document.getElementById('receiptModal');
-    const receiptModalClose = document.getElementById('receiptModalClose');
-    const recentTransactionsBody = document.getElementById('recentTransactionsBody');
-    const receiptContent = document.getElementById('receiptContent');
+    const receiptModal = document.getElementById("receiptModal");
+    const receiptModalClose = document.getElementById("receiptModalClose");
+    const recentTransactionsBody = document.getElementById(
+      "recentTransactionsBody"
+    );
+    const receiptContent = document.getElementById("receiptContent");
 
     if (recentTransactionsBody) {
-        recentTransactionsBody.addEventListener('click', (e) => {
-            const viewBtn = e.target.closest('.view-receipt-btn');
-            if (viewBtn && viewBtn.dataset.orderId) {
-                e.preventDefault();
-                e.stopPropagation();
-                openReceiptModal(viewBtn.dataset.orderId);
-            }
-        });
+      recentTransactionsBody.addEventListener("click", (e) => {
+        const viewBtn = e.target.closest(".view-receipt-btn");
+        if (viewBtn && viewBtn.dataset.orderId) {
+          e.preventDefault();
+          e.stopPropagation();
+          openReceiptModal(viewBtn.dataset.orderId);
+        }
+      });
     }
 
     function closeReceiptModal() {
-        if (receiptModal) {
-            receiptModal.classList.remove('visible');
-            setTimeout(() => {
-                if (!receiptModal.classList.contains('visible')) {
-                    receiptModal.style.display = 'none';
-                }
-            }, 300);
-        }
+      if (receiptModal) {
+        receiptModal.classList.remove("visible");
+        setTimeout(() => {
+          if (!receiptModal.classList.contains("visible")) {
+            receiptModal.style.display = "none";
+          }
+        }, 300);
+      }
     }
 
     if (receiptModalClose) {
-        receiptModalClose.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            closeReceiptModal();
-        });
+      receiptModalClose.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeReceiptModal();
+      });
     }
 
     if (receiptModal) {
-        receiptModal.addEventListener('click', (e) => {
-            if (e.target === receiptModal) {
-                closeReceiptModal();
-            }
-        });
+      receiptModal.addEventListener("click", (e) => {
+        if (e.target === receiptModal) {
+          closeReceiptModal();
+        }
+      });
     }
 
     async function openReceiptModal(orderId) {
-        if (!orderId) return;
+      if (!orderId) return;
 
-        receiptContent.innerHTML = '<div class="receipt-header"><p>Loading order details...</p></div>';
+      receiptContent.innerHTML =
+        '<div class="receipt-header"><p>Loading order details...</p></div>';
 
-        if (receiptModal) {
-            receiptModal.style.display = 'flex';
-            receiptModal.offsetHeight;
-            receiptModal.classList.add('visible');
-        }
+      if (receiptModal) {
+        receiptModal.style.display = "flex";
+        receiptModal.offsetHeight;
+        receiptModal.classList.add("visible");
+      }
 
-        try {
-            const response = await fetch(`/api/order/${orderId}/`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const order = await response.json();
-            populateReceiptModal(order);
-        } catch (error) {
-            console.error('Error fetching receipt:', error);
-            receiptContent.innerHTML = '<div class="receipt-header"><p style="color: red;">Could not load order details.</p></div>';
-        }
+      try {
+        const response = await fetch(`/api/order/${orderId}/`);
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
+        const order = await response.json();
+        populateReceiptModal(order);
+      } catch (error) {
+        console.error("Error fetching receipt:", error);
+        receiptContent.innerHTML =
+          '<div class="receipt-header"><p style="color: red;">Could not load order details.</p></div>';
+      }
     }
 
     function populateReceiptModal(order) {
-        let subtotal = 0;
-        order.items.forEach(item => {
-            subtotal += (item.qty * parseFloat(item.price_at_order));
-        });
+      let subtotal = 0;
+      order.items.forEach((item) => {
+        subtotal += item.qty * parseFloat(item.price_at_order);
+      });
 
-        const discountPercent = parseFloat(order.discount || 0);
-        let discountAmount = 0;
-        let total = subtotal;
-        let vatAmount = 0;
-        let vatableAmount = 0;
-        let isSeniorPwd = false;
-        let discountHtml = '';
+      const discountPercent = parseFloat(order.discount || 0);
+      let discountAmount = 0;
+      let total = subtotal;
+      let vatAmount = 0;
+      let vatableAmount = 0;
+      let isSeniorPwd = false;
+      let discountHtml = "";
 
-        const seniorFormulaTotal = (subtotal / 1.12) * 0.80;
-        const isSeniorMath = Math.abs(order.total - seniorFormulaTotal) < 1.0;
+      const seniorFormulaTotal = (subtotal / 1.12) * 0.8;
+      const isSeniorMath = Math.abs(order.total - seniorFormulaTotal) < 1.0;
 
-        let discountType = order.discount_type || 'regular';
-        if (discountType === 'regular' && isSeniorMath && discountPercent > 0) {
-            discountType = 'senior';
-        }
+      let discountType = order.discount_type || "regular";
+      if (discountType === "regular" && isSeniorMath && discountPercent > 0) {
+        discountType = "senior";
+      }
 
-        if(discountType === 'senior' || discountType === 'pwd') {
-             isSeniorPwd = true;
-             const vatRate = 0.12;
-             vatableAmount = subtotal / (1 + vatRate);
-             vatAmount = subtotal - vatableAmount;
-             discountAmount = vatableAmount * 0.20;
-             total = subtotal - discountAmount - vatAmount;
+      if (discountType === "senior" || discountType === "pwd") {
+        isSeniorPwd = true;
+        const vatRate = 0.12;
+        vatableAmount = subtotal / (1 + vatRate);
+        vatAmount = subtotal - vatableAmount;
+        discountAmount = vatableAmount * 0.2;
+        total = subtotal - discountAmount - vatAmount;
 
-             discountHtml = `
+        discountHtml = `
              <div class="totals-row highlight">
                 <span>
-                    ${discountType === 'senior' ? 'Senior Citizen' : 'PWD'} (20%)
+                    ${
+                      discountType === "senior" ? "Senior Citizen" : "PWD"
+                    } (20%)
                     <span class="discount-badge">${discountType.toUpperCase()}</span>
                 </span>
                 <span>-₱${discountAmount.toFixed(2)}</span>
@@ -1272,40 +1467,57 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>VAT Exempt:</span>
                 <span>-₱${vatAmount.toFixed(2)}</span>
              </div>
-             ${order.discount_id ? `<div class="totals-row" style="font-size: 10px;"><span>ID: ${order.discount_id}</span><span></span></div>` : ''}
+             ${
+               order.discount_id
+                 ? `<div class="totals-row" style="font-size: 10px;"><span>ID: ${order.discount_id}</span><span></span></div>`
+                 : ""
+             }
              `;
-        } else {
-             discountAmount = subtotal * (discountPercent / 100);
-             total = subtotal - discountAmount;
+      } else {
+        discountAmount = subtotal * (discountPercent / 100);
+        total = subtotal - discountAmount;
 
-             if (discountPercent > 0 || discountAmount > 0) {
-                discountHtml = `
+        if (discountPercent > 0 || discountAmount > 0) {
+          discountHtml = `
                 <div class="totals-row">
                     <span>Discount (${discountPercent}%):</span>
                     <span>-₱${discountAmount.toFixed(2)}</span>
                 </div>`;
-             }
         }
+      }
 
-        if (Math.abs(total - order.total) > 0.05) {
-             total = order.total;
-        }
+      if (Math.abs(total - order.total) > 0.05) {
+        total = order.total;
+      }
 
-        const orderDate = new Date(order.created_at);
-        const formattedDate = orderDate.toLocaleString('en-US', {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-        }).replace(',', '');
+      const orderDate = new Date(order.created_at);
+      const formattedDate = orderDate
+        .toLocaleString("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        })
+        .replace(",", "");
 
-        const itemsHtml = order.items.map(item => `
+      const itemsHtml = order.items
+        .map(
+          (item) => `
             <div class="receipt-item">
                 <span class="item-name">${item.item.name}</span>
                 <span class="item-qty">${item.qty}x</span>
-                <span class="item-price">₱${parseFloat(item.price_at_order).toFixed(2)}</span>
+                <span class="item-price">₱${parseFloat(
+                  item.price_at_order
+                ).toFixed(2)}</span>
             </div>
-        `).join('');
+        `
+        )
+        .join("");
 
-        receiptContent.innerHTML = `
+      receiptContent.innerHTML = `
             <div class="receipt-header">
                 <h3>Deja Brew Café</h3>
                 <p>95 National Road Cut-cot, Pulilan, Bulacan</p>
@@ -1318,8 +1530,14 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="receipt-info">
                 <p><strong>Order #:</strong> ${order.id}</p>
                 <p><strong>Date:</strong> ${formattedDate}</p>
-                <p><strong>Cashier:</strong> ${order.cashier_username || 'Unknown'}</p>
-                ${order.customer_name && order.customer_name !== 'Walk-in' ? `<p><strong>Customer:</strong> ${order.customer_name}</p>` : ''}
+                <p><strong>Cashier:</strong> ${
+                  order.cashier_username || "Unknown"
+                }</p>
+                ${
+                  order.customer_name && order.customer_name !== "Walk-in"
+                    ? `<p><strong>Customer:</strong> ${order.customer_name}</p>`
+                    : ""
+                }
             </div>
 
             <div class="receipt-divider"></div>
@@ -1339,7 +1557,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>₱${subtotal.toFixed(2)}</span>
                 </div>
 
-                ${isSeniorPwd ? `
+                ${
+                  isSeniorPwd
+                    ? `
                 <div class="totals-row">
                     <span>Vatable Amount:</span>
                     <span>₱${vatableAmount.toFixed(2)}</span>
@@ -1348,7 +1568,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>VAT (12%):</span>
                     <span>₱${vatAmount.toFixed(2)}</span>
                 </div>
-                ` : ''}
+                `
+                    : ""
+                }
 
                 ${discountHtml}
 
@@ -1359,23 +1581,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <div class="totals-row" style="margin-top: 10px;">
                     <span>Payment Method:</span>
-                    <span>${order.payment_method || 'Cash'}</span>
+                    <span>${order.payment_method || "Cash"}</span>
                 </div>
 
                 <div class="totals-row">
                     <span>Service Type:</span>
-                    <span>${order.dining_option ? order.dining_option.charAt(0).toUpperCase() + order.dining_option.slice(1) : 'Dine-In'}</span>
+                    <span>${
+                      order.dining_option
+                        ? order.dining_option.charAt(0).toUpperCase() +
+                          order.dining_option.slice(1)
+                        : "Dine-In"
+                    }</span>
                 </div>
             </div>
 
             <div class="receipt-footer" style="border-top: 2px solid #000; margin-top: 20px; padding-top: 15px;">
                 <p style="font-weight: bold;">Thank you for your purchase!</p>
                 <p>Please come again.</p>
-                ${isSeniorPwd ? `<p style="margin-top: 10px; font-size: 10px; font-style: italic;">"This ${discountType.toUpperCase()} discount is granted as per RA 9994/RA 10754"</p>` : ''}
+                ${
+                  isSeniorPwd
+                    ? `<p style="margin-top: 10px; font-size: 10px; font-style: italic;">"This ${discountType.toUpperCase()} discount is granted as per RA 9994/RA 10754"</p>`
+                    : ""
+                }
             </div>
         `;
     }
-});
+  });
 </script>
 
 <!-- Load Forecast JS -->

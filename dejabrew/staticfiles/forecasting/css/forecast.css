@@ -1,0 +1,7 @@
+.container { max-width: 1000px; margin: 30px auto; font-family: Arial, sans-serif; }
+.controls { margin-bottom: 20px; }
+.controls label { margin-right: 12px; }
+.metrics { margin-top: 10px; font-size: 0.95rem; }
+.table-area table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.table-area th, .table-area td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+.error { color: red; }

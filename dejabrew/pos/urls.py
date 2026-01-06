@@ -70,4 +70,7 @@ urlpatterns = [
     path('forecasting/api/predict/', forecast_views.predict_api, name='forecast_predict_api'),
     path('upload_model/', forecast_views.upload_model_view, name='upload_model'),
     path('metrics_dashboard/', forecast_views.metrics_dashboard_view, name='metrics_dashboard'),
+    
+    path('run-retrain/', views.run_retrain),
+    path('populate-inventory/', views.populate_inventory),
 ]

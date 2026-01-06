@@ -1,0 +1,121 @@
+/* Print Receipt Styles - Fixed for proper printing */
+
+/* Hide everything except the receipt when printing */
+@media print {
+    /* Hide all page content */
+    body > *:not(#printable-receipt) {
+        display: none !important;
+    }
+    
+    /* --- THIS IS THE FIX ---
+       It forces the hidden div to be visible for printing
+    */
+    #printable-receipt {
+        display: block !important; 
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80mm; /* Standard receipt paper width */
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Remove page margins */
+    @page {
+        margin: 0;
+        size: 80mm auto;
+    }
+    
+    /* Ensure receipt container is visible */
+    .receipt-container {
+        display: block !important;
+        width: 100% !important;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 12px;
+        color: #000;
+        padding: 10px;
+        background: white;
+    }
+    
+    /* ... (rest of the styling) ... */
+    
+    /* Receipt header styling */
+    .receipt-header {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .receipt-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    
+    .receipt-header p {
+        margin: 2px 0;
+        font-size: 11px;
+    }
+    
+    /* Divider lines */
+    .receipt-divider {
+        border-top: 1px dashed #000;
+        margin: 8px 0;
+    }
+    
+    /* Item rows */
+    .receipt-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+        font-size: 11px;
+    }
+    
+    .receipt-item .item-name {
+        width: 50%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .receipt-item .item-qty {
+        width: 20%;
+        text-align: center;
+    }
+    
+    .receipt-item .item-price {
+        width: 30%;
+        text-align: right;
+    }
+    
+    /* Totals section */
+    .receipt-totals {
+        margin-top: 10px;
+    }
+    
+    .receipt-totals .totals-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
+    
+    .receipt-totals .totals-row.total {
+        font-weight: bold;
+        font-size: 14px;
+        border-top: 1px dashed #000;
+        padding-top: 5px;
+        margin-top: 5px;
+    }
+    
+    /* Footer */
+    .receipt-footer {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 11px;
+    }
+}
+
+/* Screen display - keep hidden */
+#printable-receipt {
+    display: none;
+}
