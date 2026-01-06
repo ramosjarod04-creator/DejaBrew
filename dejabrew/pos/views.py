@@ -41,7 +41,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_permissions(self):
-        # Allow unauthenticated read access for POS operations (list, retrieve)
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         if self.action in ['update', 'partial_update']:
@@ -84,18 +83,14 @@ class IngredientViewSet(viewsets.ModelViewSet):
         action = "Update Ingredient"
         severity = "medium"
 
-        # Track inventory transactions for stock changes
         if old_mainStock != instance.mainStock and old_stockRoom != instance.stockRoom:
-            # This is a transfer between locations
             action = "Stock Transfer"
             severity = "low"
             changes.append(f"mainStock: {old_mainStock} -> {instance.mainStock}")
             changes.append(f"stockRoom: {old_stockRoom} -> {instance.stockRoom}")
 
-            # Determine transfer direction
             main_diff = instance.mainStock - old_mainStock
             if main_diff > 0:
-                # Transfer from stock room to main
                 create_inventory_transaction(
                     ingredient=instance,
                     transaction_type='TRANSFER_TO_MAIN',
@@ -104,7 +99,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
                     notes=f"Transferred {main_diff}{instance.unit} from stock room to main stock"
                 )
             else:
-                # Transfer from main to stock room
                 create_inventory_transaction(
                     ingredient=instance,
                     transaction_type='TRANSFER_TO_ROOM',
@@ -119,7 +113,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
                 stock_diff = instance.mainStock - old_mainStock
 
                 if stock_diff > 0:
-                    # Stock added to main
                     create_inventory_transaction(
                         ingredient=instance,
                         transaction_type='STOCK_IN',
@@ -128,7 +121,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
                         notes=f"Added {stock_diff}{instance.unit} to main stock"
                     )
                 else:
-                    # Stock removed from main (manual adjustment)
                     create_inventory_transaction(
                         ingredient=instance,
                         transaction_type='ADJUSTMENT',
@@ -142,7 +134,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
                 stock_diff = instance.stockRoom - old_stockRoom
 
                 if stock_diff > 0:
-                    # Stock added to room
                     create_inventory_transaction(
                         ingredient=instance,
                         transaction_type='STOCK_IN',
@@ -151,7 +142,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
                         notes=f"Added {stock_diff}{instance.unit} to stock room"
                     )
                 else:
-                    # Stock removed from room (manual adjustment)
                     create_inventory_transaction(
                         ingredient=instance,
                         transaction_type='ADJUSTMENT',
@@ -255,17 +245,8 @@ def get_client_ip(request):
 def create_inventory_transaction(ingredient, transaction_type, quantity, user, notes="", reference=""):
     """
     Helper function to create an InventoryTransaction record
-
-    Args:
-        ingredient: Ingredient instance
-        transaction_type: One of the TRANSACTION_TYPE_CHOICES
-        quantity: Float (positive for IN, negative for OUT)
-        user: User instance
-        notes: Optional notes
-        reference: Optional reference (Order ID, Waste Log ID, etc.)
     """
     try:
-        # Get fresh stock levels
         ingredient.refresh_from_db()
 
         transaction = InventoryTransaction.objects.create(
@@ -288,7 +269,7 @@ def create_inventory_transaction(ingredient, transaction_type, quantity, user, n
         print(f"⚠️ Failed to create inventory transaction for {ingredient.name}: {e}")
         import traceback
         traceback.print_exc()
-        raise  # Re-raise the exception so we can see it
+        raise
 
 
 def save_receipt_to_file(order, order_items_list, subtotal, discount, discount_amount, total, payment_method, 
@@ -327,6 +308,258 @@ def save_receipt_to_file(order, order_items_list, subtotal, discount, discount_a
         print(f"⚠️ Error saving receipt to file: {e}")
         return None
 
+
+def handle_uploaded_file(f):
+    try:
+        save_dir = os.path.join(settings.BASE_DIR, 'pos', 'static', 'pos', 'img')
+        os.makedirs(save_dir, exist_ok=True)
+
+        fname, ext = os.path.splitext(f.name)
+        safe_fname = "".join(c for c in fname if c.isalnum() or c in ('_','-')).rstrip()
+        unique_filename = f"{safe_fname}_{int(time.time())}{ext}"
+
+        save_path = os.path.join(save_dir, unique_filename)
+
+        with open(save_path, 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)
+
+        url_path = f'/static/pos/img/{unique_filename}'
+        return url_path
+
+    except Exception as e:
+        print(f"⚠️ Error saving uploaded file: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+# ... [Previous view functions remain the same until process_order] ...
+
+
+@login_required
+@require_http_methods(["POST"])
+@transaction.atomic
+def process_order(request):
+    try:
+        data = json.loads(request.body)
+        cart_items_data = data.get('items', [])
+        payment_method = data.get('payment_method', 'Cash')
+        discount = Decimal(data.get('discount', '0.0'))
+        customer_name = data.get('customer_name', '')
+        
+        discount_type = data.get('discount_type', 'regular')
+        discount_id = data.get('discount_id', '')
+        
+        payment_details = data.get('payment_details', {})
+        
+        if not cart_items_data: 
+            return JsonResponse({'success': False, 'error': 'Cart is empty'}, status=400)
+        
+        required_ingredients = defaultdict(float)
+        items_to_process = []
+
+        for item_data in cart_items_data:
+            try:
+                item = Item.objects.get(id=item_data['id'], is_active=True)
+                quantity = int(item_data['quantity'])
+                
+                # CRITICAL FIX: Calculate actual quantity needed for Buy 1 Take 1
+                # If item is Buy 1 Take 1, we need to deduct double the quantity ordered
+                actual_quantity_needed = quantity * 2 if item.is_buy1take1 else quantity
+                
+                items_to_process.append({
+                    'item': item, 
+                    'quantity': quantity,  # Quantity customer ordered (for receipt)
+                    'actual_quantity': actual_quantity_needed  # Actual quantity to deduct from stock
+                })
+                
+                is_recipe_item = False
+                if item.stock > 0:
+                    is_recipe_item = False
+                else:
+                    if isinstance(item.recipe, list) and len(item.recipe) > 0:
+                        for recipe_item in item.recipe:
+                            ingredient_name = recipe_item.get('ingredient')
+                            qty_per_item = recipe_item.get('quantity', 0)
+                            if ingredient_name and qty_per_item > 0: 
+                                is_recipe_item = True
+                                # Use actual_quantity_needed for recipe calculations
+                                required_ingredients[ingredient_name] += float(qty_per_item) * actual_quantity_needed
+                
+                if not is_recipe_item:
+                    if item.stock < actual_quantity_needed: 
+                        return JsonResponse({
+                            'success': False, 
+                            'error': f'Insufficient product stock for {item.name}. Need {actual_quantity_needed}, have {item.stock}'
+                        }, status=400)
+
+            except Item.DoesNotExist: 
+                return JsonResponse({'success': False, 'error': f'Item ID {item_data["id"]} not found or inactive'}, status=404)
+            except ValueError: 
+                return JsonResponse({'success': False, 'error': 'Invalid quantity received'}, status=400)
+            except TypeError:
+                return JsonResponse({'success': False, 'error': f'Invalid recipe format for {item.name}'}, status=500)
+        
+        ingredients_to_update = []
+        for name, needed_qty in required_ingredients.items():
+            try:
+                ingredient = Ingredient.objects.get(name=name)
+                if ingredient.status == 'Out of Stock' or ingredient.mainStock < needed_qty:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Insufficient or out of stock ingredient: {name}. Needed: {needed_qty}, Available: {ingredient.mainStock}'
+                    }, status=400)
+                ingredients_to_update.append({'ingredient': ingredient, 'deduct_qty': needed_qty})
+            except Ingredient.DoesNotExist: 
+                return JsonResponse({'success': False, 'error': f'Ingredient "{name}" not found in database'}, status=404)
+        
+        subtotal = sum((item['item'].price or Decimal('0.0')) * item['quantity'] for item in items_to_process)
+        
+        vat_rate = Decimal('0.12')
+        vatable_amount = subtotal / (Decimal('1') + vat_rate)
+        vat_amount = subtotal - vatable_amount
+        
+        discount_amount = Decimal('0.0')
+        discount_percent = discount
+        
+        if discount_type == 'senior' or discount_type == 'pwd':
+            discount_percent = Decimal('20.0')
+            discount_amount = vatable_amount * (discount_percent / Decimal('100.0'))
+            total_deduction = discount_amount + vat_amount
+            total = subtotal - total_deduction
+        else:
+            discount_amount = subtotal * (discount_percent / Decimal('100.0'))
+            total = subtotal - discount_amount
+        
+        dining_option = data.get('dining_option', 'dine-in')
+
+        reference_number = None
+        if payment_details:
+            reference_number = payment_details.get('ref_num', '') or payment_details.get('reference_number', '')
+
+        order_data = {
+            'total': total,
+            'customer_name': customer_name,
+            'status': 'paid',
+            'cashier': request.user,
+            'payment_method': payment_method,
+            'discount': discount_percent,
+            'dining_option': dining_option,
+            'reference_number': reference_number or ''
+        }
+
+        try:
+            order = Order.objects.create(
+                **order_data,
+                discount_type=discount_type,
+                discount_id=discount_id
+            )
+        except TypeError:
+            order = Order.objects.create(**order_data)
+        
+        order_items_list = []
+        for item_data in items_to_process:
+            item = item_data['item']
+            quantity = item_data['quantity']
+            actual_quantity = item_data['actual_quantity']
+            
+            order_item = OrderItem.objects.create(
+                order=order, 
+                item=item, 
+                qty=quantity,  # Store customer's ordered quantity
+                price_at_order=item.price
+            )
+            order_items_list.append(order_item)
+            
+            is_recipe_item = False
+            if item.stock > 0:
+                is_recipe_item = False
+            else:
+                if isinstance(item.recipe, list) and len(item.recipe) > 0:
+                    for recipe_item in item.recipe:
+                        if recipe_item.get('ingredient') and recipe_item.get('quantity', 0) > 0:
+                            is_recipe_item = True
+                            break
+            
+            if not is_recipe_item:
+                # CRITICAL FIX: Deduct actual_quantity (accounts for Buy 1 Take 1)
+                item.stock -= actual_quantity
+                item.save(update_fields=['stock'])
+
+        for ing_data in ingredients_to_update:
+            ingredient = ing_data['ingredient']
+            deduct_qty = ing_data['deduct_qty']
+
+            ingredient.mainStock -= deduct_qty
+            if ingredient.mainStock <= 0 and ingredient.stockRoom <= 0 and ingredient.status != 'Out of Stock':
+                ingredient.status = 'Out of Stock'
+            elif ingredient.mainStock < ingredient.reorder and ingredient.status == 'In Stock':
+                ingredient.status = 'Low Stock'
+            ingredient.save(update_fields=['mainStock', 'status'])
+
+            create_inventory_transaction(
+                ingredient=ingredient,
+                transaction_type='STOCK_OUT',
+                quantity=-deduct_qty,
+                user=request.user,
+                notes=f"Used in order (recipe)",
+                reference=f"Order-{order.id}"
+            )
+        
+        audit_description = f"Order #{order.id} processed. Total: ₱{total}."
+        if discount_type in ['senior', 'pwd']:
+            audit_description += f" {discount_type.upper()} Discount (ID: {discount_id}). VAT Exempt."
+        if payment_method != 'Cash' and payment_details:
+            ref_num = payment_details.get('ref_num', 'N/A')
+            cust_name = payment_details.get('cust_name', 'N/A')
+            audit_description += f" Method: {payment_method} (Ref: {ref_num}, Name: {cust_name})"
+        
+        log_audit(request, request.user, "Process Order", audit_description, category="sales", severity="medium")
+
+        receipt_context = {
+            'order': order,
+            'order_items': order_items_list,
+            'subtotal': subtotal,
+            'vatable_amount': vatable_amount if (discount_type in ['senior', 'pwd']) else None,
+            'vat_amount': vat_amount if (discount_type in ['senior', 'pwd']) else None,
+            'discount_type': discount_type,
+            'discount_id': discount_id,
+            'discount_percent': discount_percent,
+            'discount_amount': discount_amount,
+            'total': total,
+            'payment_method': payment_method,
+            'dining_option': dining_option
+        }
+        
+        receipt_html = render_to_string('pos/receipt/_receipt_template.html', receipt_context)
+        
+        saved_file_path = save_receipt_to_file(
+            order, order_items_list, subtotal, discount_percent, 
+            discount_amount, total, payment_method, 
+            vatable_amount=vatable_amount, 
+            vat_amount=vat_amount,
+            discount_type=discount_type,
+            discount_id=discount_id
+        )
+        
+        response_data = {
+            'success': True, 
+            'order_id': order.id, 
+            'total': float(total), 
+            'message': 'Order processed successfully!',
+            'receipt_html': receipt_html
+        }
+        
+        if saved_file_path:
+            response_data['receipt_file'] = saved_file_path
+        
+        return JsonResponse(response_data)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data received'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'}, status=500)
 
 def handle_uploaded_file(f):
     try:
@@ -610,7 +843,15 @@ def process_order(request):
             try:
                 item = Item.objects.get(id=item_data['id'], is_active=True)
                 quantity = int(item_data['quantity'])
-                items_to_process.append({'item': item, 'quantity': quantity})
+                
+                # CRITICAL FIX: Calculate actual quantity needed for Buy 1 Take 1
+                actual_quantity_needed = quantity * 2 if item.is_buy1take1 else quantity
+                
+                items_to_process.append({
+                    'item': item, 
+                    'quantity': quantity,  # Quantity customer ordered
+                    'actual_quantity': actual_quantity_needed  # Actual quantity to deduct
+                })
                 
                 is_recipe_item = False
                 if item.stock > 0:
@@ -622,11 +863,15 @@ def process_order(request):
                             qty_per_item = recipe_item.get('quantity', 0)
                             if ingredient_name and qty_per_item > 0: 
                                 is_recipe_item = True
-                                required_ingredients[ingredient_name] += float(qty_per_item) * quantity
+                                # Use actual_quantity_needed for recipe calculations
+                                required_ingredients[ingredient_name] += float(qty_per_item) * actual_quantity_needed
                 
                 if not is_recipe_item:
-                    if item.stock < quantity: 
-                        return JsonResponse({'success': False, 'error': f'Insufficient product stock for {item.name}'}, status=400)
+                    if item.stock < actual_quantity_needed: 
+                        return JsonResponse({
+                            'success': False, 
+                            'error': f'Insufficient product stock for {item.name}. Need {actual_quantity_needed}, have {item.stock}'
+                        }, status=400)
 
             except Item.DoesNotExist: 
                 return JsonResponse({'success': False, 'error': f'Item ID {item_data["id"]} not found or inactive'}, status=404)
@@ -640,7 +885,10 @@ def process_order(request):
             try:
                 ingredient = Ingredient.objects.get(name=name)
                 if ingredient.status == 'Out of Stock' or ingredient.mainStock < needed_qty:
-                    return JsonResponse({'success': False, 'error': f'Insufficient or out of stock ingredient: {name}. Needed: {needed_qty}, Available: {ingredient.mainStock}'}, status=400)
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Insufficient or out of stock ingredient: {name}. Needed: {needed_qty}, Available: {ingredient.mainStock}'
+                    }, status=400)
                 ingredients_to_update.append({'ingredient': ingredient, 'deduct_qty': needed_qty})
             except Ingredient.DoesNotExist: 
                 return JsonResponse({'success': False, 'error': f'Ingredient "{name}" not found in database'}, status=404)
@@ -663,10 +911,8 @@ def process_order(request):
             discount_amount = subtotal * (discount_percent / Decimal('100.0'))
             total = subtotal - discount_amount
         
-        # Attempt to save discount details and dining option if model supports it
         dining_option = data.get('dining_option', 'dine-in')
 
-        # Extract reference number from payment details (for GCash and Card payments)
         reference_number = None
         if payment_details:
             reference_number = payment_details.get('ref_num', '') or payment_details.get('reference_number', '')
@@ -682,8 +928,6 @@ def process_order(request):
             'reference_number': reference_number or ''
         }
 
-        # Try adding discount_type/id if your model has these fields.
-        # If not, this might error, but based on requirements we assume you want to save them.
         try:
             order = Order.objects.create(
                 **order_data,
@@ -691,14 +935,20 @@ def process_order(request):
                 discount_id=discount_id
             )
         except TypeError:
-            # Fallback if model fields don't exist - create without extra fields
             order = Order.objects.create(**order_data)
         
         order_items_list = []
         for item_data in items_to_process:
             item = item_data['item']
             quantity = item_data['quantity']
-            order_item = OrderItem.objects.create(order=order, item=item, qty=quantity, price_at_order=item.price)
+            actual_quantity = item_data['actual_quantity']
+            
+            order_item = OrderItem.objects.create(
+                order=order, 
+                item=item, 
+                qty=quantity,  # Store customer's ordered quantity
+                price_at_order=item.price
+            )
             order_items_list.append(order_item)
             
             is_recipe_item = False
@@ -712,7 +962,8 @@ def process_order(request):
                             break
             
             if not is_recipe_item:
-                item.stock -= quantity
+                # CRITICAL FIX: Deduct actual_quantity (accounts for Buy 1 Take 1)
+                item.stock -= actual_quantity
                 item.save(update_fields=['stock'])
 
         for ing_data in ingredients_to_update:
@@ -726,11 +977,10 @@ def process_order(request):
                 ingredient.status = 'Low Stock'
             ingredient.save(update_fields=['mainStock', 'status'])
 
-            # Create inventory transaction for stock out (usage in recipe)
             create_inventory_transaction(
                 ingredient=ingredient,
                 transaction_type='STOCK_OUT',
-                quantity=-deduct_qty,  # Negative because it's removing from stock
+                quantity=-deduct_qty,
                 user=request.user,
                 notes=f"Used in order (recipe)",
                 reference=f"Order-{order.id}"
@@ -789,7 +1039,7 @@ def process_order(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON data received'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'}, status=500)
-
+    
 @login_required
 def recent_orders_api(request):
     orders = Order.objects.filter(status='paid').select_related('cashier').order_by('-created_at')[:5]
@@ -841,6 +1091,9 @@ def create_product(request):
             if image_url is None:
                 return JsonResponse({'success': False, 'error': 'Failed to save uploaded image'}, status=500)
 
+        # Get Buy 1 Take 1 promo status
+        is_buy1take1 = data.get('is_buy1take1', 'false').lower() == 'true'
+
         product = Item.objects.create(
             name=name,
             description=data.get('description', '').strip(),
@@ -848,7 +1101,8 @@ def create_product(request):
             price=price,
             stock=stock,
             image_url=image_url,
-            recipe=recipe_data
+            recipe=recipe_data,
+            is_buy1take1=is_buy1take1
         )
         
         log_audit(request, request.user, "Create Product", f"Admin '{request.user.username}' created product '{name}'", category="inventory", severity="medium")
@@ -876,6 +1130,7 @@ def update_product(request, product_id):
         product.price = float(data.get('price', product.price))
         product.stock = int(data.get('stock', product.stock))
         product.is_active = data.get('is_active', product.is_active)
+        product.is_buy1take1 = data.get('is_buy1take1', 'false').lower() == 'true'
 
         recipe_json = data.get('recipe', '[]')
         try:

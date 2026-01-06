@@ -389,9 +389,14 @@ function renderProducts(products) {
             outOfStockReason = 'Out of Stock';
         }
         
+        const isBuy1Take1 = product.is_buy1take1 === true;
+
         return `
         <div class="product-card ${isDisabled ? 'disabled' : ''}">
-            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}')"></div>
+            <div class="product-image" style="background-image: url('${product.image_url || PLACEHOLDER_IMAGE}'); position: relative;">
+                ${isDisabled ? '<div class="out-of-stock-watermark">NOT AVAILABLE</div>' : ''}
+                ${isBuy1Take1 && !isDisabled ? '<div class="promo-badge">BUY 1 TAKE 1</div>' : ''}
+            </div>
             <div class="product-info">
                 <div class="title" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
                 <div class="desc">${stockStatusText}</div>
@@ -531,11 +536,13 @@ window.addToCart = function(productId) {
             quantity: 1,
             stock: product.stock,
             recipe: product.recipe || [],
-            addOns: []
+            addOns: [],
+            is_buy1take1: product.is_buy1take1 || false
         });
     }
     updateCartDisplay();
-    showNotification(`${product.name} added to cart`, 'success');
+    const promoText = product.is_buy1take1 ? ' (Buy 1 Take 1!)' : '';
+    showNotification(`${product.name}${promoText} added to cart`, 'success');
 }
 
 window.updateQuantity = async function(productId, change) {
@@ -666,10 +673,17 @@ function updateCartDisplay() {
                 ? `<br><small style="color: #666;">+ ${item.addOns.map(a => a.name).join(', ')}</small>`
                 : '';
 
+            const isBuy1Take1 = item.is_buy1take1 === true;
+            const promoText = isBuy1Take1
+                ? `<br><small style="color: #ff6b6b; font-weight: 700;">🎁 Buy 1 Get 1 Free!</small>`
+                : '';
+
+            const displayQuantity = isBuy1Take1 ? `${item.quantity} (Get ${item.quantity * 2})` : item.quantity;
+
             return `
             <div class="cart-item">
                 <div class="item-info">
-                    <p class="item-name">${escapeHtml(item.name)}${addOnsText}</p>
+                    <p class="item-name">${escapeHtml(item.name)}${addOnsText}${promoText}</p>
                     <p class="item-price">₱${item.price.toFixed(2)}</p>
                     <button class="modify-btn" onclick="modifyProduct(${item.id})" style="margin-top: 5px; padding: 4px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">
                         <i class="fa-solid fa-pen-to-square"></i> Modify
@@ -700,37 +714,40 @@ function updateCartDisplay() {
 
 function updateCartTotals() {
     let subtotal = 0;
-    
+
     cart.forEach(item => {
         const itemPrice = (item.price || 0) * item.quantity;
         const addOnsPrice = (item.addOns || []).reduce((sum, addOn) => sum + addOn.price, 0) * item.quantity;
         subtotal += itemPrice + addOnsPrice;
     });
-    
+
     const discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
-    const discountType = window.currentDiscount?.type || 'regular';
-    
+    const discountType = window.currentDiscount?.type || 'none';
+
     let total = subtotal;
     let vatAmount = 0;
     let discountAmount = 0;
-    
+
     if (discountType === 'senior' || discountType === 'pwd') {
         // VAT-inclusive calculation
         const vatRate = 0.12;
         const vatableAmount = subtotal / (1 + vatRate);
         vatAmount = subtotal - vatableAmount;
-        
+
         // 20% discount on vatable amount
         discountAmount = vatableAmount * 0.20;
-        
+
         // Total = Subtotal - Discount - VAT
         total = subtotal - discountAmount - vatAmount;
-    } else {
-        // Regular discount
+    } else if (discountType === 'regular') {
+        // Regular discount - simple percentage discount
         discountAmount = subtotal * (discountPercent / 100);
         total = subtotal - discountAmount;
+    } else {
+        // No discount
+        total = subtotal;
     }
-    
+
     document.getElementById('subtotalDisplay').textContent = `₱${subtotal.toFixed(2)}`;
     document.getElementById('totalDisplay').textContent = `₱${total.toFixed(2)}`;
 }
@@ -740,6 +757,7 @@ function clearCart() {
     document.getElementById('discountInput').value = 0;
     document.getElementById('discountInput').disabled = false;
     window.currentDiscount = null;
+    window.discountVerified = false; // Reset verification status
     updateCartDisplay();
 }
 
@@ -885,15 +903,23 @@ function setupDiscountModal() {
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">Discount Type:</label>
                     <select id="discountTypeSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                        <option value="regular">Regular Discount</option>
+                        <option value="regular">Regular Discount (Custom %)</option>
                         <option value="senior">Senior Citizen (20% + VAT Exempt)</option>
                         <option value="pwd">PWD (20% + VAT Exempt)</option>
                     </select>
                 </div>
                 
+                <div id="customDiscountGroup" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Discount Percentage (%):</label>
+                    <input type="number" id="customDiscountInput" placeholder="Enter discount % (e.g., 15)" 
+                           min="0" max="100" value="0"
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    <small style="color: #666; display: block; margin-top: 5px;">Enter custom discount percentage (0-100%)</small>
+                </div>
+                
                 <div id="discountIdGroup" style="margin-bottom: 20px; display: none;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">ID Number:</label>
-                    <input type="text" id="discountIdInput" placeholder="Enter ID/OSCA Number" 
+                    <input type="text" id="discountIdInput" placeholder="Enter ID/OSCA Number"
                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
                     <small style="color: #666; display: block; margin-top: 5px;">Required for Senior Citizen and PWD discounts</small>
                 </div>
@@ -912,16 +938,21 @@ function setupDiscountModal() {
     discountTypeSelect = document.getElementById('discountTypeSelect');
     discountIdInput = document.getElementById('discountIdInput');
     discountIdGroup = document.getElementById('discountIdGroup');
+    const customDiscountInput = document.getElementById('customDiscountInput');
+    const customDiscountGroup = document.getElementById('customDiscountGroup');
     discountModalCancel = document.getElementById('discountModalCancel');
     discountModalApply = document.getElementById('discountModalApply');
-    
-    discountTypeSelect.addEventListener('change', () => {
+
+    discountTypeSelect.addEventListener('change', function() {
         const type = discountTypeSelect.value;
+        
         if (type === 'senior' || type === 'pwd') {
             discountIdGroup.style.display = 'block';
+            customDiscountGroup.style.display = 'none';
             discountIdInput.required = true;
         } else {
             discountIdGroup.style.display = 'none';
+            customDiscountGroup.style.display = 'block';
             discountIdInput.required = false;
             discountIdInput.value = '';
         }
@@ -939,10 +970,18 @@ function showDiscountModal() {
         showNotification('Please add items to cart first', 'error');
         return;
     }
-    
+
+    // Reset to regular discount by default
     discountTypeSelect.value = 'regular';
     discountIdInput.value = '';
     discountIdGroup.style.display = 'none';
+    
+    // Reset and show custom discount input
+    const customDiscountInput = document.getElementById('customDiscountInput');
+    const customDiscountGroup = document.getElementById('customDiscountGroup');
+    if (customDiscountInput) customDiscountInput.value = '0';
+    if (customDiscountGroup) customDiscountGroup.style.display = 'block';
+
     discountModal.classList.add('is-visible');
 }
 
@@ -953,19 +992,33 @@ function closeDiscountModal() {
 async function applyDiscount() {
     const discountType = discountTypeSelect.value;
     const discountId = discountIdInput.value.trim();
+    const customDiscountInput = document.getElementById('customDiscountInput');
+    const customDiscountValue = parseFloat(customDiscountInput.value) || 0;
 
+    // Validation for Senior/PWD
     if ((discountType === 'senior' || discountType === 'pwd') && !discountId) {
         showNotification('Please enter ID number for senior/PWD discount', 'error');
         return;
     }
 
-    // Close discount modal first BEFORE authentication
+    // Validation for Regular discount
+    if (discountType === 'regular' && (customDiscountValue < 0 || customDiscountValue > 100)) {
+        showNotification('Please enter a valid discount percentage (0-100%)', 'error');
+        return;
+    }
+
+    if (discountType === 'regular' && customDiscountValue === 0) {
+        showNotification('Please enter a discount percentage greater than 0', 'error');
+        return;
+    }
+
+    // Close discount modal BEFORE authentication
     closeDiscountModal();
 
-    // Small delay to ensure discount modal is fully closed before showing admin modal
+    // Wait a moment for modal to close
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Require admin authentication BEFORE applying discount
+    // Require admin authentication
     const authResult = await showAdminPasswordModal();
 
     if (!authResult || !authResult.success) {
@@ -973,23 +1026,27 @@ async function applyDiscount() {
         return;
     }
 
-    // Admin authenticated - now apply the discount IMMEDIATELY
+    // Admin authenticated - apply discount
     window.currentDiscount = {
         type: discountType,
         id: discountId
     };
+
+    window.discountVerified = true;
 
     const discountInput = document.getElementById('discountInput');
     if (discountType === 'senior' || discountType === 'pwd') {
         discountInput.value = '20';
         discountInput.disabled = true;
     } else {
-        discountInput.disabled = false;
+        // Regular discount - use custom value
+        discountInput.value = customDiscountValue.toString();
+        discountInput.disabled = true;
     }
 
     updateCartTotals();
 
-    let message = 'Regular discount applied';
+    let message = `Custom discount applied (${customDiscountValue}%)`;
     if (discountType === 'senior') message = 'Senior Citizen discount applied (20% + VAT Exempt)';
     if (discountType === 'pwd') message = 'PWD discount applied (20% + VAT Exempt)';
 
@@ -1310,6 +1367,13 @@ async function processOrder() {
         return showNotification('Cart is empty', 'error');
     }
 
+    // Check if discount is applied and requires admin verification
+    const discountValue = parseFloat(document.getElementById('discountInput').value || 0);
+    if (discountValue > 0 && !window.discountVerified) {
+        showNotification('Please verify admin credentials to apply discount', 'error');
+        return;
+    }
+
     // NOTE: Automatic add-ons prompt removed - users now use the "Modify" button on cart items
     // to add or change add-ons at any time before processing the order
 
@@ -1344,13 +1408,13 @@ async function processOrder() {
         }
     });
 
-    const discountInfo = window.currentDiscount || { type: 'regular', id: '' };
+    const discountInfo = window.currentDiscount || { type: 'custom', id: '' };
     const diningOption = getSelectedDiningOption(); // Use button-based selection
 
     const orderData = {
         items: orderItems,
         total: parseFloat(document.getElementById('totalDisplay').textContent.replace('₱', '')),
-        discount: parseFloat(document.getElementById('discountInput').value || 0),
+        discount: discountValue,
         discount_type: discountInfo.type,
         discount_id: discountInfo.id,
         payment_method: paymentMethod,
@@ -1715,8 +1779,7 @@ async function verifyAdminCredentials(username, password) {
 }
 
 async function requireAdminForDiscount() {
-    // First, show the discount modal to let user select discount type
-    // This will be handled by the applyDiscount function which now requires auth
+    // Show discount modal (which will handle admin auth after selection)
     showDiscountModal();
 }
 
